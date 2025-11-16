@@ -43,15 +43,27 @@ class MeepSimulation(gym.Env):
         self.pml_layers = [mp.PML(1.0)]
         self.resolution = RESOLUTION
         self.pattern = np.array([])
-        self.sources = self.set_sources()
-        self.flux_monitors = self.set_flux_monitors()
-        self.sim = self.set_simulation()
+        self.geometry = []  # Initialize geometry list
         self.num_detectors = NUM_DETECTORS
         self.output_plane_x = OUTPUT_PLANE_X
-        self.target_state = self.set_target_state()
         self.layer_num = 0
+        
+        # Set up sources first
+        self.set_sources()
+        
+        # Set up simulation (needs geometry and sources)
+        self.set_simulation()
+        
+        # Set up flux monitors (needs sim to exist)
+        self.flux_monitors = []  # Initialize flux monitors list
+        self.set_flux_monitors()
+        
+        # Initialize target state
+        self.target_state = np.zeros(STATE_SIZE, dtype=np.float32)
+        self.set_target_state()
+        
         #-----------------------gymnasium-----------------------------
-        self.state = spaces.Box(low=0, high=1, shape=(STATE_SIZE,), dtype=np.float32)
+        # Define action and observation spaces
         self.action_space = spaces.MultiBinary(n=ACTION_SIZE)
         self.observation_space = spaces.Box(low=0, high=1, shape=(STATE_SIZE,), dtype=np.float32)
         #-------------------------------------------------------------
@@ -63,6 +75,7 @@ class MeepSimulation(gym.Env):
         self.sim.run(until=until)
 
     def set_sources(self):
+        """Set up sources for the simulation."""
         self.sources = [mp.Source(
             src=mp.GaussianSource(self.frequency, fwidth=0.2*self.frequency),
             component=mp.Ez,
@@ -81,6 +94,7 @@ class MeepSimulation(gym.Env):
             self.flux_monitors.append(self.sim.add_flux(self.frequency, 0, 1, flux_region))
 
     def set_target_state(self):
+        """Set up the target power distribution pattern."""
         for i in range(self.state_size):
             if i >= self.state_size / 8 and i <= self.state_size * 3 / 8:
                 self.target_state[i] = 1
@@ -101,7 +115,7 @@ class MeepSimulation(gym.Env):
             if self.pattern[i, nx-1] == 1:
                 center_x = (-self.design_region_sx/2 + 1) + (nx+0.5)*self.block_size_x #(-4 + 1.5)
                 center_y = (self.design_region_sy/2 - 1) + (-i-0.5)*self.block_size_y #(-2 + )
-                print(f"added block at ({center_x}, {center_y})")
+                # print(f"added block at ({center_x}, {center_y})")
                 self.geometry.append(
                     mp.Block(
                         material=mp.Medium(index=3.45),  # Silicon
@@ -179,23 +193,45 @@ class MeepSimulation(gym.Env):
 
 
     def reset(self, seed=None, options=None):
+        """Reset the environment to initial state."""
         super().reset(seed=seed)
-        self.state = np.zeros_like(self.state)
-        return self.state, {}
+        
+        # Reset simulation state
+        self.pattern = np.array([])
+        self.geometry = []
+        self.layer_num = 0
+        
+        # Re-initialize simulation
+        self.set_simulation()
+        self.flux_monitors = []
+        self.set_flux_monitors()
+        
+        # Return initial observation (zero power distribution)
+        initial_observation = np.zeros(STATE_SIZE, dtype=np.float32)
+        return initial_observation, {}
 
     def step(self, action):
+        """Execute one step in the environment."""
+        # Add the layer to the design
         self.add_layer(action.reshape(-1, 1))
+        
+        # Run electromagnetic simulation
         self.run_simulation(until=200)
-        self.state, _= self.get_power_distribution()
-        reward = np.sum(np.abs(self.state - self.target_state)) # can be changed to other reward function
+        
+        # Get power distribution as observation
+        power_dist, _ = self.get_power_distribution()
+        observation = np.array(power_dist, dtype=np.float32)
+        
+        # Calculate reward (negative distance from target - minimize difference)
+        reward = float(-np.sum(np.abs(observation - self.target_state)))
+        
+        # Check if episode is done
         self.layer_num += 1
-        if self.layer_num == self.block_num_y:
-            done = True
-        else:
-            done = False
+        terminated = (self.layer_num >= self.block_num_x)
         truncated = False
         info = {}
-        return self.state, reward, done, truncated, info
+        
+        return observation, reward, terminated, truncated, info
 
     
 if __name__ == "__main__":
