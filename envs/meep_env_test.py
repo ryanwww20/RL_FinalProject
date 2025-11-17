@@ -69,7 +69,7 @@ class MeepSimulation(gym.Env):
 
         # Set up flux monitors (needs sim to exist)
         self.flux_monitors = []  # Initialize flux monitors list
-        self.set_flux_monitors()
+        # self.set_flux_monitors()
 
         # Initialize target state
         self.target_state = np.zeros(STATE_SIZE, dtype=np.float32)
@@ -198,7 +198,15 @@ class MeepSimulation(gym.Env):
         # Highlight output plane on both subplots
         for ax in axes:
             ax.axvline(x=self.output_plane_x, color='yellow', linestyle='-', linewidth=1.5)
+        import time
+        import os
+        os.makedirs('img', exist_ok=True)  # Create img directory if it doesn't exist
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        filename = f'img/cell_visualization_{timestamp}.png'
+        fig.savefig(filename, dpi=150, bbox_inches='tight')
+        print(f"Saved visualization to {filename}")
         
+        plt.close(fig)  # Close figure to free memory
         return fig
     
     def power_distribution(self):
@@ -249,6 +257,7 @@ class MeepSimulation(gym.Env):
         self.set_simulation()
         self.flux_monitors = []
         self.set_flux_monitors()
+        self.setup_waveguide()
 
     def reset(self, seed=None, options=None):
         """Reset the environment to initial state."""
@@ -260,9 +269,7 @@ class MeepSimulation(gym.Env):
         self.layer_num = 0
 
         # Re-initialize simulation
-        self.set_simulation()
-        self.flux_monitors = []
-        self.set_flux_monitors()
+        self.simulation_reset()
 
         # Return initial observation (zero power distribution)
         initial_observation = np.zeros(STATE_SIZE, dtype=np.float32)
