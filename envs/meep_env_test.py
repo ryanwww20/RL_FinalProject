@@ -269,13 +269,13 @@ class MeepSimulation(gym.Env):
         self.add_layer(action.reshape(-1, 1))
 
         # Run electromagnetic simulation
-        self.simulation_reset()
+        # self.simulation_reset()
 
-        print(f"pattern: {self.pattern}")
+        # print(f"pattern: {self.pattern}")
         self.run_simulation(until=200)
 
         # Get power distribution as observation
-        print(f"layer_num: {self.layer_num}")
+        # print(f"layer_num: {self.layer_num}", end='\r')
         power_dist, _ = self.get_power_distribution()
         observation = np.array(power_dist, dtype=np.float32)
 
@@ -292,7 +292,9 @@ class MeepSimulation(gym.Env):
         observation = np.clip(observation, 0.0, 1.0).astype(np.float32)
 
         # Calculate reward (negative distance from target - minimize difference)
-        reward = float(-np.sum(np.abs(observation - self.target_state)))
+        # reward = float(-np.sum(np.abs(observation - self.target_state)))
+        # use MSE
+        reward = float(-np.mean(np.square(observation - self.target_state)))
 
         # Check if episode is done
         self.layer_num += 1
