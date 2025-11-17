@@ -22,10 +22,10 @@ my_config = {
     "algorithm": PPO,
     "policy_network": "MlpPolicy",
     "save_path": "models/sample_model",
-    "num_train_envs": 4,
-    "epoch_num": 5,
-    "timesteps_per_epoch": 100,
-    "eval_episode_num": 10,
+    "num_train_envs": 1,
+    "epoch_num": 2,
+    "timesteps_per_epoch": 10,  # Reduce if training is too slow (e.g., 60)
+    "eval_episode_num": 3,       # Reduced from 10 to speed up evaluation
 }
 
 def make_env():
@@ -75,6 +75,7 @@ def train(eval_env, model, config):
             # ),
         )
 
+        print(f"Epoch {epoch + 1}/{config['epoch_num']} completed")
         epoch_duration = time.time() - epoch_start_time
         total_duration = time.time() - start_time
 
@@ -141,6 +142,8 @@ if __name__ == "__main__":
     model = my_config["algorithm"](
         my_config["policy_network"], 
         train_env, 
+        n_steps = 10,
+        batch_size = 10,
         verbose=1,
         tensorboard_log=my_config["run_id"]
     )

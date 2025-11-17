@@ -202,6 +202,10 @@ class MeepSimulation(gym.Env):
             y_positions.append(y_pos)
         return power_distribution, y_positions
 
+    def simulation_reset(self):
+        self.set_simulation()
+        self.flux_monitors = []
+        self.set_flux_monitors()
 
     def reset(self, seed=None, options=None):
         """Reset the environment to initial state."""
@@ -227,9 +231,13 @@ class MeepSimulation(gym.Env):
         self.add_layer(action.reshape(-1, 1))
         
         # Run electromagnetic simulation
+        self.simulation_reset()
+        
+        print(f"pattern: {self.pattern}")
         self.run_simulation(until=200)
         
         # Get power distribution as observation
+        print(f"layer_num: {self.layer_num}")
         power_dist, _ = self.get_power_distribution()
         power_array = np.array(power_dist, dtype=np.float32)
         
@@ -249,7 +257,11 @@ class MeepSimulation(gym.Env):
         
         # Check if episode is done
         self.layer_num += 1
-        terminated = (self.layer_num >= self.block_num_x)
+        if self.layer_num >= self.block_num_x:
+            terminated = True
+            self.layer_num = 0
+        else:
+            terminated = False
         truncated = False
         info = {
             'total_power': float(total_power),
