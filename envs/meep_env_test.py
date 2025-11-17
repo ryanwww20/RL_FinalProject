@@ -94,22 +94,33 @@ class MeepSimulation(gym.Env):
             self.flux_monitors.append(self.sim.add_flux(self.frequency, 0, 1, flux_region))
 
     def set_target_state(self):
-        """Set up the target power distribution pattern."""
+        """Set up the target power distribution pattern.
+        
+        Creates a target distribution with two peaks:
+        - First peak: detectors 12-37 (25% to 37.5% of range)
+        - Second peak: detectors 62-87 (62.5% to 87.5% of range)
+        """
+        # Create binary pattern first
         for i in range(self.state_size):
             if i >= self.state_size / 8 and i <= self.state_size * 3 / 8:
                 self.target_state[i] = 1
-            elif i >= self.state_size * 5  / 8 and i <= self.state_size * 7 / 8:
+            elif i >= self.state_size * 5 / 8 and i <= self.state_size * 7 / 8:
                 self.target_state[i] = 1
             else:
                 self.target_state[i] = 0
+        
+        # Normalize to sum to 1 (probability distribution) to match observation
+        total = np.sum(self.target_state)
+        if total > 0:
+            self.target_state = self.target_state / total
     
     def add_layer(self, layer):
         if self.pattern.size == 0:
             self.pattern = layer
         else:
             self.pattern = np.hstack((self.pattern, layer))
-        print(f"pattern: {self.pattern}")
-        print(f"pattern shape: {self.pattern.shape}")
+        # print(f"pattern: {self.pattern}")
+        # print(f"pattern shape: {self.pattern.shape}")
         ny, nx = self.pattern.shape
         for i in range(ny): # add layer x = (-self.sx/2 + 1) + (nx+0.5)*self.block_size_x
             if self.pattern[i, nx-1] == 1:
@@ -220,7 +231,18 @@ class MeepSimulation(gym.Env):
         
         # Get power distribution as observation
         power_dist, _ = self.get_power_distribution()
-        observation = np.array(power_dist, dtype=np.float32)
+        power_array = np.array(power_dist, dtype=np.float32)
+        
+        # Normalize to [0, 1] range to match observation space
+        # Option 1: Normalize by total power (if total > 0)
+        total_power = np.sum(power_array)
+        if total_power > 0:
+            observation = power_array / total_power
+        else:
+            observation = power_array  # All zeros if no power
+        
+        # Ensure observation is within [0, 1] bounds
+        observation = np.clip(observation, 0.0, 1.0)
         
         # Calculate reward (negative distance from target - minimize difference)
         reward = float(-np.sum(np.abs(observation - self.target_state)))
@@ -229,7 +251,10 @@ class MeepSimulation(gym.Env):
         self.layer_num += 1
         terminated = (self.layer_num >= self.block_num_x)
         truncated = False
-        info = {}
+        info = {
+            'total_power': float(total_power),
+            'raw_power_dist': power_array.tolist()
+        }
         
         return observation, reward, terminated, truncated, info
 
