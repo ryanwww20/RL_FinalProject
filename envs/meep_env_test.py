@@ -239,7 +239,7 @@ class MeepSimulation(gym.Env):
         self.add_layer(action.reshape(-1, 1))
 
         # Run electromagnetic simulation
-        # self.simulation_reset()
+        self.simulation_reset()
 
         # print(f"pattern: {self.pattern}")
         self.run_simulation(until=200)
