@@ -5,21 +5,24 @@ import matplotlib.pyplot as plt
 import gymnasium as gym
 from gymnasium import spaces
 
-Cell_SX = 20
-Cell_SY = 20
-Design_Region_SX = 15
-Design_Region_SY = 15
-BLOCK_SIZE_X = 1
-BLOCK_SIZE_Y = 1
-BLOCK_NUM_X = 15
-BLOCK_NUM_Y = 15
+Cell_SX = 10
+Cell_SY = 10
+Design_Region_SX = 2
+Design_Region_SY = 2
+WAVEGUIDE_WIDTH = 0.4 #400nm
+WAVEGUIDE_SPACING = 0.8 #200nm
+BLOCK_SIZE_X = 0.04
+BLOCK_SIZE_Y = 0.04
+BLOCK_NUM_X = Design_Region_SX / BLOCK_SIZE_X
+BLOCK_NUM_Y = Design_Region_SY / BLOCK_SIZE_Y
 WAVELENGTH = 1.55 # μm
 FREQUENCY = 1 / WAVELENGTH
 RESOLUTION = 20
 NUM_DETECTORS = 100
 STATE_SIZE = NUM_DETECTORS
-ACTION_SIZE = BLOCK_NUM_Y
+ACTION_SIZE = int(BLOCK_NUM_Y)
 OUTPUT_PLANE_X = Cell_SX/2 - 1
+MATERIAL_INDEX_SILICON = 3.48
 
 class MeepSimulation(gym.Env):
     metadata = {
@@ -47,7 +50,10 @@ class MeepSimulation(gym.Env):
         self.num_detectors = NUM_DETECTORS
         self.output_plane_x = OUTPUT_PLANE_X
         self.layer_num = 0
-        
+        self.waveguide_width = WAVEGUIDE_WIDTH
+        self.waveguide_length = (Cell_SX - Design_Region_SX) / 2
+        self.waveguide_spacing = WAVEGUIDE_SPACING
+        self.material_index_silicon = MATERIAL_INDEX_SILICON
         # Set up sources first
         self.set_sources()
         
@@ -76,11 +82,15 @@ class MeepSimulation(gym.Env):
 
     def set_sources(self):
         """Set up sources for the simulation."""
-        self.sources = [mp.Source(
+        self.sources = [mp.EigenModeSource(
             src=mp.GaussianSource(self.frequency, fwidth=0.2*self.frequency),
             component=mp.Ez,
             center=mp.Vector3(-self.cell_sx/2 + 1, 0),  # near left boundary
-            size=mp.Vector3(0, self.cell_sy)
+            size=mp.Vector3(0, self.cell_sy),
+            eig_band=1,                                     # fundamental mode
+            eig_kpoint=mp.Vector3(1, 0, 0),                 # +x direction
+            eig_parity=mp.ODD_Z,                            # select TE/TM symmetry
+            eig_match_freq=True
         )]
 
     def set_flux_monitors(self):
@@ -124,17 +134,38 @@ class MeepSimulation(gym.Env):
         ny, nx = self.pattern.shape
         for i in range(ny): # add layer x = (-self.sx/2 + 1) + (nx+0.5)*self.block_size_x
             if self.pattern[i, nx-1] == 1:
-                center_x = (-self.design_region_sx/2 + 1) + (nx+0.5)*self.block_size_x #(-4 + 1.5)
-                center_y = (self.design_region_sy/2 - 1) + (-i-0.5)*self.block_size_y #(-2 + )
+                center_x = (-self.design_region_sx/2) + (nx+0.5)*self.block_size_x #(-4 + 1.5)
+                center_y = (self.design_region_sy/2) + (-i-0.5)*self.block_size_y #(-2 + )
                 # print(f"added block at ({center_x}, {center_y})")
                 self.geometry.append(
                     mp.Block(
-                        material=mp.Medium(index=3.45),  # Silicon
+                        material=mp.Medium(index=self.material_index_silicon),  # Silicon
                         center=mp.Vector3(center_x, center_y),
                         size=mp.Vector3(self.block_size_x, self.block_size_y)
                     )
                 )
     
+    def setup_waveguide(self):
+        waveguide = mp.Block(
+            material=mp.Medium(index=self.material_index_silicon),
+            center=mp.Vector3(-self.cell_sx/2 + self.waveguide_length/2, 0),
+            size=mp.Vector3(self.waveguide_length, self.waveguide_width)
+        )
+        self.geometry.append(waveguide)
+        waveguide = mp.Block(
+            material=mp.Medium(index=self.material_index_silicon),
+            center=mp.Vector3(self.cell_sx/2 - self.waveguide_length/2, self.waveguide_spacing/2 + self.waveguide_width/2),
+            size=mp.Vector3(self.waveguide_length, self.waveguide_width)
+        )
+        self.geometry.append(waveguide)
+        waveguide = mp.Block(
+            material=mp.Medium(index=self.material_index_silicon),
+            center=mp.Vector3(self.cell_sx/2 - self.waveguide_length/2, -self.waveguide_spacing/2 - self.waveguide_width/2),
+            size=mp.Vector3(self.waveguide_length, self.waveguide_width)
+        )
+        self.geometry.append(waveguide)
+
+
     def cell_visualization(self):
         """Visualize the electric field distribution with coordinate markings."""
         # Get field data
@@ -274,16 +305,22 @@ class MeepSimulation(gym.Env):
 if __name__ == "__main__":
     # Create simulation
     simulation = MeepSimulation()
+    print("design region size: ", simulation.design_region_sx, simulation.design_region_sy)
+    print("cell size: ", simulation.cell_sx, simulation.cell_sy)
+    print("waveguide width: ", simulation.waveguide_width)
+    print("waveguide spacing: ", simulation.waveguide_spacing)
+    print("waveguide length: ", simulation.waveguide_length)
     
     # Add layers
-    for i in range(10):
-        layer = np.random.randint(0, 2, size=(15, 1))
+    for i in range(50):
+        layer = np.random.randint(0, 2, size=(50, 1))
         simulation.add_layer(layer)
 
     # Setup simulation
     simulation.set_sources()
-    simulation.set_simulation()
+    simulation.setup_waveguide()
     simulation.set_flux_monitors()
+    simulation.set_simulation()
     
     # Run simulation
     simulation.run_simulation(until=200)
