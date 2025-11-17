@@ -1,3 +1,6 @@
 meep
 __pycache__/
-example/
+# TensorBoard event files
+events.out.tfevents.*
+**/events.out.tfevents.*
+img/

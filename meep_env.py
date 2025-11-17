@@ -9,11 +9,12 @@ Design_Region_SX = 15
 Design_Region_SY = 15
 BLOCK_SIZE_X = 1
 BLOCK_SIZE_Y = 1
-WAVELENGTH = 1.55 # μm
+WAVELENGTH = 1.55  # μm
 FREQUENCY = 1 / WAVELENGTH
 RESOLUTION = 20
 NUM_DETECTORS = 100
 OUTPUT_PLANE_X = Cell_SX/2 - 1
+
 
 class MeepSimulation:
     def __init__(self):
@@ -36,8 +37,9 @@ class MeepSimulation:
         self.output_plane_x = OUTPUT_PLANE_X
 
     def set_simulation(self):
-        self.sim = mp.Simulation(cell_size=self.cell_size, boundary_layers=self.pml_layers, geometry=self.geometry, sources=self.sources, resolution=self.resolution)
-    
+        self.sim = mp.Simulation(cell_size=self.cell_size, boundary_layers=self.pml_layers,
+                                 geometry=self.geometry, sources=self.sources, resolution=self.resolution)
+
     def run_simulation(self, until=200):
         self.sim.run(until=until)
 
@@ -47,16 +49,19 @@ class MeepSimulation:
         for i in range(ny):
             for j in range(nx):
                 if self.pattern[i, j] == 1:
-                    center_x = -self.design_region_sx/2 + (j+0.5)*self.block_size_x
-                    center_y = -self.design_region_sy/2 + (ny-i-0.5)*self.block_size_y
+                    center_x = -self.design_region_sx / \
+                        2 + (j+0.5)*self.block_size_x
+                    center_y = -self.design_region_sy / \
+                        2 + (ny-i-0.5)*self.block_size_y
                     self.geometry.append(
                         mp.Block(
                             material=mp.Medium(index=3.45),  # Silicon
                             center=mp.Vector3(center_x, center_y),
-                            size=mp.Vector3(self.block_size_x, self.block_size_y)
+                            size=mp.Vector3(self.block_size_x,
+                                            self.block_size_y)
                         )
                     )
-    
+
     def set_sources(self):
         self.sources = [mp.Source(
             src=mp.GaussianSource(self.frequency, fwidth=0.2*self.frequency),
@@ -65,16 +70,20 @@ class MeepSimulation:
             size=mp.Vector3(0, self.cell_sy)
         )]
 
+    # this is the output plane, the power distribution is measured at the output plane
     def set_flux_monitors(self):
         detector_height = self.cell_sy / self.num_detectors
+        y_positions = []
         for i in range(self.num_detectors):
             y_pos = -self.cell_sy/2 + (i + 0.5) * detector_height
+            y_positions.append(y_pos)
             flux_region = mp.FluxRegion(
                 center=mp.Vector3(self.output_plane_x, y_pos),
                 size=mp.Vector3(0, detector_height)
             )
-            self.flux_monitors.append(self.sim.add_flux(self.frequency, 0, 1, flux_region))
-    
+            self.flux_monitors.append(self.sim.add_flux(
+                self.frequency, 0, 1, flux_region))
+
     def add_layer(self, layer):
         if self.pattern.size == 0:
             self.pattern = layer
@@ -83,10 +92,12 @@ class MeepSimulation:
         print(f"pattern: {self.pattern}")
         print(f"pattern shape: {self.pattern.shape}")
         ny, nx = self.pattern.shape
-        for i in range(ny): # add layer x = (-self.sx/2 + 1) + (nx+0.5)*self.block_size_x
+        for i in range(ny):  # add layer x = (-self.sx/2 + 1) + (nx+0.5)*self.block_size_x
             if self.pattern[i, nx-1] == 1:
-                center_x = (-self.design_region_sx/2 + 1) + (nx+0.5)*self.block_size_x #(-4 + 1.5)
-                center_y = (self.design_region_sy/2 - 1) + (-i-0.5)*self.block_size_y #(-2 + )
+                center_x = (-self.design_region_sx/2 + 1) + \
+                    (nx+0.5)*self.block_size_x  # (-4 + 1.5)
+                center_y = (self.design_region_sy/2 - 1) + \
+                    (-i-0.5)*self.block_size_y  # (-2 + )
                 print(f"added block at ({center_x}, {center_y})")
                 self.geometry.append(
                     mp.Block(
@@ -95,15 +106,17 @@ class MeepSimulation:
                         size=mp.Vector3(self.block_size_x, self.block_size_y)
                     )
                 )
-    
+
     def cell_visualization(self):
         """Visualize the electric field distribution with coordinate markings."""
         # Get field data
-        eps_data = self.sim.get_array(center=mp.Vector3(), size=self.cell_size, component=mp.Dielectric)
-        ez_data = self.sim.get_array(center=mp.Vector3(), size=self.cell_size, component=mp.Ez)
-        
+        eps_data = self.sim.get_array(
+            center=mp.Vector3(), size=self.cell_size, component=mp.Dielectric)
+        ez_data = self.sim.get_array(
+            center=mp.Vector3(), size=self.cell_size, component=mp.Ez)
+
         # Create visualization
-        plt.figure(figsize=(10,6))
+        plt.figure(figsize=(10, 6))
         plt.imshow(eps_data.transpose(), interpolation='spline36', cmap='binary',
                    extent=[-self.cell_sx/2, self.cell_sx/2, -self.cell_sy/2, self.cell_sy/2], origin='lower')
         plt.imshow(ez_data.transpose(), interpolation='spline36', cmap='RdBu', alpha=0.8,
@@ -112,43 +125,64 @@ class MeepSimulation:
         plt.ylabel('Y Position (μm)', fontsize=12)
         plt.title('Electric Field Distribution', fontsize=12)
         plt.colorbar(label='Ez Field (au)', fraction=0.046, pad=0.04)
-        plt.axhline(y=0, color='white', linestyle='--', linewidth=0.5, alpha=0.5)
-        plt.axvline(x=0, color='white', linestyle='--', linewidth=0.5, alpha=0.5)
+        plt.axhline(y=0, color='white', linestyle='--',
+                    linewidth=0.5, alpha=0.5)
+        plt.axvline(x=0, color='white', linestyle='--',
+                    linewidth=0.5, alpha=0.5)
         # Mark the output plane
-        plt.axvline(x=self.output_plane_x, color='yellow', linestyle='-', linewidth=2, label='Output Plane')
+        plt.axvline(x=self.output_plane_x, color='yellow',
+                    linestyle='-', linewidth=2, label='Output Plane')
         plt.legend(loc='upper left', fontsize=10)
         plt.tight_layout()
+
+        # don't open a window, save the image to a file
+        # give the file a unique name
+        import time
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        # plt.savefig(f'img/cell_visualization_{timestamp}.png')
+        plt.close()
         return plt
-    
+
     def power_distribution(self):
         """Extract and plot the power distribution along the output plane."""
         # Extract power distribution along y-axis at output plane
         power_distribution = []
         y_positions = []
         detector_height = self.cell_sy / self.num_detectors
-        
+
         for i, monitor in enumerate(self.flux_monitors):
             power = mp.get_fluxes(monitor)[0]
             power_distribution.append(power)
             y_pos = -self.cell_sy/2 + (i + 0.5) * detector_height
             y_positions.append(y_pos)
-        
+
         # Plot power distribution
         plt.figure(figsize=(8, 6))
-        plt.plot(y_positions, power_distribution, 'o-', linewidth=2, markersize=8)
+        plt.plot(y_positions, power_distribution,
+                 'o-', linewidth=2, markersize=8)
         plt.xlabel('Y Position (μm)', fontsize=12)
         plt.ylabel('Power (au)', fontsize=12)
         plt.title('Power Distribution at Output Plane', fontsize=12)
         plt.grid(True, alpha=0.3)
         plt.tight_layout()
-        
+
+        # don't open a window, save the image to a file
+        # give the file a unique name
+        import time
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        plt.savefig(f'img/power_distribution_{timestamp}.png')
+        plt.close()
+
         # Print results
         print("\n=== Power Distribution at Output Plane ===")
         print(f"Total transmitted power: {np.sum(power_distribution):.6f}")
-        print("\nPower at each detector position:")
-        for i, (y, p) in enumerate(zip(y_positions, power_distribution)):
-            print(f"  Detector {i+1} (y={y:+.2f}): {p:.6f}")
-        
+        # print("\nPower at each detector position:")
+        # for i, (y, p) in enumerate(zip(y_positions, power_distribution)):
+        #     print(f"  Detector {i+1} (y={y:+.2f}): {p:.6f}")
+        print('='*100)
+        print(f"num of detectors: {len(self.flux_monitors)}")
+        print('='*100)
+
         return plt, power_distribution, y_positions
 
     def get_power_distribution(self):
@@ -162,32 +196,36 @@ class MeepSimulation:
             y_pos = -self.cell_sy/2 + (i + 0.5) * detector_height
             y_positions.append(y_pos)
         return power_distribution, y_positions
-    
+
+
 if __name__ == "__main__":
     # Create simulation
     simulation = MeepSimulation()
-    
-    # Add layers
-    for i in range(10):
-        layer = np.random.randint(0, 2, size=(15, 1))
-        simulation.add_layer(layer)
 
-    # Setup simulation
     simulation.set_sources()
-    simulation.set_simulation()
+    # simulation.set_simulation()
+    # simulation.set_flux_monitors()
+    # Add layers
     simulation.set_flux_monitors()
-    
-    # Run simulation
-    simulation.run_simulation(until=200)
-    
-    # Visualize results
-    simulation.cell_visualization()
-    plt.show()
-    
-    simulation.power_distribution()
-    plt.show()
+    for i in range(5):
+        # Setup simulation
+        # after adding a layer,
+        simulation.set_simulation()
+
+        # layer = np.random.randint(0, 2, size=(15, 1))
+        tmp = [0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0]
+        layer = np.array([[tmp[j]] for j in range(15)])
+        simulation.add_layer(layer)
+        # Run simulation
+        simulation.run_simulation(until=200)
+
+        # Visualize results
+        simulation.cell_visualization()
+        plt.show()
+
+        simulation.power_distribution()
+        plt.show()
 
     power_distribution, y_positions = simulation.get_power_distribution()
     print(f"power distribution: {power_distribution}")
     print(f"y positions: {y_positions}")
-    
