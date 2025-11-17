@@ -70,10 +70,13 @@ class MeepSimulation:
             size=mp.Vector3(0, self.cell_sy)
         )]
 
+    # this is the output plane, the power distribution is measured at the output plane
     def set_flux_monitors(self):
         detector_height = self.cell_sy / self.num_detectors
+        y_positions = []
         for i in range(self.num_detectors):
             y_pos = -self.cell_sy/2 + (i + 0.5) * detector_height
+            y_positions.append(y_pos)
             flux_region = mp.FluxRegion(
                 center=mp.Vector3(self.output_plane_x, y_pos),
                 size=mp.Vector3(0, detector_height)
@@ -131,6 +134,13 @@ class MeepSimulation:
                     linestyle='-', linewidth=2, label='Output Plane')
         plt.legend(loc='upper left', fontsize=10)
         plt.tight_layout()
+
+        # don't open a window, save the image to a file
+        # give the file a unique name
+        import time
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        # plt.savefig(f'img/cell_visualization_{timestamp}.png')
+        plt.close()
         return plt
 
     def power_distribution(self):
@@ -156,12 +166,22 @@ class MeepSimulation:
         plt.grid(True, alpha=0.3)
         plt.tight_layout()
 
+        # don't open a window, save the image to a file
+        # give the file a unique name
+        import time
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        plt.savefig(f'img/power_distribution_{timestamp}.png')
+        plt.close()
+
         # Print results
         print("\n=== Power Distribution at Output Plane ===")
         print(f"Total transmitted power: {np.sum(power_distribution):.6f}")
-        print("\nPower at each detector position:")
-        for i, (y, p) in enumerate(zip(y_positions, power_distribution)):
-            print(f"  Detector {i+1} (y={y:+.2f}): {p:.6f}")
+        # print("\nPower at each detector position:")
+        # for i, (y, p) in enumerate(zip(y_positions, power_distribution)):
+        #     print(f"  Detector {i+1} (y={y:+.2f}): {p:.6f}")
+        print('='*100)
+        print(f"num of detectors: {len(self.flux_monitors)}")
+        print('='*100)
 
         return plt, power_distribution, y_positions
 
@@ -182,28 +202,29 @@ if __name__ == "__main__":
     # Create simulation
     simulation = MeepSimulation()
 
-    # Add layers
-    for i in range(10):
-
-        layer = np.random.randint(0, 2, size=(15, 1))
-        # tmp = [0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0]
-
-        simulation.add_layer(layer)
-
-    # Setup simulation
     simulation.set_sources()
-    simulation.set_simulation()
+    # simulation.set_simulation()
+    # simulation.set_flux_monitors()
+    # Add layers
     simulation.set_flux_monitors()
+    for i in range(5):
+        # Setup simulation
+        # after adding a layer,
+        simulation.set_simulation()
 
-    # Run simulation
-    simulation.run_simulation(until=200)
+        # layer = np.random.randint(0, 2, size=(15, 1))
+        tmp = [0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0]
+        layer = np.array([[tmp[j]] for j in range(15)])
+        simulation.add_layer(layer)
+        # Run simulation
+        simulation.run_simulation(until=200)
 
-    # Visualize results
-    simulation.cell_visualization()
-    plt.show()
+        # Visualize results
+        simulation.cell_visualization()
+        plt.show()
 
-    simulation.power_distribution()
-    plt.show()
+        simulation.power_distribution()
+        plt.show()
 
     power_distribution, y_positions = simulation.get_power_distribution()
     print(f"power distribution: {power_distribution}")
