@@ -3,3 +3,4 @@ __pycache__/
 # TensorBoard event files
 events.out.tfevents.*
 **/events.out.tfevents.*
+img/
