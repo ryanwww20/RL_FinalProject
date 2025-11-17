@@ -1,5 +1,6 @@
 import warnings
 import time
+import numpy as np
 import gymnasium as gym
 from gymnasium.envs.registration import register
 
@@ -22,10 +23,10 @@ my_config = {
     "algorithm": PPO,
     "policy_network": "MlpPolicy",
     "save_path": "models/sample_model",
-    "num_train_envs": 1,
-    "epoch_num": 2,
-    "timesteps_per_epoch": 10,  # Reduce if training is too slow (e.g., 60)
-    "eval_episode_num": 3,       # Reduced from 10 to speed up evaluation
+    "num_train_envs": 4,
+    "epoch_num": 10,
+    "timesteps_per_epoch": 15,  # Reduce if training is too slow (e.g., 60)
+    "eval_episode_num": 1,       # Reduced from 10 to speed up evaluation
 }
 
 
@@ -39,26 +40,25 @@ def eval(env, model, eval_episode_num):
     avg_score = 0
     avg_highest = 0
     for seed in range(eval_episode_num):
-        # Reset environment with seed (Gymnasium API)
-        obs, info = env.reset(seed=seed)
-        terminated = False
-        truncated = False
+        # VecEnv API: seed first, then reset (no seed parameter in reset)
+        env.seed(seed)
+        obs = env.reset()  # VecEnv returns just observations (array), not tuple
+        dones = np.zeros(env.num_envs, dtype=bool)
         total_reward = 0
 
-        # Interact with env using Gymnasium API
-        while not (terminated or truncated):
+        # Interact with env using VecEnv API
+        while not np.any(dones):
             # Model uses observation to predict action
             action, _state = model.predict(obs, deterministic=True)
-            # Environment executes action and returns new observation + reward
-            obs, reward, terminated, truncated, info = env.step(action)
-            total_reward += reward
+            # VecEnv step returns: (obs, rewards, dones, infos)
+            obs, rewards, dones, infos = env.step(action)
+            total_reward += rewards[0]  # Extract reward from array
 
         avg_score += total_reward
-        # Note: info['highest'] and info['score'] don't exist in your env
-        # You may want to add these to the info dict in step() if needed
+        # Placeholder - update if you add highest tracking
+        avg_highest = max(avg_highest, total_reward)
 
     avg_score /= eval_episode_num
-    avg_highest = avg_score  # Placeholder - update if you add highest tracking
 
     return avg_score, avg_highest
 
@@ -82,16 +82,24 @@ def train(eval_env, model, config):
             #     verbose=2,
             # ),
         )
-
+        print(f"\n{'v'*60}")
         print(f"Epoch {epoch + 1}/{config['epoch_num']} completed")
+        print(f"{'v'*60}")
         epoch_duration = time.time() - epoch_start_time
         total_duration = time.time() - start_time
 
         # Evaluation
         eval_start = time.time()
+        print(f"\n{'='*60}")
+        print(f"Starting Evaluation")
+        print(f"{'='*60}")
         avg_score, avg_highest = eval(
             eval_env, model, config["eval_episode_num"])
         eval_duration = time.time() - eval_start
+
+        print(f"\n{'='*60}")
+        print(f"Evaluation Completed")
+        print(f"{'='*60}")
 
         # Print training progress and speed
         print(f"\n{'='*60}")
@@ -104,6 +112,11 @@ def train(eval_env, model, config):
         print(f"Performance:")
         print(f"   - Avg Score: {avg_score:.1f}")
         print(f"   - Avg Highest Tile: {avg_highest:.1f}")
+
+        # log the epoch, avg_score, avg_highest, epoch_duration, eval_duration, total_duration to a csv file
+        with open('training_log.csv', 'a') as f:
+            f.write(
+                f"{epoch + 1}, {avg_score}, {avg_highest}, {epoch_duration}, {eval_duration}, {total_duration}\n")
 
         # wandb.log(
         #     {"avg_highest": avg_highest,
@@ -153,7 +166,8 @@ if __name__ == "__main__":
     model = my_config["algorithm"](
         my_config["policy_network"],
         train_env,
-        verbose=1,
+        n_steps=my_config["timesteps_per_epoch"],
+        verbose=0,
         tensorboard_log=my_config["run_id"]
     )
     train(eval_env, model, my_config)
