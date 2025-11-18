@@ -101,7 +101,7 @@ class MinimalEnv(gym.Env):
         output_flux, ez_data = self.simulation.calculate_flux(
             self.material_matrix)
 
-        reward = np.sum(output_flux * TARGET_FLUX)/np.sum(output_flux)
+        reward = self.get_reward(output_flux)
 
         # Check if episode is done
         terminated = self.material_matrix_idx >= self.max_steps # Goal reached
@@ -124,6 +124,10 @@ class MinimalEnv(gym.Env):
         info = {}
 
         return observation, reward, terminated, truncated, info
+
+
+    def get_reward(self, flux_data):
+        return np.sum(flux_data * TARGET_FLUX)/np.sum(flux_data)
 
     def reward_plot(self, reward, flux_data):
         # save reward to csv
