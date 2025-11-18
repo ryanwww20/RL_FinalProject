@@ -145,7 +145,7 @@ class MinimalEnv(gym.Env):
         plt.legend()
         plt.grid(True, alpha=0.3)
         plt.savefig(
-            f'/Users/ryan/NTUEE_Local/114-1/RL_FinalPJ/RL_FinalProject/sac_model_logs/flux_images/flux_distribution_{datetime.now().strftime("%Y%m%d_%H%M%S")}.png')
+            f'/Users/ryan/NTUEE_Local/114-1/RL_FinalPJ/RL_FinalProject/ppo_model_logs/flux_images/flux_distribution_{datetime.now().strftime("%Y%m%d_%H%M%S")}.png')
         plt.close()
 
     def field_result_plot(self, ez_data):
@@ -172,7 +172,7 @@ class MinimalEnv(gym.Env):
             plt.legend()
             plt.grid(True, alpha=0.3)
             plt.savefig(
-                f'/Users/ryan/NTUEE_Local/114-1/RL_FinalPJ/RL_FinalProject/sac_model_logs/field_images/field_distribution_{datetime.now().strftime("%Y%m%d_%H%M%S")}.png')
+                f'/Users/ryan/NTUEE_Local/114-1/RL_FinalPJ/RL_FinalProject/ppo_model_logs/field_images/field_distribution_{datetime.now().strftime("%Y%m%d_%H%M%S")}.png')
             plt.close()
         except Exception as e:
             print(f'Error plotting field results: {e}')

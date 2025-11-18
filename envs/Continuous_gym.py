@@ -142,7 +142,7 @@ class MinimalEnv(gym.Env):
     def reward_plot(self, reward, flux_data):
         # save reward to csv
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        with open('/Users/ryan/NTUEE_Local/114-1/RL_FinalPJ/RL_FinalProject/ppo_model_logs/episode_rewards.csv', 'a') as f:
+        with open('/Users/ryan/NTUEE_Local/114-1/RL_FinalPJ/RL_FinalProject/sac_model_logs/episode_rewards.csv', 'a') as f:
             f.write(f'{timestamp}, {reward}\n')
 
         plt.figure(figsize=(10, 6))
@@ -155,7 +155,7 @@ class MinimalEnv(gym.Env):
         plt.legend()
         plt.grid(True, alpha=0.3)
         plt.savefig(
-            f'/Users/ryan/NTUEE_Local/114-1/RL_FinalPJ/RL_FinalProject/ppo_model_logs/flux_images/flux_distribution_{datetime.now().strftime("%Y%m%d_%H%M%S")}.png')
+            f'/Users/ryan/NTUEE_Local/114-1/RL_FinalPJ/RL_FinalProject/sac_model_logs/flux_images/flux_distribution_{datetime.now().strftime("%Y%m%d_%H%M%S")}.png')
         plt.close()
 
     def field_result_plot(self, ez_data):
