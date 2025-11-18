@@ -28,24 +28,27 @@ class MinimalEnv(gym.Env):
             render_mode: "human" for GUI, "rgb_array" for image, None for no rendering
         """
         super().__init__()
-
+        
+        self.obs_size = config.environment.obs_size
+        self.action_size = config.environment.action_size
         # Define observation and action spaces
         # State is an array of 100
         self.observation_space = spaces.Box(
             low=-np.inf,
             high=np.inf,
-            shape=(config.environment.obs_size,),
+            shape=(self.obs_size,),
             dtype=np.float32
         )
 
         # Action space: binary array of length 50 (0/1 values)
-        self.action_space = spaces.MultiBinary(config.environment.action_size)
+        self.action_space = spaces.MultiBinary(self.action_size)
 
         # Initialize state
         self.state = None
         self.render_mode = render_mode
-        self.material_matrix = np.zeros((50, 50))
+        self.material_matrix = np.zeros((config.simulation.pixel_num_x, config.simulation.pixel_num_y))
         self.material_matrix_idx = 0
+        self.max_steps = config.environment.max_steps
         self.simulation = WaveguideSimulation()
 
     def reset(self, seed=None, options=None):
@@ -63,11 +66,11 @@ class MinimalEnv(gym.Env):
         super().reset(seed=seed)
 
         # Reset material matrix and index
-        self.material_matrix = np.zeros((50, 50))
+        self.material_matrix = np.zeros((config.simulation.pixel_num_x, config.simulation.pixel_num_y))
         self.material_matrix_idx = 0
 
         # Return initial observation (zeros since no material set yet)
-        observation = np.zeros(100, dtype=np.float32)
+        observation = np.zeros(self.obs_size, dtype=np.float32)
         info = {}
 
         return observation, info
@@ -96,12 +99,12 @@ class MinimalEnv(gym.Env):
         self.material_matrix_idx += 1
 
         output_flux, ez_data = self.simulation.calculate_flux(
-            self.material_matrix, x_position=2.0)
+            self.material_matrix)
 
         reward = np.sum(output_flux * TARGET_FLUX)/np.sum(output_flux)
 
         # Check if episode is done
-        terminated = self.material_matrix_idx >= 50  # Goal reached
+        terminated = self.material_matrix_idx >= self.max_steps # Goal reached
         if terminated:
             self.reward_plot(reward, output_flux)
             self.field_result_plot(ez_data)
@@ -115,7 +118,7 @@ class MinimalEnv(gym.Env):
 
         else:
             # Initial state: return zeros
-            observation = np.zeros(100, dtype=np.float32)
+            observation = np.zeros(self.obs_size, dtype=np.float32)
 
         # Info dictionary (can contain debugging info)
         info = {}

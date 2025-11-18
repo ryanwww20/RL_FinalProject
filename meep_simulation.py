@@ -124,9 +124,6 @@ class WaveguideSimulation:
                     # Map matrix indices to physical coordinates in square region
                     x_center = square_x_min + (i + 0.5) * dx
                     y_center = square_y_min + (j + 0.5) * dy
-                    
-                    if j == 49:
-                        print(f"x_center: {x_center}, y_center: {y_center}")
 
                     if material_matrix[i, j] == 1:
                         # Silicon pixel
