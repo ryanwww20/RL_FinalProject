@@ -6,3 +6,4 @@ events.out.tfevents.*
 img/
 
 ppo_model_logs/
+ppo_tensorboard/

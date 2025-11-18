@@ -301,6 +301,8 @@ def train_ppo(
     except KeyboardInterrupt:
         print("\n\nTraining interrupted by user (Ctrl+C)")
         print("Saving current model state...")
+    except Exception as e:
+        print(f"Error during training: {e}")
 
     # Save the final model (even if interrupted)
     model.save(save_path)

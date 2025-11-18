@@ -141,4 +141,3 @@ For 3D simulations, you can use:
 3. Place sources away from PML boundaries (at least 0.5-1 wavelength)
 4. For waveguide sources, the `size` must match the waveguide cross-section
 5. Use `eig_band=1` for fundamental mode, higher numbers for higher-order modes
-
