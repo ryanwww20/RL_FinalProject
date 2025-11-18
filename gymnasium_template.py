@@ -6,6 +6,7 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 from meep_simulation import FluxCalculator
+from meep_simulation import WaveguideSimulation
 import matplotlib.pyplot as plt
 from datetime import datetime
 
@@ -45,7 +46,7 @@ class MinimalEnv(gym.Env):
         self.render_mode = render_mode
         self.material_matrix = np.zeros((50, 50))
         self.material_matrix_idx = 0
-        self.flux_calculator = FluxCalculator()
+        self.simulation = WaveguideSimulation()
 
     def reset(self, seed=None, options=None):
         """
@@ -94,7 +95,7 @@ class MinimalEnv(gym.Env):
         self.material_matrix[self.material_matrix_idx] = action
         self.material_matrix_idx += 1
 
-        output_flux, ez_data = self.flux_calculator.calculate_flux(
+        output_flux, ez_data = self.simulation.calculate_flux(
             self.material_matrix, x_position=2.0)
 
         reward = np.sum(output_flux * TARGET_FLUX)/np.sum(output_flux)
