@@ -406,6 +406,57 @@ class WaveguideSimulation:
         self.ez_data = ez_data.T
         return self.ez_data
 
+    def cell_visualization(self, save_path=None):
+        """
+        Visualize the electric field distribution with coordinate markings.
+        
+        Args:
+            save_path: Path to save the image (e.g., 'img/train0/cell_visualization_step5.png')
+                      If None, image is not saved.
+        
+        Returns:
+            matplotlib figure object
+        """
+        if self.sim is None:
+            raise ValueError(
+                "Simulation must be run first. Call run() method.")
+        
+        # Get field data
+        eps_data = self.sim.get_array(
+            center=mp.Vector3(), size=self.cell_size, component=mp.Dielectric)
+        ez_data = self.sim.get_array(
+            center=mp.Vector3(), size=self.cell_size, component=mp.Ez)
+
+        # Create visualization
+        plt.figure(figsize=(10, 6))
+        plt.imshow(eps_data.transpose(), interpolation='spline36', cmap='binary',
+                   extent=[-self.cell_size.x/2, self.cell_size.x/2, 
+                           -self.cell_size.y/2, self.cell_size.y/2], origin='lower')
+        plt.imshow(ez_data.transpose(), interpolation='spline36', cmap='RdBu', alpha=0.8,
+                   extent=[-self.cell_size.x/2, self.cell_size.x/2, 
+                           -self.cell_size.y/2, self.cell_size.y/2], origin='lower')
+        plt.xlabel('X Position (μm)', fontsize=12)
+        plt.ylabel('Y Position (μm)', fontsize=12)
+        plt.title('Electric Field Distribution', fontsize=12)
+        plt.colorbar(label='Ez Field (au)', fraction=0.046, pad=0.04)
+        plt.axhline(y=0, color='white', linestyle='--',
+                    linewidth=0.5, alpha=0.5)
+        plt.axvline(x=0, color='white', linestyle='--',
+                    linewidth=0.5, alpha=0.5)
+        plt.tight_layout()
+
+        # Save the image if path is provided
+        if save_path is not None:
+            # Create directory if it doesn't exist
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
+            plt.savefig(save_path, dpi=150, bbox_inches='tight')
+            plt.close()
+        else:
+            # Return figure if not saving
+            return plt
+        
+        return None
+
     def get_power_density_at_point(self, position, component='x'):
         """
         Get power density (Poynting vector) at a specific point.
@@ -654,7 +705,7 @@ class FluxCalculator:
         self.simulation_time = simulation_time
         self.num_flux_regions = num_flux_regions
 
-    def calculate_flux(self, material_matrix, x_position=2.0):
+    def calculate_flux(self, material_matrix, x_position=2.0, save_visualization_path=None):
         """
         Calculate flux distribution along y-axis at specified x position.
 
@@ -662,6 +713,8 @@ class FluxCalculator:
             material_matrix: 50x50 numpy array where 0=silica, 1=silicon
                            Matrix applies to square region: x from 0 to 2um, y from -1 to +1um
             x_position: x coordinate where to measure flux (default: 2.0)
+            save_visualization_path: Path to save cell visualization image (e.g., 'img/train0/cell_visualization_step5.png')
+                                    If None, visualization is not saved.
 
         Returns:
             flux_array: numpy array of flux values along y-axis
@@ -692,6 +745,10 @@ class FluxCalculator:
 
         # Run simulation
         sim.run(until=self.simulation_time)
+
+        # Save visualization if path is provided
+        if save_visualization_path is not None:
+            sim.cell_visualization(save_path=save_visualization_path)
 
         # Get flux distribution
         y_positions, flux_values = sim.get_flux_distribution_along_y()

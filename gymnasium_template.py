@@ -46,6 +46,8 @@ class MinimalEnv(gym.Env):
         self.material_matrix = np.zeros((50, 50))
         self.material_matrix_idx = 0
         self.flux_calculator = FluxCalculator()
+        self.training_index = 0  # Track training episode/index
+        self.save_visualizations = True  # Flag to enable/disable visualization saving
 
     def reset(self, seed=None, options=None):
         """
@@ -64,6 +66,7 @@ class MinimalEnv(gym.Env):
         # Reset material matrix and index
         self.material_matrix = np.zeros((50, 50))
         self.material_matrix_idx = 0
+        # Note: training_index is incremented at the end of each episode, not at reset
 
         # Return initial observation (zeros since no material set yet)
         observation = np.zeros(100, dtype=np.float32)
@@ -94,14 +97,21 @@ class MinimalEnv(gym.Env):
         self.material_matrix[self.material_matrix_idx] = action
         self.material_matrix_idx += 1
 
+        # Prepare visualization path if saving is enabled
+        visualization_path = None
+        if self.save_visualizations:
+            visualization_path = f'img/train{self.training_index}/cell_visualization_step{self.material_matrix_idx}.png'
+
         output_flux = self.flux_calculator.calculate_flux(
-            self.material_matrix, x_position=2.0)
+            self.material_matrix, x_position=2.0, save_visualization_path=visualization_path)
 
         reward = np.sum(output_flux * TARGET_FLUX)/np.sum(output_flux)
 
         # Check if episode is done
         terminated = self.material_matrix_idx >= 50  # Goal reached
         if terminated:
+            # Increment training index for next episode
+            self.training_index += 1
             # save reward to csv
             with open('/Users/ryan/NTUEE_Local/114-1/RL_FinalPJ/RL_FinalProject/ppo_model_logs/episode_rewards.csv', 'a') as f:
                 f.write(
