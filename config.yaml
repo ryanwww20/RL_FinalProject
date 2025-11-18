@@ -1,0 +1,61 @@
+paths:
+  logs_root: /Users/ryan/NTUEE_Local/114-1/RL_FinalPJ/RL_FinalProject/ppo_model_logs
+  rewards_csv: ${paths.logs_root}/episode_rewards.csv
+  flux_dir: ${paths.logs_root}/flux_images
+  field_dir: ${paths.logs_root}/field_images
+
+state_dim: &state_dim 100
+
+environment:
+  obs_size: *state_dim
+  action_size: 50
+  max_steps: 50
+  target_flux:
+    baseline: -1.0
+    segments:
+      - {start: 20, end: 40, value: 2.0}
+      - {start: 60, end: 80, value: 2.0}
+
+simulation:
+  resolution: 50
+  wavelength: 1.55
+  cell_size: [6, 2, 0]
+  pml_thickness: 0.2
+  waveguide_width: 0.3
+  waveguide_index: 3.5
+  waveguide_center_x: -0.9
+  waveguide_length: 1.8
+  simulation_time: 30
+  num_flux_regions: *state_dim
+  output_x: 2.0
+  design_region_x: 2.0
+  design_region_y: 2.0
+  pixel_size: 0.04
+  silicon_index: 3.45
+  silica_index: 1.45
+  pixel_num_x: 50
+  pixel_num_y: 50
+  
+plots:
+  figsize: [10, 6]
+  flux_line:
+    color: b
+    linewidth: 2
+  field_cmap: RdBu
+
+training:
+  ppo:
+    total_timesteps: 1000000
+    n_envs: 1
+    learning_rate: 0.0003
+    n_steps: 50
+    batch_size: 50
+    n_epochs: 50
+    gamma: 0.99
+    gae_lambda: 0.95
+    clip_range: 0.2
+    ent_coef: 0.01
+    vf_coef: 0.5
+    max_grad_norm: 0.5
+    tensorboard_log: ./ppo_tensorboard/
+    save_path: ./ppo_model

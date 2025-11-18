@@ -7,11 +7,33 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
+from pathlib import Path
+
+import yaml
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
 from gymnasium_template import MinimalEnv
+
+CONFIG_ENV_VAR = "TRAINING_CONFIG_PATH"
+DEFAULT_CONFIG_PATH = Path(__file__).resolve().parent / "config.yaml"
+TRAIN_PPO_KWARGS = {
+    "total_timesteps",
+    "n_envs",
+    "learning_rate",
+    "n_steps",
+    "batch_size",
+    "n_epochs",
+    "gamma",
+    "gae_lambda",
+    "clip_range",
+    "ent_coef",
+    "vf_coef",
+    "max_grad_norm",
+    "tensorboard_log",
+    "save_path",
+}
 
 
 class RewardAndFluxCallback(BaseCallback):
@@ -348,15 +370,39 @@ def test_model(model, env, n_episodes=5):
     print(f"Std deviation: {np.std(total_rewards):.2f}")
 
 
+def load_training_config(config_path=None):
+    """
+    Load train_ppo keyword arguments from YAML config.
+
+    Args:
+        config_path: Optional override path. Defaults to config.yaml next to this file.
+
+    Returns:
+        dict: Filtered kwargs to pass into train_ppo.
+    """
+    path = Path(config_path) if config_path else DEFAULT_CONFIG_PATH
+    if not path.exists():
+        print(f"[config] Config file not found at {path}. Using train_ppo defaults.")
+        return {}
+
+    with path.open("r", encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+
+    training_cfg = data.get("training", {}).get("ppo", {}) or {}
+    filtered_cfg = {k: v for k, v in training_cfg.items() if k in TRAIN_PPO_KWARGS}
+
+    unknown_keys = sorted(set(training_cfg.keys()) - TRAIN_PPO_KWARGS)
+    if unknown_keys:
+        print(f"[config] Ignoring unsupported train_ppo keys: {unknown_keys}")
+
+    return filtered_cfg
+
+
 if __name__ == "__main__":
+    config_override_path = os.environ.get(CONFIG_ENV_VAR)
+    train_kwargs = load_training_config(config_override_path)
+
     # Train PPO agent
-    model = train_ppo(
-        total_timesteps=1000000,
-        n_envs=1,
-        learning_rate=3e-4,
-        n_steps=50,
-        batch_size=50,
-        n_epochs=50
-    )
+    model = train_ppo(**train_kwargs)
 
     print("\nTraining complete!")
