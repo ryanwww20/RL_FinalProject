@@ -103,7 +103,7 @@ class MinimalEnv(gym.Env):
         terminated = self.material_matrix_idx >= 50  # Goal reached
         if terminated:
             # save reward to csv
-            with open('/Users/williamsu/Documents/ntu/lecture/31/RL/2025-09-RL/final_11_18/ppo_model_logs/episode_rewards.csv', 'a') as f:
+            with open('/Users/ryan/NTUEE_Local/114-1/RL_FinalPJ/RL_FinalProject/ppo_model_logs/episode_rewards.csv', 'a') as f:
                 f.write(
                     f'{datetime.now().strftime("%Y%m%d_%H%M%S")}, {reward}\n')
             # plot flux distribution of material matrix
@@ -120,7 +120,7 @@ class MinimalEnv(gym.Env):
             plt.legend()
             plt.grid(True, alpha=0.3)
             plt.savefig(
-                f'/Users/williamsu/Documents/ntu/lecture/31/RL/2025-09-RL/final_11_18/ppo_model_logs/flux_images/flux_distribution_{datetime.now().strftime("%Y%m%d_%H%M%S")}.png')
+                f'/Users/ryan/NTUEE_Local/114-1/RL_FinalPJ/RL_FinalProject/ppo_model_logs/flux_images/flux_distribution_{datetime.now().strftime("%Y%m%d_%H%M%S")}.png')
             plt.close()
         truncated = False   # Time limit exceeded
 
