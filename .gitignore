@@ -7,3 +7,9 @@ img/
 
 ppo_model_logs/
 ppo_tensorboard/
+sac_tensorboard/
+sac_model_logs/
+
+models/
+
+.DS_Store

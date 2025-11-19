@@ -5,7 +5,7 @@ Minimal OpenAI Gymnasium Environment Template
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
-from meep_simulation import WaveguideSimulation
+from envs.meep_simulation import WaveguideSimulation
 import matplotlib.pyplot as plt
 from datetime import datetime
 from config import config
