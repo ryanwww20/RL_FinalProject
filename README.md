@@ -1,41 +1,66 @@
-# Meep 2D Light Simulation
+# RL for Waveguide Optimization using Meep
 
-This project contains a simple 2D Meep simulation in a 2um × 2um space.
-
-## About 2D vs 3D in Meep
-
-**For 2D simulations, the third dimension (z) is NOT necessary!**
-
-- In 2D mode, Meep automatically treats the z-dimension as infinite/extended
-- This means the simulation is effectively a slice through an infinite structure
-- Set `dimensions=2` and use `cell_size = mp.Vector3(x, y, 0)` where z=0 indicates 2D
-- This is much faster and uses less memory than 3D simulations
+This project uses Reinforcement Learning (PPO and SAC) to optimize waveguide structures simulated with Meep.
 
 ## Requirements
 
+Ensure you have the following installed:
+
+- Python 3.8+
+- [Meep](https://meep.readthedocs.io/en/latest/Installation/) (pymeep)
+- Stable Baselines3
+- Gymnasium
+- NumPy, Matplotlib, Pandas, PyYAML
+
 ```bash
-pip install meep matplotlib numpy
+pip install stable-baselines3 gymnasium numpy matplotlib pandas pyyaml
+# Install meep according to official instructions (e.g., via conda)
+conda install -c conda-forge pymeep
 ```
 
-## Running the Simulation
+## Usage
+
+### Training PPO (Discrete Action Space)
+
+To train a PPO agent using the discrete environment:
 
 ```bash
-python meep_simple_2d.py
+python train_ppo.py
 ```
 
-## What the Simulation Does
+This will:
+- Use the environment defined in `envs/Discrete_gym.py`.
+- Save logs to `ppo_model_logs/` and tensorboard logs to `ppo_tensorboard/`.
+- Save the trained model to `ppo_model.zip`.
 
-1. Creates a 2um × 2um 2D simulation space
-2. Adds a continuous light source at the center (0.5um wavelength)
-3. Runs the simulation and visualizes the electric field distribution
-4. Saves the result as `meep_2d_result.png`
+### Training SAC (Continuous Action Space)
 
-## Customization
+To train a SAC agent using the continuous environment:
 
-You can modify:
-- `cell_size`: Change the simulation domain size
-- `resolution`: Higher resolution = more accurate but slower
-- `sources`: Change the light source properties (wavelength, position, type)
-- `geometry`: Add objects (dielectrics, metals, etc.) to the simulation
+```bash
+python train_sac.py
+```
 
+This will:
+- Use the environment defined in `envs/Continuous_gym.py`.
+- Save logs to `sac_model_logs/` and tensorboard logs to `sac_tensorboard/`.
+- Save the trained model to `sac_model.zip`.
 
+## Configuration
+
+You can customize training hyperparameters and simulation settings in `config.yaml`.
+
+- **Simulation Settings**: Resolution, cell size, waveguide parameters, etc.
+- **Training Hyperparameters**:
+    - `training.ppo`: `total_timesteps`, `learning_rate`, `n_steps`, etc.
+    - `training.sac`: `total_timesteps`, `learning_rate`, `buffer_size`, etc.
+
+## Project Structure
+
+- `train_ppo.py`: Script to train PPO agent.
+- `train_sac.py`: Script to train SAC agent.
+- `config.yaml`: Configuration file.
+- `envs/`: Contains Gymnasium environments.
+    - `Discrete_gym.py`: Environment with discrete actions for PPO.
+    - `Continuous_gym.py`: Environment with continuous actions for SAC.
+    - `meep_simulation.py`: Core Meep simulation logic.
