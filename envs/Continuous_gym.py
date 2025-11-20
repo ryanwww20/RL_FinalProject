@@ -178,6 +178,7 @@ class MinimalEnv(gym.Env):
     def field_result_plot(self, ez_data):
         # plot field results with marked material matrix
         try:
+            pixel_size = self.simulation.pixel_size
             extent = [-3, 3, -2, 2]
             plt.figure(figsize=(10, 6))
             plt.imshow(ez_data, interpolation='spline36', cmap='RdBu',
@@ -187,11 +188,11 @@ class MinimalEnv(gym.Env):
             for i in range(self.material_matrix.shape[0]):
                 for j in range(self.material_matrix.shape[1]):
                     if self.material_matrix[i, j] == 1:
-                        plt.plot(i*0.04, j*0.04-1, 'o', color='darkgrey',
-                                 markersize=2)
-                    # elif self.material_matrix[i, j] == 0:
-                    #     plt.plot(i*0.04, j*0.04-1, 'o',
-                    #              color='darkgrey', markersize=2)
+                        plt.plot(i*pixel_size-1, j*pixel_size-1, 'o', color='darkgrey',
+                                 markersize=2, label='Silicon')
+                    elif self.material_matrix[i, j] == 0:
+                        plt.plot(i*pixel_size-1, j*pixel_size-1, 'o',
+                                 color='black', markersize=2, label='Silica')
             plt.xlabel('x (microns) → right')
             plt.ylabel('y (microns) → top')
             plt.title(

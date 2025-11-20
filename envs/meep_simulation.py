@@ -39,6 +39,7 @@ class WaveguideSimulation:
             waveguide_index: refractive index of waveguide
             waveguide_center_x: x-coordinate of waveguide center
             waveguide_length: length of waveguide in x-direction
+            1 for silicon, 0 for silica
         """
         self.resolution = config.simulation.resolution
         self.wavelength = config.simulation.wavelength
@@ -153,6 +154,13 @@ class WaveguideSimulation:
                             material=mp.Medium(index=self.silicon_index)
                         )
                         geometry.append(silicon_pixel)
+                    else:
+                        silica_pixel = mp.Block(
+                            center=mp.Vector3(x_center, y_center, 0),
+                            size=mp.Vector3(dx, dy, 0),
+                            material=mp.Medium(index=self.silica_index)
+                        )
+                        geometry.append(silica_pixel)
 
         self.geometry = geometry
     

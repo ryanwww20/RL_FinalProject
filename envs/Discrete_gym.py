@@ -175,11 +175,12 @@ class MinimalEnv(gym.Env):
             for i in range(self.material_matrix.shape[0]):
                 for j in range(self.material_matrix.shape[1]):
                     if self.material_matrix[i, j] == 1:
-                        plt.plot(i*0.04, j*0.04-1, 'o', color='darkgrey',
+                        plt.plot(i*0.04-1, j*0.04-1, 'o', color='darkgrey',
                                  markersize=2)
-                    # elif self.material_matrix[i, j] == 0:
-                    #     plt.plot(i*0.04, j*0.04-1, 'o',
-                    #              color='darkgrey', markersize=2)
+                    elif self.material_matrix[i, j] == 0:
+                        plt.plot(i*0.04-1, j*0.04-1, 'o',
+                                 color='black', markersize=2)
+            # self.simulation.plot_geometry()
             plt.xlabel('x (microns) → right')
             plt.ylabel('y (microns) → top')
             plt.title(
