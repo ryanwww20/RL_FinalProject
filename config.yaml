@@ -58,7 +58,7 @@ training:
     vf_coef: 0.5
     max_grad_norm: 0.5
     tensorboard_log: ./ppo_tensorboard/
-    save_path: ./ppo_model
+    save_path: models/ppo_model
   sac:
     total_timesteps: 1000000
     learning_rate: 0.0003
@@ -74,4 +74,4 @@ training:
     target_entropy: auto
     use_sde: false
     tensorboard_log: ./sac_tensorboard/
-    save_path: ./sac_model
+    save_path: models/sac_model
