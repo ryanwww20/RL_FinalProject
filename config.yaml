@@ -19,9 +19,9 @@ environment:
 simulation:
   resolution: 50
   wavelength: 1.55
-  cell_size: [6, 2, 0]
+  cell_size: [6, 4, 0]
   pml_thickness: 0.2
-  waveguide_width: 0.3
+  waveguide_width: 0.4
   waveguide_index: 3.5
   waveguide_center_x: -0.9
   waveguide_length: 1.8
@@ -36,6 +36,8 @@ simulation:
   pixel_num_x: 50
   pixel_num_y: 50
   src_pos_shift_coeff: 0.95
+  input_coupler_length: 1.5
+  output_coupler_length: 1.5
 
 plots:
   figsize: [10, 6]

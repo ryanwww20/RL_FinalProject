@@ -24,6 +24,8 @@ class SimulationConfig:
     pixel_num_x: int
     pixel_num_y: int
     src_pos_shift_coeff: float
+    input_coupler_length: float
+    output_coupler_length: float
 @dataclass
 class EnvironmentConfig:
     obs_size: int
