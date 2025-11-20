@@ -83,6 +83,7 @@ class WaveguideSimulation:
         self.silica_index = config.simulation.silica_index
         self.pixel_num_x = config.simulation.pixel_num_x
         self.pixel_num_y = config.simulation.pixel_num_y
+        self.src_pos_shift_coeff = config.simulation.src_pos_shift_coeff
 
     def create_geometry(self, material_matrix=None):
         """
@@ -293,7 +294,7 @@ class WaveguideSimulation:
                 width=20
             ),
             # Position source at the start of the input coupler
-            center=mp.Vector3(input_coupler_start_x*0.95, 0, 0), 
+            center=mp.Vector3(input_coupler_start_x * self.src_pos_shift_coeff, 0, 0), 
             size=mp.Vector3(0, self.waveguide_width, 0),
             eig_band=1,
             direction=mp.NO_DIRECTION,

@@ -35,7 +35,8 @@ simulation:
   silica_index: 1.45
   pixel_num_x: 50
   pixel_num_y: 50
-  
+  src_pos_shift_coeff: 0.95
+
 plots:
   figsize: [10, 6]
   flux_line:

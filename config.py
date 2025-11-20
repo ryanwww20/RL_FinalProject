@@ -23,6 +23,7 @@ class SimulationConfig:
     silica_index: float
     pixel_num_x: int
     pixel_num_y: int
+    src_pos_shift_coeff: float
 @dataclass
 class EnvironmentConfig:
     obs_size: int
