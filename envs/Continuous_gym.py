@@ -178,7 +178,7 @@ class MinimalEnv(gym.Env):
     def field_result_plot(self, ez_data):
         # plot field results with marked material matrix
         try:
-            extent = [-2, 2, -1, 1]
+            extent = [-3, 3, -2, 2]
             plt.figure(figsize=(10, 6))
             plt.imshow(ez_data, interpolation='spline36', cmap='RdBu',
                        aspect='auto', extent=extent, origin='lower')
