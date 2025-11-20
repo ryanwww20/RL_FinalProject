@@ -26,16 +26,7 @@ SAVE_FIG = False
 class WaveguideSimulation:
     """2D Meep simulation class for waveguide with eigenmode source"""
 
-    def __init__(self,
-                 resolution=50,
-                 wavelength=1.55,
-                 cell_size=mp.Vector3(6, 4, 0), # Using 6x4 based on your previous example
-                 pml_thickness=0.2,
-                 waveguide_width=0.4, # Using 0.4 based on your previous example
-                 waveguide_index=3.5,
-                 # New parameters for coupling section lengths
-                 input_coupler_length=1.5, # Length of waveguide before design area
-                 output_coupler_length=1.5): # Length of waveguide after design area:
+    def __init__(self):
         """
         Initialize simulation parameters
 
@@ -57,8 +48,8 @@ class WaveguideSimulation:
         self.waveguide_index = config.simulation.waveguide_index
 
         # New coupling lengths
-        self.input_coupler_length = input_coupler_length
-        self.output_coupler_length = output_coupler_length # Used for output 1 and 2
+        self.input_coupler_length = config.simulation.input_coupler_length
+        self.output_coupler_length = config.simulation.output_coupler_length # Used for output 1 and 2
         
         # Design region remains 2um x 2um centered at (0,0)
         self.design_region_x_min = -1.0
@@ -891,12 +882,7 @@ if __name__ == "__main__":
 if __name__ == "__main__":
     
     # Example 1: Standard centered setup
-    calculator_A = WaveguideSimulation(
-        cell_size=mp.Vector3(8, 4, 0), # Increase cell size to fit longer waveguides
-        input_coupler_length=1.5,      # Input waveguide length is 2.0 µm
-        output_coupler_length=1.5,     # Output waveguide length is 2.0 µm
-        waveguide_width=0.4
-    )
+    calculator_A = WaveguideSimulation()
     
     # Create a simple test matrix
     material_matrix = np.ones((50, 50)) 
