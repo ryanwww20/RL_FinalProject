@@ -26,6 +26,7 @@ class SimulationConfig:
     src_pos_shift_coeff: float
     input_coupler_length: float
     output_coupler_length: float
+    input_waveguide_flux_region_x: float
 @dataclass
 class EnvironmentConfig:
     obs_size: int
