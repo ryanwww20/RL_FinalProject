@@ -122,23 +122,24 @@ class MinimalEnv(gym.Env):
         
         self.material_matrix_idx += 1
 
-        output_flux, ez_data = self.simulation.calculate_flux(
+        input_flux, output_flux_1, output_flux_2, output_all_flux, ez_data = self.simulation.calculate_flux(
             self.material_matrix)
 
-        reward = self.get_reward(output_flux)
+        reward = self.get_reward(output_all_flux)
 
         # Check if episode is done
         terminated = self.material_matrix_idx >= self.max_steps # Goal reached
         if terminated:
-            self.reward_plot(reward, output_flux)
+            self.flux_plot(reward, output_all_flux)
             self.field_result_plot(ez_data)
+            print(f'Input Flux: {input_flux}, Output Flux 1: {output_flux_1}, Output Flux 2: {output_flux_2}')
         truncated = False   # Time limit exceeded
 
         # Get observation - return the current flux distribution as observation
         # This gives the agent feedback about the current state
         if self.material_matrix_idx > 0:
             # Calculate current flux as observation
-            observation = output_flux.copy()
+            observation = output_all_flux.copy()
 
         else:
             # Initial state: return zeros
@@ -153,7 +154,7 @@ class MinimalEnv(gym.Env):
     def get_reward(self, flux_data):
         return np.sum(flux_data * TARGET_FLUX)/np.sum(flux_data)
 
-    def reward_plot(self, reward, flux_data):
+    def flux_plot(self, reward, flux_data):
         # save reward to csv
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
