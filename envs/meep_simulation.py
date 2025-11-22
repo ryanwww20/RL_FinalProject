@@ -509,7 +509,7 @@ class WaveguideSimulation:
         """
         Get flux value at the input waveguide
         """
-        if self.flux is None:
+        if self.input_flux_region is None:
             raise ValueError(
                 "No flux monitor added. Call add_flux_monitor() first.")
         return mp.get_fluxes(self.input_flux_region)[0]
@@ -518,7 +518,7 @@ class WaveguideSimulation:
         """
         Get flux values at the output waveguides
         """
-        if self.output_flux_region_1 is None or self.output_flux_region_2 is None:
+        if self.output_flux_region_1 is None:
             raise ValueError(
                 "No output flux monitors added. Call add_output_flux_monitors() first.")
         return mp.get_fluxes(self.output_flux_region_1)[0]
