@@ -22,7 +22,7 @@ simulation:
   cell_size: [6, 4, 0]
   pml_thickness: 0.2
   waveguide_width: 0.4
-  waveguide_index: 3.5
+  waveguide_index: 3.45
   waveguide_center_x: -0.9
   waveguide_length: 1.8
   simulation_time: 30
