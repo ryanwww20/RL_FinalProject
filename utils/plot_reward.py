@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # read the episode_rewards.csv
-df = pd.read_csv('ppo_model_logs/episode_rewards.csv')
+df = pd.read_csv('../ppo_model_logs/episode_rewards.csv')
 
 # plot the reward
 # plot the second (score) and third (reward) columns, in different figures
