@@ -21,8 +21,6 @@ if __name__ == "__main__":
 from contextlib import redirect_stdout, redirect_stderr
 from config import config
 
-SAVE_FIG = False
-
 
 class WaveguideSimulation:
     """2D Meep simulation class for waveguide with eigenmode source"""
@@ -424,6 +422,7 @@ class WaveguideSimulation:
         y_max = self.cell_size.y / 2
         y_positions = np.linspace(
             y_min + region_height/2, y_max - region_height/2, self.num_flux_regions)
+
         # Create flux monitors for each y position
         flux_monitors = []
         for y_pos in y_positions:

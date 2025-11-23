@@ -14,7 +14,8 @@ DIRECTORIES_TO_DELETE = [
     "ppo_model_logs",
     "ppo_tensorboard",
     "sac_model_logs",
-    "sac_tensorboard"
+    "sac_tensorboard",
+    "sample_img"
 ]
 
 
