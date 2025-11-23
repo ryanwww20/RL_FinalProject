@@ -129,7 +129,6 @@ class WaveguideSimulation:
             material=mp.Medium(index=self.waveguide_index)
         )
         geometry.append(output_waveguide_2)
-
         # --- 3. Add material distribution from matrix (Design Region) ---
         if material_matrix is not None:
             material_matrix = np.array(material_matrix)
@@ -226,6 +225,10 @@ class WaveguideSimulation:
             (output_x_start, output2_y_start), output_length, self.waveguide_width,
             linewidth=1, edgecolor='k', facecolor=waveguide_color, alpha=0.6
         ))
+        print('===============================================')
+        print(
+            f"Output Waveguide 1: {output1_y_start}, Output Waveguide 2: {output2_y_start}")
+        print('===============================================')
 
         # --- 4. Mark the Design Region ---
         design_region_rect = Rectangle(
@@ -653,7 +656,8 @@ class WaveguideSimulation:
         ))
 
         # --- 2. Overlays: Output Waveguides ---
-        output_y_separation = 0.3  # Use the same fixed separation as in create_geometry
+        # Use the same fixed separation as in create_geometry
+        output_y_separation = self.output_y_separation
         output_waveguide_x_start = self.design_region_x_max
         output_waveguide_length = self.output_coupler_length
 
@@ -665,7 +669,6 @@ class WaveguideSimulation:
             linewidth=2.5, edgecolor='orange', facecolor='none', linestyle='-', alpha=0.9,
             label='Output Waveguide Outline'  # Only label once
         ))
-
         # Output Waveguide 2 (Bottom)
         output2_waveguide_y_start = -output_y_separation - self.waveguide_width / 2
         ax.add_patch(Rectangle(
@@ -674,7 +677,6 @@ class WaveguideSimulation:
             linewidth=2.5, edgecolor='orange', facecolor='none', linestyle='-', alpha=0.9
             # No label here to avoid duplicate legend entry
         ))
-
         # --- 3. Overlays: Design Region ---
         ax.add_patch(Rectangle(
             # Lower-left corner: (-1.0, -1.0)
