@@ -542,71 +542,6 @@ class WaveguideSimulation:
                 "No output flux monitors added. Call add_output_flux_monitors() first.")
         return mp.get_fluxes(self.output_flux_region_2)[0]
 
-    def plot_flux_distribution_y(self, save_path=None, show_plot=True):
-        """
-        Plot flux distribution along y-axis at a specific x position
-
-        Args:
-            x_position: x coordinate where flux was measured
-            save_path: optional path to save the plot
-            show_plot: whether to display the plot
-        """
-        y_positions, flux_values = self.get_flux_distribution_along_y()
-
-        # Add timestamp to filename if not provided
-        if save_path is None:
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            save_path = f'flux_distribution_x{self.output_x}_{timestamp}.png'
-
-        # Create plot
-        plt.figure(figsize=(10, 6))
-        plt.plot(y_positions, flux_values, 'b-', linewidth=2,
-                 label=f'Flux at x = {self.output_x}')
-        plt.axhline(y=0, color='k', linestyle='--', linewidth=1, alpha=0.5)
-        plt.xlabel('y (microns)')
-        plt.ylabel('Flux')
-        plt.title(f'Flux Distribution along Y-axis at x = {self.output_x}μm')
-        plt.grid(True, alpha=0.3)
-        plt.legend()
-
-        # Add statistics
-        total_flux = np.sum(
-            flux_values) * (y_positions[1] - y_positions[0]) if len(y_positions) > 1 else flux_values[0]
-        max_flux = np.max(flux_values)
-        min_flux = np.min(flux_values)
-        plt.text(0.02, 0.98,
-                 f'Total flux: {total_flux:.6e}\n'
-                 f'Max: {max_flux:.6e}\n'
-                 f'Min: {min_flux:.6e}',
-                 transform=plt.gca().transAxes,
-                 verticalalignment='top',
-                 bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
-
-        if SAVE_FIG:
-            plt.savefig(save_path, dpi=150, bbox_inches='tight')
-        print(f"Flux distribution plot saved to '{save_path}'")
-
-        if show_plot:
-            plt.show()
-        else:
-            plt.close()
-
-    def get_flux_value(self):
-        """
-        Get the flux value from the flux monitor
-
-        Returns:
-            flux_value: total flux through the monitor
-        """
-        if self.flux is None:
-            raise ValueError(
-                "No flux monitor added. Call add_flux_monitor() first.")
-
-        # Get flux value
-        flux_value = mp.get_fluxes(self.flux)[0]
-
-        return flux_value
-
     def run(self):
         """Run the simulation"""
         if self.sim is None:
@@ -615,7 +550,7 @@ class WaveguideSimulation:
         with open(os.devnull, 'w') as devnull:
             with redirect_stdout(devnull), redirect_stderr(devnull):
                 self.sim.run(until=self.simulation_time)
-        # self.plot_results(save_path=None, show_plot=False)
+        # self.plot_design(save_path=None, show_plot=False)
         return self.sim
 
     def get_field_data(self, component=mp.Ez):
@@ -635,7 +570,7 @@ class WaveguideSimulation:
         self.ez_data = ez_data.T
         return self.ez_data
 
-    def plot_results(self, save_path=None, show_plot=True):
+    def plot_design(self, save_path=None, show_plot=True):
         """
         Plot and visualize the simulation results (Ez field + geometry overlays).
         This version includes input/output waveguides and the output measurement plane.
@@ -805,7 +740,7 @@ if __name__ == "__main__":
 
     print("\nRunning simulation with centered geometry...")
     calculator_A.run()
-    calculator_A.plot_results(
+    calculator_A.plot_design(
         show_plot=False,
         save_path='img/simulation_ez_field.png'  # Provide a file name here
     )
