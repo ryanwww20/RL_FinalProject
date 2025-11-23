@@ -727,6 +727,32 @@ class WaveguideSimulation:
         else:
             plt.close()
 
+    def plot_distribution(self, output_all_flux, save_path=None, show_plot=True):
+        """
+        Plot the flux distribution along the output plane.
+
+        Args:
+            output_all_flux: 1D array of flux values at each detector position
+            save_path: Optional path to save the plot
+            show_plot: Whether to display the plot
+        """
+        plt.figure(figsize=(10, 6))
+        plt.plot(output_all_flux, 'b-', linewidth=2, label='Flux Distribution')
+        plt.xlabel('Detector Index')
+        plt.ylabel('Flux')
+        plt.title('Flux Distribution at Output Plane')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+
+        if save_path:
+            plt.savefig(save_path, dpi=150, bbox_inches='tight')
+            print(f"Flux distribution plot saved to '{save_path}'")
+
+        if show_plot:
+            plt.show()
+        else:
+            plt.close()
+
     def calculate_flux(self, material_matrix):
         # Create simulation
 
@@ -792,3 +818,9 @@ if __name__ == "__main__":
     # Get total flux
     _, flux_values = calculator_A.get_flux_distribution_along_y()
     print(f"Total flux measured: {np.sum(flux_values):.4e}")
+
+    calculator_A.plot_distribution(
+        output_all_flux=flux_values,
+        show_plot=False,
+        save_path='img/flux_distribution.png'  # Provide a file name here
+    )
