@@ -10,11 +10,6 @@ from datetime import datetime
 from config import config
 import os
 
-TARGET_FLUX = np.zeros(100)
-TARGET_FLUX[20:40] = 2.0
-TARGET_FLUX[60:80] = 2.0
-TARGET_FLUX -= 1.0
-
 
 class MinimalEnv(gym.Env):
 
@@ -57,6 +52,7 @@ class MinimalEnv(gym.Env):
         self.material_matrix_idx = 0
         self.max_steps = config.environment.max_steps
         self.simulation = WaveguideSimulation()
+        self.last_score = 0
 
         # Determine project root and log paths
         # Assuming this file is in envs/ and project root is one level up
@@ -87,6 +83,7 @@ class MinimalEnv(gym.Env):
         self.material_matrix = np.zeros(
             (config.simulation.pixel_num_x, config.simulation.pixel_num_y))
         self.material_matrix_idx = 0
+        self.last_score = 0
 
         # Return initial observation (zeros since no material set yet)
         observation = np.zeros(self.obs_size, dtype=np.float32)
@@ -125,7 +122,7 @@ class MinimalEnv(gym.Env):
         input_flux, output_flux_1, output_flux_2, output_all_flux, ez_data = self.simulation.calculate_flux(
             self.material_matrix)
 
-        reward = self.get_reward(output_all_flux)
+        reward = self.get_reward(input_flux, output_flux_1, output_flux_2)
 
         # Check if episode is done
         terminated = self.material_matrix_idx >= self.max_steps  # Goal reached
@@ -172,5 +169,10 @@ class MinimalEnv(gym.Env):
 
         return observation, reward, terminated, truncated, info
 
-    def get_reward(self, flux_data):
-        return np.sum(flux_data * TARGET_FLUX)/np.sum(flux_data)
+    def get_reward(self, input_flux, output_flux_1, output_flux_2):
+        current_score = (output_flux_1 - input_flux*0.5)**2 + \
+            (output_flux_2 - input_flux*0.5)**2
+        reward = current_score - self.last_score
+        self.last_score = current_score
+
+        return reward
