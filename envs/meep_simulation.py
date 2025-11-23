@@ -638,7 +638,7 @@ class WaveguideSimulation:
                             # Silica - lighter grey
                             ax.add_patch(Rectangle(
                                 (x_left, y_bottom), dx, dy,
-                                facecolor='lightgrey', edgecolor='none', alpha=0.1,
+                                facecolor='lightgrey', edgecolor='none', alpha=0.4,
                                 label='Silica' if not silica_label_added else ''
                             ))
                             if not silica_label_added:
