@@ -635,55 +635,6 @@ class WaveguideSimulation:
         self.ez_data = ez_data.T
         return self.ez_data
 
-    def get_power_density_at_point(self, position, component='x'):
-        """
-        Get power density (Poynting vector) at a specific point.
-
-        Args:
-            position: mp.Vector3 or tuple (x, y) position where to measure
-            component: 'x', 'y', or 'total' for power density direction
-
-        Returns:
-            power_density: Power density value at the point (real part)
-        """
-        if self.sim is None:
-            raise ValueError(
-                "Simulation must be run first. Call run() method.")
-
-        # Convert tuple to Vector3 if needed
-        if isinstance(position, (tuple, list)):
-            position = mp.Vector3(position[0], position[1], 0)
-        elif not isinstance(position, mp.Vector3):
-            position = mp.Vector3(position.x, position.y, 0)
-
-        # Method 1: Use Meep's built-in S-field (Poynting vector) components
-        # Note: get_sfield_x() returns an array, so we need to get the array
-        # and then interpolate to the point, OR use get_array with mp.Sx component
-
-        # Method 2: Calculate from E and H fields (more direct for point values)
-        # Get fields for 2D TM mode (Ez, Hx, Hy)
-        Ez = self.sim.get_field_point(mp.Ez, position)
-        Hx = self.sim.get_field_point(mp.Hx, position)
-        Hy = self.sim.get_field_point(mp.Hy, position)
-
-        # Calculate Poynting vector for 2D TM: Sx = -Ez * Hy, Sy = Ez * Hx
-        # This is the standard way: S = (1/2) * Re(E × H*)
-        # For real fields in 2D TM: Sx = -Ez * Hy, Sy = Ez * Hx
-        Sx = -Ez * Hy  # Power flow in x-direction
-        Sy = Ez * Hx   # Power flow in y-direction
-
-        # Return real part (power density is typically real)
-        if component == 'x':
-            return np.real(Sx)
-        elif component == 'y':
-            return np.real(Sy)
-        elif component == 'z':
-            return 0.0  # No z-component in 2D
-        elif component == 'total':
-            return np.real(np.sqrt(Sx**2 + Sy**2))
-        else:
-            raise ValueError("component must be 'x', 'y', 'z', or 'total'")
-
     def get_field_at_point(self, position, field_component=mp.Ez):
         """
         Get field value at a specific point.
