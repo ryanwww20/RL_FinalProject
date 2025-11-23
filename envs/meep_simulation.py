@@ -635,29 +635,6 @@ class WaveguideSimulation:
         self.ez_data = ez_data.T
         return self.ez_data
 
-    def get_field_at_point(self, position, field_component=mp.Ez):
-        """
-        Get field value at a specific point.
-
-        Args:
-            position: mp.Vector3 or tuple (x, y) position where to measure
-            field_component: Field component (mp.Ez, mp.Hx, mp.Hy, etc.)
-
-        Returns:
-            field_value: Field value at the point
-        """
-        if self.sim is None:
-            raise ValueError(
-                "Simulation must be run first. Call run() method.")
-
-        # Convert tuple to Vector3 if needed
-        if isinstance(position, (tuple, list)):
-            position = mp.Vector3(position[0], position[1], 0)
-        elif not isinstance(position, mp.Vector3):
-            position = mp.Vector3(position.x, position.y, 0)
-
-        return self.sim.get_field_point(field_component, position)
-
     def plot_results(self, save_path=None, show_plot=True):
         """
         Plot and visualize the simulation results (Ez field + geometry overlays).
@@ -771,56 +748,6 @@ class WaveguideSimulation:
             plt.show()
         else:
             plt.close()
-
-    def run_full_simulation(self, until=30, save_path=None, show_plot=False,
-                            measure_flux_at_x=None, flux_along_y=False, num_flux_regions=50):
-        """
-        Run complete simulation workflow
-
-        Args:
-            until: simulation time
-            save_path: path to save plot
-            show_plot: whether to show plot
-            measure_flux_at_x: if provided, measure flux at this x position
-            flux_along_y: if True, measure flux distribution along y-axis
-            num_flux_regions: number of flux regions for y-axis distribution
-        """
-        # Add flux monitors if requested
-        if measure_flux_at_x is not None:
-            if self.sim is None:
-                self.create_simulation()
-
-            if flux_along_y:
-                # Add multiple flux monitors along y-axis
-                self.add_flux_monitors_along_y(
-                    measure_flux_at_x, num_regions=num_flux_regions)
-            else:
-                # Add single flux monitor
-                self.add_flux_monitor(measure_flux_at_x)
-
-        self.run(until=until)
-        self.get_field_data()
-        self.plot_results(save_path=save_path, show_plot=show_plot)
-
-        # Calculate and print flux
-        if self.flux_regions:
-            # Multiple flux regions along y-axis
-            y_positions, flux_values = self.get_flux_distribution_along_y()
-            total_flux = np.sum(flux_values) * (y_positions[1] - y_positions[0]) if len(
-                y_positions) > 1 else np.sum(flux_values)
-            print(f"\nFlux distribution at x = {measure_flux_at_x}:")
-            print(f"  Total flux: {total_flux:.6e}")
-            print(f"  Max flux: {np.max(flux_values):.6e}")
-            print(f"  Min flux: {np.min(flux_values):.6e}")
-
-            # Plot flux distribution
-            self.plot_flux_distribution_y(
-                measure_flux_at_x, save_path=None, show_plot=False)
-
-        elif self.flux is not None:
-            # Single flux monitor
-            flux_value = self.get_flux_value()
-            print(f"\nFlux at x = {measure_flux_at_x}: {flux_value:.6e}")
 
     def calculate_flux(self, material_matrix):
         # Create simulation
