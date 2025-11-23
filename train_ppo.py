@@ -6,6 +6,7 @@ Uses Stable-Baselines3 for PPO implementation
 import numpy as np
 import os
 from pathlib import Path
+from datetime import datetime
 
 import yaml
 from stable_baselines3 import PPO
@@ -110,8 +111,17 @@ def train_ppo(
         print(f"Error during training: {e}")
 
     # Save the final model (even if interrupted)
-    model.save(save_path)
-    print(f"Model saved to {save_path}")
+    # Add timestamp to model name
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    save_path_with_timestamp = f"{save_path}_{timestamp}"
+
+    # Create directory if it doesn't exist
+    save_dir = os.path.dirname(save_path_with_timestamp)
+    if save_dir and not os.path.exists(save_dir):
+        os.makedirs(save_dir, exist_ok=True)
+
+    model.save(save_path_with_timestamp)
+    print(f"Model saved to {save_path_with_timestamp}")
 
     # Test the trained model
     print("\nTesting trained model...")

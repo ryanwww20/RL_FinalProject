@@ -8,6 +8,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 from pathlib import Path
+from datetime import datetime
 
 import yaml
 from stable_baselines3 import SAC
@@ -327,8 +328,17 @@ def train_sac(
         print(f"Error during training: {e}")
 
     # Save the final model (even if interrupted)
-    model.save(save_path)
-    print(f"Model saved to {save_path}")
+    # Add timestamp to model name
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    save_path_with_timestamp = f"{save_path}_{timestamp}"
+
+    # Create directory if it doesn't exist
+    save_dir = os.path.dirname(save_path_with_timestamp)
+    if save_dir and not os.path.exists(save_dir):
+        os.makedirs(save_dir, exist_ok=True)
+
+    model.save(save_path_with_timestamp)
+    print(f"Model saved to {save_path_with_timestamp}")
 
     # Test the trained model
     print("\nTesting trained model...")
@@ -382,14 +392,16 @@ def load_training_config(config_path=None):
     """
     path = Path(config_path) if config_path else DEFAULT_CONFIG_PATH
     if not path.exists():
-        print(f"[config] Config file not found at {path}. Using train_sac defaults.")
+        print(
+            f"[config] Config file not found at {path}. Using train_sac defaults.")
         return {}
 
     with path.open("r", encoding="utf-8") as f:
         data = yaml.safe_load(f) or {}
 
     training_cfg = data.get("training", {}).get("sac", {}) or {}
-    filtered_cfg = {k: v for k, v in training_cfg.items() if k in TRAIN_SAC_KWARGS}
+    filtered_cfg = {k: v for k, v in training_cfg.items()
+                    if k in TRAIN_SAC_KWARGS}
 
     unknown_keys = sorted(set(training_cfg.keys()) - TRAIN_SAC_KWARGS)
     if unknown_keys:

@@ -50,8 +50,7 @@ plots:
 
 training:
   ppo:
-    # total_timesteps: 1000000
-    total_timesteps: 50
+    total_timesteps: 1000000
     n_envs: 1
     learning_rate: 0.0003
     n_steps: 50
