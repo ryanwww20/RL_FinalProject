@@ -570,10 +570,16 @@ class WaveguideSimulation:
         self.ez_data = ez_data.T
         return self.ez_data
 
-    def plot_design(self, save_path=None, show_plot=True):
+    def plot_design(self, material_matrix=None, save_path=None, show_plot=True):
         """
         Plot and visualize the simulation results (Ez field + geometry overlays).
         This version includes input/output waveguides and the output measurement plane.
+
+        Args:
+            material_matrix: 2D array (pixel_num_x x pixel_num_y) where 1=silicon, 0=silica.
+                           If provided, will overlay material distribution as grey boxes.
+            save_path: Path to save the plot
+            show_plot: Whether to display the plot
         """
         if self.ez_data is None:
             self.get_field_data()
@@ -599,6 +605,43 @@ class WaveguideSimulation:
         plt.ylabel('y (microns)')
         plt.title(
             f'Waveguide Simulation - Ez Field (L_in={self.input_coupler_length}µm, L_out={self.output_coupler_length}µm)')
+
+        # --- 0. Overlay Material Matrix (if provided) ---
+        silicon_label_added = False
+        silica_label_added = False
+        if material_matrix is not None:
+            material_matrix = np.array(material_matrix)
+            if material_matrix.shape == (self.pixel_num_x, self.pixel_num_y):
+                square_x_min = self.design_region_x_min  # -1.0
+                square_y_min = self.design_region_y_min  # -1.0
+                dx = self.pixel_size
+                dy = self.pixel_size
+
+                # Plot each pixel as a rectangle
+                for i in range(self.pixel_num_x):
+                    for j in range(self.pixel_num_y):
+                        # Calculate lower-left corner position
+                        x_left = square_x_min + i * dx
+                        y_bottom = square_y_min + j * dy
+
+                        if material_matrix[i, j] == 1:
+                            # Silicon - darker grey
+                            ax.add_patch(Rectangle(
+                                (x_left, y_bottom), dx, dy,
+                                facecolor='darkgrey', edgecolor='none', alpha=0.4,
+                                label='Silicon' if not silicon_label_added else ''
+                            ))
+                            if not silicon_label_added:
+                                silicon_label_added = True
+                        else:
+                            # Silica - lighter grey
+                            ax.add_patch(Rectangle(
+                                (x_left, y_bottom), dx, dy,
+                                facecolor='lightgrey', edgecolor='none', alpha=0.1,
+                                label='Silica' if not silica_label_added else ''
+                            ))
+                            if not silica_label_added:
+                                silica_label_added = True
 
         # --- 1. Overlays: Input Waveguide ---
         input_waveguide_x_start = self.design_region_x_min - self.input_coupler_length
@@ -712,12 +755,12 @@ class WaveguideSimulation:
 
 
 if __name__ == "__main__":
-
     # Example 1: Standard centered setup
     calculator_A = WaveguideSimulation()
 
     # Create a simple test matrix
     material_matrix = np.ones((50, 50))
+    material_matrix[25, :] = 0
 
     # Apply the geometry
     calculator_A.create_geometry(material_matrix=material_matrix)
@@ -741,6 +784,7 @@ if __name__ == "__main__":
     print("\nRunning simulation with centered geometry...")
     calculator_A.run()
     calculator_A.plot_design(
+        material_matrix=material_matrix,
         show_plot=False,
         save_path='img/simulation_ez_field.png'  # Provide a file name here
     )
