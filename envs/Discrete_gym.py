@@ -115,8 +115,13 @@ class MinimalEnv(gym.Env):
         # Save reward to CSV
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         csv_path = os.path.join(self.log_dir, 'episode_rewards.csv')
+        # add column names for the first time
+        if not os.path.exists(csv_path):
+            with open(csv_path, 'w') as f:
+                f.write(
+                    'timestamp, current_score, reward, output_flux_1_ratio, output_flux_2_ratio, loss_ratio\n')
         with open(csv_path, 'a') as f:
-            f.write(f'{timestamp}, {current_score}, {reward}\n')
+            f.write(f'{timestamp}, {current_score}, {reward}, {output_flux_1/input_flux}, {output_flux_2/input_flux}, {(input_flux - (output_flux_1 + output_flux_2))/input_flux}\n')
         # Check if episode is done
         terminated = self.material_matrix_idx >= self.max_steps  # Goal reached
         if terminated:
@@ -140,7 +145,7 @@ class MinimalEnv(gym.Env):
             )
 
             print(
-                f'Output Flux 1: {output_flux_1/input_flux:.2f}, Output Flux 2: {output_flux_2/input_flux:.2f}, Loss: {(input_flux - (output_flux_1 + output_flux_2))/input_flux:.2e}')
+                f'Output Flux 1: {output_flux_1/input_flux:.2f}, Output Flux 2: {output_flux_2/input_flux:.2f}, Loss: {(input_flux - (output_flux_1 + output_flux_2))/input_flux:.2f}')
 
         truncated = False   # Time limit exceeded
 

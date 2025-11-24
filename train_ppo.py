@@ -125,7 +125,7 @@ def train_ppo(
 
     # Test the trained model
     print("\nTesting trained model...")
-    test_model(model, eval_env, n_episodes=5)
+    test_model(model, eval_env, n_episodes=3)
 
     return model
 
