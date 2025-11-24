@@ -35,7 +35,6 @@ class MinimalEnv(gym.Env):
             dtype=np.float32
         )
 
-        # Action space: binary array of length 50 (0/1 values)
         index_diff = config.simulation.silicon_index - config.simulation.silica_index
         self.action_space = spaces.Box(
             low=config.simulation.silica_index - index_diff/2,
@@ -52,13 +51,13 @@ class MinimalEnv(gym.Env):
         self.material_matrix_idx = 0
         self.max_steps = config.environment.max_steps
         self.simulation = WaveguideSimulation()
-        self.last_score = 0
+        self.last_score = None
 
         # Determine project root and log paths
         # Assuming this file is in envs/ and project root is one level up
         current_file_path = os.path.abspath(__file__)
         self.project_root = os.path.dirname(os.path.dirname(current_file_path))
-        self.log_dir = os.path.join(self.project_root, 'sac_model_logs')
+        self.log_dir = os.path.join(self.project_root, 'ppo_model_logs')
 
         # Ensure base log directory exists
         os.makedirs(self.log_dir, exist_ok=True)
@@ -83,8 +82,7 @@ class MinimalEnv(gym.Env):
         self.material_matrix = np.zeros(
             (config.simulation.pixel_num_x, config.simulation.pixel_num_y))
         self.material_matrix_idx = 0
-        self.last_score = 0
-
+        self.last_score = None
         # Return initial observation (zeros since no material set yet)
         observation = np.zeros(self.obs_size, dtype=np.float32)
         info = {}
@@ -111,27 +109,35 @@ class MinimalEnv(gym.Env):
         assert self.action_space.contains(action), f"Invalid action: {action}"
 
         # Action is a binary array of length 50
+        # Action is a binary array of length 50
         for i in range(self.action_size):
             if action[i] > (config.simulation.silicon_index + config.simulation.silica_index) / 2:
                 self.material_matrix[self.material_matrix_idx, i] = 1
             else:
                 self.material_matrix[self.material_matrix_idx, i] = 0
-
         self.material_matrix_idx += 1
 
         input_flux, output_flux_1, output_flux_2, output_all_flux, ez_data = self.simulation.calculate_flux(
             self.material_matrix)
+        print(f"Input flux: {input_flux:.4e}")
+        print(f"Output flux 1: {output_flux_1:.4e}")
+        print(f"Output flux 2: {output_flux_2:.4e}")
 
-        reward = self.get_reward(input_flux, output_flux_1, output_flux_2)
-
+        current_score, reward = self.get_reward(
+            input_flux, output_flux_1, output_flux_2)
+        # Save reward to CSV
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        csv_path = os.path.join(self.log_dir, 'episode_rewards.csv')
+        # add column names for the first time
+        if not os.path.exists(csv_path):
+            with open(csv_path, 'w') as f:
+                f.write(
+                    'timestamp, current_score, reward, output_flux_1_ratio, output_flux_2_ratio, loss_ratio\n')
+        with open(csv_path, 'a') as f:
+            f.write(f'{timestamp}, {current_score}, {reward}, {output_flux_1/input_flux}, {output_flux_2/input_flux}, {(input_flux - (output_flux_1 + output_flux_2))/input_flux}\n')
         # Check if episode is done
         terminated = self.material_matrix_idx >= self.max_steps  # Goal reached
         if terminated:
-            # Save reward to CSV
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            csv_path = os.path.join(self.log_dir, 'episode_rewards.csv')
-            with open(csv_path, 'a') as f:
-                f.write(f'{timestamp}, {reward}\n')
 
             # Use simulation methods for plotting
             flux_img_path = os.path.join(
@@ -152,7 +158,8 @@ class MinimalEnv(gym.Env):
             )
 
             print(
-                f'Output Flux 1: {output_flux_1/input_flux:.2f}, Output Flux 2: {output_flux_2/input_flux:.2f}')
+                f'Output Flux 1: {output_flux_1/input_flux:.2f}, Output Flux 2: {output_flux_2/input_flux:.2f}, Loss: {(input_flux - (output_flux_1 + output_flux_2))/input_flux:.2f}')
+
         truncated = False   # Time limit exceeded
 
         # Get observation - return the current flux distribution as observation
@@ -167,7 +174,6 @@ class MinimalEnv(gym.Env):
 
         # Info dictionary (can contain debugging info)
         info = {}
-
         observation = np.append(observation, self.material_matrix_idx)
 
         return observation, reward, terminated, truncated, info
@@ -175,7 +181,7 @@ class MinimalEnv(gym.Env):
     def get_reward(self, input_flux, output_flux_1, output_flux_2):
         current_score = -((output_flux_1 - input_flux*0.5)**2 +
                           (output_flux_2 - input_flux*0.5)**2)
-        reward = current_score - self.last_score
+        reward = current_score - self.last_score if self.last_score is not None else 0
         self.last_score = current_score
 
-        return reward
+        return current_score, reward
