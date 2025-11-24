@@ -46,7 +46,7 @@ class MinimalEnv(gym.Env):
         self.material_matrix_idx = 0
         self.max_steps = config.environment.max_steps
         self.simulation = WaveguideSimulation()
-        self.last_score = 0
+        self.last_score = None
 
         # Determine project root and log paths
         # Assuming this file is in envs/ and project root is one level up
@@ -77,7 +77,7 @@ class MinimalEnv(gym.Env):
         self.material_matrix = np.zeros(
             (config.simulation.pixel_num_x, config.simulation.pixel_num_y))
         self.material_matrix_idx = 0
-        self.last_score = 0
+        self.last_score = None
         # Return initial observation (zeros since no material set yet)
         observation = np.zeros(self.obs_size, dtype=np.float32)
         info = {}
@@ -168,7 +168,7 @@ class MinimalEnv(gym.Env):
     def get_reward(self, input_flux, output_flux_1, output_flux_2):
         current_score = -((output_flux_1 - input_flux*0.5)**2 +
                           (output_flux_2 - input_flux*0.5)**2)
-        reward = current_score - self.last_score
+        reward = current_score - self.last_score if self.last_score is not None else 0
         self.last_score = current_score
 
         return current_score, reward
