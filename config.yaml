@@ -27,11 +27,7 @@ simulation:
   waveguide_center_x: -0.9
   waveguide_length: 1.8
   output_y_separation: 0.6
-<<<<<<< Updated upstream
-  simulation_time: 500
-=======
   simulation_time: 300
->>>>>>> Stashed changes
   num_flux_regions: *state_dim_minus_1
   output_x: 2.0
   design_region_x: 2.0

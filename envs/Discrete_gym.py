@@ -109,6 +109,9 @@ class MinimalEnv(gym.Env):
 
         input_flux, output_flux_1, output_flux_2, output_all_flux, ez_data = self.simulation.calculate_flux(
             self.material_matrix)
+        print(f"Input flux: {input_flux:.4e}")
+        print(f"Output flux 1: {output_flux_1:.4e}")
+        print(f"Output flux 2: {output_flux_2:.4e}")
 
         current_score, reward = self.get_reward(
             input_flux, output_flux_1, output_flux_2)

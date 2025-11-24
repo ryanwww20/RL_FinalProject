@@ -826,6 +826,7 @@ if __name__ == "__main__":
     # Since the outputs are separated, define flux monitor location at x=2.5
     calculator_A.output_x = 2.5
     calculator_A.add_flux_monitors_along_y()  # Add monitors to measure flux split
+    calculator_A.add_input_flux_monitor()
 
     print("\nRunning simulation with centered geometry...")
     calculator_A.run()
@@ -840,7 +841,6 @@ if __name__ == "__main__":
     print(f"Total flux measured: {np.sum(flux_values):.4e}")
     # get input flux
     input_flux = calculator_A.get_input_flux_value()
-
     calculator_A.plot_distribution(
         output_all_flux=flux_values,
         input_flux=input_flux,
