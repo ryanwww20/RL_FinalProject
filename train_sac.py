@@ -196,10 +196,31 @@ def load_training_config(config_path=None):
 
 
 if __name__ == "__main__":
-    config_override_path = os.environ.get(CONFIG_ENV_VAR)
-    train_kwargs = load_training_config(config_override_path)
-
-    # Train SAC agent
-    model = train_sac(**train_kwargs)
-
-    print("\nTraining complete!")
+    import sys
+    
+    # Check if user wants to test a saved model
+    if len(sys.argv) > 1 and sys.argv[1] == "test":
+        if len(sys.argv) < 3:
+            print("Usage: python train_sac.py test <model_path> [n_episodes]")
+            sys.exit(1)
+        
+        model_path = sys.argv[2]
+        n_episodes = int(sys.argv[3]) if len(sys.argv) > 3 else 5
+        
+        print(f"Loading model from {model_path}...")
+        model = SAC.load(model_path)
+        
+        print("Creating test environment...")
+        test_env = MinimalEnv(render_mode=None)
+        
+        print(f"Testing model for {n_episodes} episodes...")
+        test_model(model, test_env, n_episodes=n_episodes)
+    else:
+        # Normal training flow
+        config_override_path = os.environ.get(CONFIG_ENV_VAR)
+        train_kwargs = load_training_config(config_override_path)
+        
+        # Train SAC agent
+        model = train_sac(**train_kwargs)
+        
+        print("\nTraining complete!")
