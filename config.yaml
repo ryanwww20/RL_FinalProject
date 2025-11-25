@@ -18,7 +18,7 @@ environment:
       - { start: 60, end: 80, value: 2.0 }
 
 simulation:
-  resolution: 50
+  resolution: 20
   wavelength: 1.55
   cell_size: [6, 4, 0]
   pml_thickness: 0.2
@@ -27,16 +27,16 @@ simulation:
   waveguide_center_x: -0.9
   waveguide_length: 1.8
   output_y_separation: 0.6
-  simulation_time: 3000
+  simulation_time: 2000
   num_flux_regions: *state_dim_minus_1
-  output_x: 2.0
+  output_x: 1
   design_region_x: 2.0
   design_region_y: 2.0
-  pixel_size: 0.04
+  pixel_size: 0.1
   silicon_index: 3.45
   silica_index: 1.45
-  pixel_num_x: 50
-  pixel_num_y: 50
+  pixel_num_x: 20
+  pixel_num_y: 20
   src_pos_shift_coeff: 0.95
   input_coupler_length: 1.5
   output_coupler_length: 1.5
