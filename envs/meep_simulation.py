@@ -479,6 +479,43 @@ class WaveguideSimulation:
         self.output_flux_region_2 = self.sim.add_flux(
             frequency, 0, 1, self.output_flux_region_2)
         return self.output_flux_region_1, self.output_flux_region_2
+    
+    def add_design_region_flux_monitor(self):
+        """
+        Add flux monitor at the design region
+        """
+        frequency = 1.0 / self.wavelength
+        if self.sim is None:
+            raise ValueError(
+                "Simulation must be created first. Call create_simulation() method.")
+        self.design_region_flux_region_up = mp.FluxRegion(
+            center=mp.Vector3(0, 1, 0),
+            size=mp.Vector3(self.design_region_x, 0, 0)
+        )
+        self.design_region_flux_region_up = self.sim.add_flux(
+            frequency, 0, 1, self.design_region_flux_region_up)
+        
+        self.design_region_flux_region_down = mp.FluxRegion(
+            center=mp.Vector3(0, -1, 0),
+            size=mp.Vector3(self.design_region_x, 0, 0)
+        )
+        self.design_region_flux_region_down = self.sim.add_flux(
+            frequency, 0, 1, self.design_region_flux_region_down)
+        
+        self.design_region_flux_region_left = mp.FluxRegion(
+            center=mp.Vector3(-1, 0, 0),
+            size=mp.Vector3(0, self.design_region_y, 0)
+        )
+        self.design_region_flux_region_left = self.sim.add_flux(
+            frequency, 0, 1, self.design_region_flux_region_left)
+        
+        self.design_region_flux_region_right = mp.FluxRegion(
+            center=mp.Vector3(1, 0, 0),
+            size=mp.Vector3(0, self.design_region_y, 0)
+        )
+        self.design_region_flux_region_right = self.sim.add_flux(
+            frequency, 0, 1, self.design_region_flux_region_right)
+        return self.design_region_flux_region_up, self.design_region_flux_region_down, self.design_region_flux_region_left, self.design_region_flux_region_right
 
     def get_flux_distribution_along_y(self):
         """
@@ -542,6 +579,11 @@ class WaveguideSimulation:
             raise ValueError(
                 "No output flux monitors added. Call add_output_flux_monitors() first.")
         return mp.get_fluxes(self.output_flux_region_2)[0]
+
+
+    def get_design_region_flux_value(self):
+
+        return mp.get_fluxes(self.design_region_flux_region_up)[0], mp.get_fluxes(self.design_region_flux_region_down)[0], mp.get_fluxes(self.design_region_flux_region_left)[0], mp.get_fluxes(self.design_region_flux_region_right)[0]
 
     def run(self):
         """Run the simulation"""
@@ -827,6 +869,7 @@ if __name__ == "__main__":
     calculator_A.output_x = 2.5
     calculator_A.add_flux_monitors_along_y()  # Add monitors to measure flux split
     calculator_A.add_input_flux_monitor()
+    calculator_A.add_design_region_flux_monitor()
 
     print("\nRunning simulation with centered geometry...")
     calculator_A.run()
@@ -847,3 +890,9 @@ if __name__ == "__main__":
         show_plot=False,
         save_path='sample_img/flux_distribution.png'  # Provide a file name here
     )
+
+    design_region_flux_value_up, design_region_flux_value_down, design_region_flux_value_left, design_region_flux_value_right = calculator_A.get_design_region_flux_value()
+    print(f"Design region flux value up: {design_region_flux_value_up:.4e}")
+    print(f"Design region flux value down: {design_region_flux_value_down:.4e}")
+    print(f"Design region flux value left: {design_region_flux_value_left:.4e}")
+    print(f"Design region flux value right: {design_region_flux_value_right:.4e}")

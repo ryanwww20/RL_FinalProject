@@ -27,7 +27,7 @@ simulation:
   waveguide_center_x: -0.9
   waveguide_length: 1.8
   output_y_separation: 0.6
-  simulation_time: 300
+  simulation_time: 3000
   num_flux_regions: *state_dim_minus_1
   output_x: 2.0
   design_region_x: 2.0
@@ -67,7 +67,7 @@ training:
     save_path: models/ppo_model
   sac:
     total_timesteps: 1000000
-    learning_rate: 0.0003
+    learning_rate: 0.0003 # 0.0001 0.0003 0.001
     buffer_size: 100000
     learning_starts: 1000
     batch_size: 256
