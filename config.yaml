@@ -9,8 +9,8 @@ state_dim_minus_1: &state_dim_minus_1 100
 
 environment:
   obs_size: *state_dim
-  action_size: 50
-  max_steps: 50
+  action_size: 20
+  max_steps: 20
   target_flux:
     baseline: -1.0
     segments:
