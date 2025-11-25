@@ -63,6 +63,7 @@ class WaveguideSimulation:
         self.sources = None
         self.sim = None
         self.ez_data = None
+        self.hz_data = None
         self.flux = None  # Single flux monitor object
         self.flux_regions = []  # List of flux monitors for y-axis distribution
         self.input_flux_region = None  # Flux monitor at the input waveguide
@@ -596,7 +597,7 @@ class WaveguideSimulation:
         # self.plot_design(save_path=None, show_plot=False)
         return self.sim
 
-    def get_field_data(self, component=mp.Ez):
+    def get_ezfield_data(self):
         """Get electric field data from simulation"""
         if self.sim is None:
             raise ValueError(
@@ -606,12 +607,29 @@ class WaveguideSimulation:
         ez_data = self.sim.get_array(
             center=mp.Vector3(0, 0, 0),
             size=self.cell_size,
-            component=component
+            component=mp.Ez
         )
 
         # Transpose so indexing matches coordinate system: ez_data[x_idx, y_idx]
         self.ez_data = ez_data.T
         return self.ez_data
+
+    def get_hzfield_data(self):
+        """Get electric field data from simulation"""
+        if self.sim is None:
+            raise ValueError(
+                "Simulation must be run first. Call run() method.")
+
+        # Get field data
+        hz_data = self.sim.get_array(
+            center=mp.Vector3(0, 0, 0),
+            size=self.cell_size,
+            component=mp.Hz
+        )
+
+        # Transpose so indexing matches coordinate system: hz_data[x_idx, y_idx]
+        self.hz_data = hz_data.T
+        return self.hz_data
 
     def plot_design(self, material_matrix=None, save_path=None, show_plot=True):
         """
@@ -625,7 +643,10 @@ class WaveguideSimulation:
             show_plot: Whether to display the plot
         """
         if self.ez_data is None:
-            self.get_field_data()
+            self.get_ezfield_data()
+        
+        if self.hz_data is None:
+            self.get_hzfield_data()
 
         if save_path is None:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -641,14 +662,14 @@ class WaveguideSimulation:
         # Plot electric field
         # Transpose ez_data because imshow expects (rows, cols) where rows=y, cols=x
         # Meep's get_array gives (x, y), so transpose for correct orientation
-        field_magnitude = np.abs(self.ez_data)
+        field_magnitude = np.abs(self.hz_data)
         plt.imshow(field_magnitude, interpolation='spline36', cmap='viridis',
                    aspect='auto', extent=extent, origin='lower')
-        plt.colorbar(label='Ez (electric field)')
+        plt.colorbar(label='Hz (electric field)')
         plt.xlabel('x (microns)')
         plt.ylabel('y (microns)')
         plt.title(
-            f'Waveguide Simulation - Ez Field (L_in={self.input_coupler_length}µm, L_out={self.output_coupler_length}µm)')
+            f'Waveguide Simulation - Hz Field (L_in={self.input_coupler_length}µm, L_out={self.output_coupler_length}µm)')
 
         # --- 0. Overlay Material Matrix (if provided) ---
         silicon_label_added = False
