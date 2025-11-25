@@ -9,7 +9,9 @@ from envs.meep_simulation import WaveguideSimulation
 from datetime import datetime
 from config import config
 import os
+import math
 
+e = 1e-8
 
 class MinimalEnv(gym.Env):
 
@@ -58,6 +60,9 @@ class MinimalEnv(gym.Env):
         current_file_path = os.path.abspath(__file__)
         self.project_root = os.path.dirname(os.path.dirname(current_file_path))
         self.log_dir = os.path.join(self.project_root, 'ppo_model_logs')
+
+        self.reward_history = []
+        self.current_score_history = []
 
         # Ensure base log directory exists
         os.makedirs(self.log_dir, exist_ok=True)
@@ -125,6 +130,7 @@ class MinimalEnv(gym.Env):
 
         current_score, reward = self.get_reward(
             input_flux, output_flux_1, output_flux_2)
+        norm_current_score, norm_reward = self.normalize_reward(current_score, reward)
         # Save reward to CSV
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         csv_path = os.path.join(self.log_dir, 'episode_rewards.csv')
@@ -132,13 +138,12 @@ class MinimalEnv(gym.Env):
         if not os.path.exists(csv_path):
             with open(csv_path, 'w') as f:
                 f.write(
-                    'timestamp, current_score, reward, output_flux_1_ratio, output_flux_2_ratio, loss_ratio\n')
+                    'timestamp, current_score, reward, norm_current_score, norm_reward, output_flux_1_ratio, output_flux_2_ratio, loss_ratio\n')
         with open(csv_path, 'a') as f:
-            f.write(f'{timestamp}, {current_score}, {reward}, {output_flux_1/input_flux}, {output_flux_2/input_flux}, {(input_flux - (output_flux_1 + output_flux_2))/input_flux}\n')
+            f.write(f'{timestamp}, {current_score}, {reward}, {norm_current_score}, {norm_reward}, {output_flux_1/input_flux}, {output_flux_2/input_flux}, {(input_flux - (output_flux_1 + output_flux_2))/input_flux}\n')
         # Check if episode is done
         terminated = self.material_matrix_idx >= self.max_steps  # Goal reached
         if terminated:
-
             # Use simulation methods for plotting
             flux_img_path = os.path.join(
                 self.log_dir, 'flux_images', f'flux_distribution_{timestamp}.png')
@@ -156,6 +161,8 @@ class MinimalEnv(gym.Env):
                 save_path=field_img_path,
                 show_plot=False
             )
+            self.reward_history = []
+            self.current_score_history = []
 
             print(
                 f'Output Flux 1: {output_flux_1/input_flux:.2f}, Output Flux 2: {output_flux_2/input_flux:.2f}, Loss: {(input_flux - (output_flux_1 + output_flux_2))/input_flux:.2f}')
@@ -176,12 +183,19 @@ class MinimalEnv(gym.Env):
         info = {}
         observation = np.append(observation, self.material_matrix_idx)
 
-        return observation, reward, terminated, truncated, info
+        return observation, norm_reward, terminated, truncated, info
 
     def get_reward(self, input_flux, output_flux_1, output_flux_2):
         current_score = -((output_flux_1 - input_flux*0.5)**2 +
                           (output_flux_2 - input_flux*0.5)**2)
         reward = current_score - self.last_score if self.last_score is not None else 0
+        self.reward_history.append(reward)
+        self.current_score_history.append(current_score)
         self.last_score = current_score
 
         return current_score, reward
+
+    def normalize_reward(self, current_score, reward):
+        norm_reward = (reward - np.mean(self.reward_history)) / math.sqrt(np.std(self.reward_history) ** 2 + e)
+        norm_current_score = (current_score - np.mean(self.current_score_history)) / math.sqrt(np.std(self.current_score_history) ** 2 + e)
+        return norm_current_score, norm_reward
