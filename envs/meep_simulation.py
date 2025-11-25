@@ -841,14 +841,16 @@ class WaveguideSimulation:
 
         return input_flux_value, output_flux_value_1, output_flux_value_2, output_all_flux, ez_data
 
+import time
 
 if __name__ == "__main__":
+    start = time.time() 
     # Example 1: Standard centered setup
     calculator_A = WaveguideSimulation()
 
     # Create a simple test matrix
-    material_matrix = np.ones((50, 50))
-    material_matrix[25, :] = 0
+    material_matrix = np.ones((20, 20))
+    # material_matrix[25, :] = 0
 
     # Apply the geometry
     calculator_A.create_geometry(material_matrix=material_matrix)
@@ -866,13 +868,13 @@ if __name__ == "__main__":
     calculator_A.create_simulation()
 
     # Since the outputs are separated, define flux monitor location at x=2.5
-    calculator_A.output_x = 2.5
     calculator_A.add_flux_monitors_along_y()  # Add monitors to measure flux split
     calculator_A.add_input_flux_monitor()
     calculator_A.add_design_region_flux_monitor()
 
     print("\nRunning simulation with centered geometry...")
     calculator_A.run()
+    print("output_x",calculator_A.output_x)
     calculator_A.plot_design(
         material_matrix=material_matrix,
         show_plot=False,
@@ -896,3 +898,6 @@ if __name__ == "__main__":
     print(f"Design region flux value down: {design_region_flux_value_down:.4e}")
     print(f"Design region flux value left: {design_region_flux_value_left:.4e}")
     print(f"Design region flux value right: {design_region_flux_value_right:.4e}")
+
+    end = time.time()       # Record end time
+    print("Time elapsed:", end - start, "seconds")
