@@ -899,7 +899,7 @@ if __name__ == "__main__":
     calculator_A.plot_design(
         material_matrix=material_matrix,
         show_plot=False,
-        save_path='sample_img/meep_simulation_ez_field.png'  # Provide a file name here
+        save_path='sample_img/meep_simulation_hz_field.png'  # Provide a file name here
     )
 
     # Get total flux
