@@ -6,15 +6,9 @@ import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 from envs.meep_simulation import WaveguideSimulation
-import matplotlib.pyplot as plt
 from datetime import datetime
 from config import config
 import os
-
-TARGET_FLUX = np.zeros(100)
-TARGET_FLUX[20:40] = 2.0
-TARGET_FLUX[60:80] = 2.0
-TARGET_FLUX -= 1.0
 
 
 class MinimalEnv(gym.Env):
@@ -29,7 +23,7 @@ class MinimalEnv(gym.Env):
             render_mode: "human" for GUI, "rgb_array" for image, None for no rendering
         """
         super().__init__()
-        
+
         self.obs_size = config.environment.obs_size
         self.action_size = config.environment.action_size
         # Define observation and action spaces
@@ -41,7 +35,6 @@ class MinimalEnv(gym.Env):
             dtype=np.float32
         )
 
-        # Action space: binary array of length 50 (0/1 values)
         index_diff = config.simulation.silicon_index - config.simulation.silica_index
         self.action_space = spaces.Box(
             low=config.simulation.silica_index - index_diff/2,
@@ -53,22 +46,23 @@ class MinimalEnv(gym.Env):
         # Initialize state
         self.state = None
         self.render_mode = render_mode
-        self.material_matrix = np.zeros((config.simulation.pixel_num_x, config.simulation.pixel_num_y))
+        self.material_matrix = np.zeros(
+            (config.simulation.pixel_num_x, config.simulation.pixel_num_y))
         self.material_matrix_idx = 0
         self.max_steps = config.environment.max_steps
         self.simulation = WaveguideSimulation()
+        self.last_score = None
 
         # Determine project root and log paths
         # Assuming this file is in envs/ and project root is one level up
         current_file_path = os.path.abspath(__file__)
         self.project_root = os.path.dirname(os.path.dirname(current_file_path))
-        self.log_dir = os.path.join(self.project_root, 'sac_model_logs')
-        
+        self.log_dir = os.path.join(self.project_root, 'ppo_model_logs')
+
         # Ensure base log directory exists
         os.makedirs(self.log_dir, exist_ok=True)
         os.makedirs(os.path.join(self.log_dir, 'flux_images'), exist_ok=True)
         os.makedirs(os.path.join(self.log_dir, 'field_images'), exist_ok=True)
-
 
     def reset(self, seed=None, options=None):
         """
@@ -85,9 +79,10 @@ class MinimalEnv(gym.Env):
         super().reset(seed=seed)
 
         # Reset material matrix and index
-        self.material_matrix = np.zeros((config.simulation.pixel_num_x, config.simulation.pixel_num_y))
+        self.material_matrix = np.zeros(
+            (config.simulation.pixel_num_x, config.simulation.pixel_num_y))
         self.material_matrix_idx = 0
-
+        self.last_score = None
         # Return initial observation (zeros since no material set yet)
         observation = np.zeros(self.obs_size, dtype=np.float32)
         info = {}
@@ -114,25 +109,57 @@ class MinimalEnv(gym.Env):
         assert self.action_space.contains(action), f"Invalid action: {action}"
 
         # Action is a binary array of length 50
+        # Action is a binary array of length 50
         for i in range(self.action_size):
             if action[i] > (config.simulation.silicon_index + config.simulation.silica_index) / 2:
                 self.material_matrix[self.material_matrix_idx, i] = 1
             else:
                 self.material_matrix[self.material_matrix_idx, i] = 0
-        
         self.material_matrix_idx += 1
 
         input_flux, output_flux_1, output_flux_2, output_all_flux, ez_data = self.simulation.calculate_flux(
             self.material_matrix)
+        print(f"Input flux: {input_flux:.4e}")
+        print(f"Output flux 1: {output_flux_1:.4e}")
+        print(f"Output flux 2: {output_flux_2:.4e}")
 
-        reward = self.get_reward(output_all_flux)
-
+        current_score, reward = self.get_reward(
+            input_flux, output_flux_1, output_flux_2)
+        # Save reward to CSV
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        csv_path = os.path.join(self.log_dir, 'episode_rewards.csv')
+        # add column names for the first time
+        if not os.path.exists(csv_path):
+            with open(csv_path, 'w') as f:
+                f.write(
+                    'timestamp, current_score, reward, output_flux_1_ratio, output_flux_2_ratio, loss_ratio\n')
+        with open(csv_path, 'a') as f:
+            f.write(f'{timestamp}, {current_score}, {reward}, {output_flux_1/input_flux}, {output_flux_2/input_flux}, {(input_flux - (output_flux_1 + output_flux_2))/input_flux}\n')
         # Check if episode is done
-        terminated = self.material_matrix_idx >= self.max_steps # Goal reached
+        terminated = self.material_matrix_idx >= self.max_steps  # Goal reached
         if terminated:
-            self.flux_plot(reward, output_all_flux)
-            self.field_result_plot(ez_data)
-            print(f'Input Flux: {input_flux}, Output Flux 1: {output_flux_1}, Output Flux 2: {output_flux_2}')
+
+            # Use simulation methods for plotting
+            flux_img_path = os.path.join(
+                self.log_dir, 'flux_images', f'flux_distribution_{timestamp}.png')
+            self.simulation.plot_distribution(
+                output_all_flux=output_all_flux,
+                input_flux=input_flux,
+                save_path=flux_img_path,
+                show_plot=False
+            )
+
+            field_img_path = os.path.join(
+                self.log_dir, 'field_images', f'field_distribution_{timestamp}.png')
+            self.simulation.plot_design(
+                material_matrix=self.material_matrix,
+                save_path=field_img_path,
+                show_plot=False
+            )
+
+            print(
+                f'Output Flux 1: {output_flux_1/input_flux:.2f}, Output Flux 2: {output_flux_2/input_flux:.2f}, Loss: {(input_flux - (output_flux_1 + output_flux_2))/input_flux:.2f}')
+
         truncated = False   # Time limit exceeded
 
         # Get observation - return the current flux distribution as observation
@@ -147,62 +174,14 @@ class MinimalEnv(gym.Env):
 
         # Info dictionary (can contain debugging info)
         info = {}
+        observation = np.append(observation, self.material_matrix_idx)
 
         return observation, reward, terminated, truncated, info
 
+    def get_reward(self, input_flux, output_flux_1, output_flux_2):
+        current_score = -((output_flux_1 - input_flux*0.5)**2 +
+                          (output_flux_2 - input_flux*0.5)**2)
+        reward = current_score - self.last_score if self.last_score is not None else 0
+        self.last_score = current_score
 
-    def get_reward(self, flux_data):
-        return np.sum(flux_data * TARGET_FLUX)/np.sum(flux_data)
-
-    def flux_plot(self, reward, flux_data):
-        # save reward to csv
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        
-        csv_path = os.path.join(self.log_dir, 'episode_rewards.csv')
-        with open(csv_path, 'a') as f:
-            f.write(f'{timestamp}, {reward}\n')
-
-        plt.figure(figsize=(10, 6))
-        plt.plot(flux_data, 'b-', linewidth=2, label='Current Flux')
-        # plt.plot(TARGET_FLUX, 'r--', linewidth=2,
-        #          alpha=0.7, label='Target Flux')
-        plt.xlabel('Detector Index')
-        plt.ylabel('Flux')
-        plt.title(f'Flux Distribution at Step {self.material_matrix_idx}')
-        plt.legend()
-        plt.grid(True, alpha=0.3)
-        
-        img_path = os.path.join(self.log_dir, 'flux_images', f'flux_distribution_{timestamp}.png')
-        plt.savefig(img_path)
-        plt.close()
-
-    def field_result_plot(self, ez_data):
-        # plot field results with marked material matrix
-        try:
-            pixel_size = self.simulation.pixel_size
-            extent = [-3, 3, -2, 2]
-            plt.figure(figsize=(10, 6))
-            plt.imshow(ez_data, interpolation='spline36', cmap='RdBu',
-                       aspect='auto', extent=extent, origin='lower')
-            plt.colorbar(label='Ez (electric field)')
-            # mark material matrix
-            for i in range(self.material_matrix.shape[0]):
-                for j in range(self.material_matrix.shape[1]):
-                    if self.material_matrix[i, j] == 1:
-                        plt.plot(i*pixel_size-1, j*pixel_size-1, 'o', color='darkgrey',
-                                 markersize=2, label='Silicon')
-                    elif self.material_matrix[i, j] == 0:
-                        plt.plot(i*pixel_size-1, j*pixel_size-1, 'o',
-                                 color='black', markersize=2, label='Silica')
-            plt.xlabel('x (microns) → right')
-            plt.ylabel('y (microns) → top')
-            plt.title(
-                f'Field Distribution at Step {self.material_matrix_idx}')
-            plt.legend()
-            plt.grid(True, alpha=0.3)
-            
-            img_path = os.path.join(self.log_dir, 'field_images', f'field_distribution_{datetime.now().strftime("%Y%m%d_%H%M%S")}.png')
-            plt.savefig(img_path)
-            plt.close()
-        except Exception as e:
-            print(f'Error plotting field results: {e}')
+        return current_score, reward

@@ -4,15 +4,13 @@ Uses Stable-Baselines3 for SAC implementation
 """
 
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
 import os
 from pathlib import Path
+from datetime import datetime
 
 import yaml
 from stable_baselines3 import SAC
-from stable_baselines3.common.callbacks import BaseCallback
-from envs.Continuous_gym import MinimalEnv, TARGET_FLUX
+from envs.Continuous_gym import MinimalEnv
 
 CONFIG_ENV_VAR = "TRAINING_CONFIG_PATH"
 DEFAULT_CONFIG_PATH = Path(__file__).resolve().parent / "config.yaml"
@@ -33,210 +31,6 @@ TRAIN_SAC_KWARGS = {
     "tensorboard_log",
     "save_path",
 }
-
-
-class RewardAndFluxCallback(BaseCallback):
-    """
-    Custom callback to save rewards to CSV and flux distribution images.
-    """
-
-    def __init__(self, save_dir="./training_logs/", save_freq=1000, verbose=1):
-        """
-        Initialize the callback.
-
-        Args:
-            save_dir: Directory to save CSV and images
-            save_freq: Frequency (in steps) to save data
-            verbose: Verbosity level (0=silent, 1=progress, 2=detailed)
-        """
-        super(RewardAndFluxCallback, self).__init__(verbose)
-        self.save_dir = save_dir
-        self.save_freq = save_freq
-        self.rewards = []
-        self.episode_rewards = []
-        self.episode_lengths = []
-        self.step_count = 0
-        self.num_timesteps = None  # Will be set when training starts
-
-        # Create save directory
-        os.makedirs(save_dir, exist_ok=True)
-        os.makedirs(os.path.join(save_dir, "flux_images"), exist_ok=True)
-
-        # CSV file path
-        self.csv_path = os.path.join(save_dir, "rewards.csv")
-
-        if self.verbose > 0:
-            print(f"Callback initialized:")
-            print(f"  Save directory: {save_dir}")
-            print(f"  Save frequency: Every {save_freq} steps")
-            print(f"  CSV file: {self.csv_path}")
-            print(
-                f"  Images directory: {os.path.join(save_dir, 'flux_images')}")
-
-    def _on_training_start(self):
-        """Called when training starts."""
-        # Get total timesteps from the model
-        if hasattr(self.model, 'n_steps') and hasattr(self.model, 'n_envs'):
-            # Estimate total timesteps (may not be exact)
-            pass
-        if self.verbose > 0:
-            print(f"\n{'='*60}")
-            print(f"Training Started!")
-            print(f"{'='*60}")
-
-    def _on_step(self) -> bool:
-        """
-        Called at each step of training.
-
-        Returns:
-            bool: True to continue training, False to stop
-        """
-        # Get info from the environment
-        if len(self.locals.get("infos", [])) > 0:
-            info = self.locals["infos"][0]
-
-            # Track episode rewards
-            if "episode" in info:
-                episode_reward = info["episode"]["r"]
-                episode_length = info["episode"]["l"]
-                self.episode_rewards.append(episode_reward)
-                self.episode_lengths.append(episode_length)
-                self.rewards.append({
-                    "step": self.step_count,
-                    "episode": len(self.episode_rewards),
-                    "reward": episode_reward,
-                    "length": episode_length
-                })
-
-                # Print progress for each completed episode
-                if self.verbose > 0:
-                    print(f"\nEpisode {len(self.episode_rewards)} | "
-                          f"Reward: {episode_reward:.4f} | "
-                          f"Length: {episode_length} | "
-                          f"Step: {self.step_count}")
-
-        self.step_count += 1
-
-        # Save data periodically and show progress
-        if self.step_count % self.save_freq == 0:
-            # Get training progress info
-            if self.num_timesteps is None:
-                # Try to get from model or locals
-                if hasattr(self, 'model') and hasattr(self.model, 'n_steps'):
-                    # This is approximate
-                    pass
-
-            if self.verbose > 0:
-                print(f"\n{'─'*60}")
-                print(f"Progress Update at Step {self.step_count}")
-                print(f"{'─'*60}")
-                if len(self.episode_rewards) > 0:
-                    recent_avg = np.mean(self.episode_rewards[-10:]) if len(
-                        self.episode_rewards) >= 10 else np.mean(self.episode_rewards)
-                    print(f"  Episodes completed: {len(self.episode_rewards)}")
-                    print(f"  Average reward (last 10): {recent_avg:.4f}")
-                    print(f"  Best reward: {np.max(self.episode_rewards):.4f}")
-                    print(
-                        f"  Average episode length: {np.mean(self.episode_lengths):.2f}")
-                print(f"  Saving rewards and flux image...")
-
-            self._save_rewards()
-            self._save_flux_image()
-
-        return True
-
-    def _save_rewards(self):
-        """Save rewards to CSV file."""
-        if len(self.rewards) > 0:
-            df = pd.DataFrame(self.rewards)
-            df.to_csv(self.csv_path, index=False)
-            if self.verbose > 0:
-                print(f"Saved rewards to {self.csv_path}")
-
-    def _save_flux_image(self):
-        """Save flux distribution image from the environment."""
-        try:
-            # Get the environment from the model
-            env = self.training_env.envs[0] if hasattr(
-                self.training_env, 'envs') else None
-
-            if env is not None and hasattr(env, 'flux_calculator'):
-                # Get current material matrix
-                if hasattr(env, 'material_matrix'):
-                    material_matrix = env.material_matrix
-                else:
-                    # If material_matrix not directly accessible, create from unwrapped env
-                    unwrapped = env.unwrapped if hasattr(
-                        env, 'unwrapped') else env
-                    material_matrix = unwrapped.material_matrix
-
-                # Get flux calculator
-                if hasattr(env, 'flux_calculator'):
-                    flux_calc = env.flux_calculator
-                else:
-                    unwrapped = env.unwrapped if hasattr(
-                        env, 'unwrapped') else env
-                    flux_calc = unwrapped.flux_calculator
-
-                # Calculate flux
-                flux_array = flux_calc.calculate_flux(
-                    material_matrix, x_position=2.0
-                )
-
-                # Create and save plot
-                plt.figure(figsize=(10, 6))
-                plt.plot(flux_array, 'b-', linewidth=2, label='Current Flux')
-
-                # Plot target flux if available
-                if TARGET_FLUX is not None:
-                    plt.plot(TARGET_FLUX, 'r--', linewidth=2,
-                             alpha=0.7, label='Target Flux')
-
-                plt.xlabel('Detector Index')
-                plt.ylabel('Flux')
-                plt.title(f'Flux Distribution at Step {self.step_count}')
-                plt.legend()
-                plt.grid(True, alpha=0.3)
-
-                # Save image
-                image_path = os.path.join(
-                    self.save_dir,
-                    "flux_images",
-                    f"flux_step_{self.step_count:06d}.png"
-                )
-                plt.savefig(image_path, dpi=150, bbox_inches='tight')
-                plt.close()
-
-                if self.verbose > 0:
-                    print(f"Saved flux image to {image_path}")
-        except Exception as e:
-            if self.verbose > 0:
-                print(f"Warning: Could not save flux image: {e}")
-
-    def _on_training_end(self):
-        """Called when training ends."""
-        # Final save
-        self._save_rewards()
-        self._save_flux_image()
-
-        # Print summary
-        if self.verbose > 0:
-            print(f"\n{'='*60}")
-            print(f"Training Complete!")
-            print(f"{'='*60}")
-            print(f"Total timesteps: {self.step_count}")
-            if len(self.episode_rewards) > 0:
-                print(f"Total episodes: {len(self.episode_rewards)}")
-                print(f"Average reward: {np.mean(self.episode_rewards):.4f}")
-                print(f"Std deviation: {np.std(self.episode_rewards):.4f}")
-                print(f"Best reward: {np.max(self.episode_rewards):.4f}")
-                print(f"Worst reward: {np.min(self.episode_rewards):.4f}")
-                print(
-                    f"Average episode length: {np.mean(self.episode_lengths):.2f}")
-                print(f"Rewards saved to: {self.csv_path}")
-                print(
-                    f"Flux images saved to: {os.path.join(self.save_dir, 'flux_images')}")
-            print(f"{'='*60}\n")
 
 
 def train_sac(
@@ -304,20 +98,12 @@ def train_sac(
         verbose=1
     )
 
-    # Create custom callback for rewards and flux images
-    reward_callback = RewardAndFluxCallback(
-        save_dir=f"{save_path}_logs",
-        save_freq=1000,  # Save every 1000 steps
-        verbose=1
-    )
-
     # Train the model
     print(f"Training SAC agent for {total_timesteps} timesteps...")
     print("Press Ctrl+C to interrupt training and save current model...")
     try:
         model.learn(
             total_timesteps=total_timesteps,
-            callback=reward_callback,
             progress_bar=False  # Set to False to avoid tqdm/rich dependency
         )
     except KeyboardInterrupt:
@@ -327,8 +113,17 @@ def train_sac(
         print(f"Error during training: {e}")
 
     # Save the final model (even if interrupted)
-    model.save(save_path)
-    print(f"Model saved to {save_path}")
+    # Add timestamp to model name
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    save_path_with_timestamp = f"{save_path}_{timestamp}"
+
+    # Create directory if it doesn't exist
+    save_dir = os.path.dirname(save_path_with_timestamp)
+    if save_dir and not os.path.exists(save_dir):
+        os.makedirs(save_dir, exist_ok=True)
+
+    model.save(save_path_with_timestamp)
+    print(f"Model saved to {save_path_with_timestamp}")
 
     # Test the trained model
     print("\nTesting trained model...")
@@ -382,14 +177,16 @@ def load_training_config(config_path=None):
     """
     path = Path(config_path) if config_path else DEFAULT_CONFIG_PATH
     if not path.exists():
-        print(f"[config] Config file not found at {path}. Using train_sac defaults.")
+        print(
+            f"[config] Config file not found at {path}. Using train_sac defaults.")
         return {}
 
     with path.open("r", encoding="utf-8") as f:
         data = yaml.safe_load(f) or {}
 
     training_cfg = data.get("training", {}).get("sac", {}) or {}
-    filtered_cfg = {k: v for k, v in training_cfg.items() if k in TRAIN_SAC_KWARGS}
+    filtered_cfg = {k: v for k, v in training_cfg.items()
+                    if k in TRAIN_SAC_KWARGS}
 
     unknown_keys = sorted(set(training_cfg.keys()) - TRAIN_SAC_KWARGS)
     if unknown_keys:
@@ -399,10 +196,31 @@ def load_training_config(config_path=None):
 
 
 if __name__ == "__main__":
-    config_override_path = os.environ.get(CONFIG_ENV_VAR)
-    train_kwargs = load_training_config(config_override_path)
-
-    # Train SAC agent
-    model = train_sac(**train_kwargs)
-
-    print("\nTraining complete!")
+    import sys
+    
+    # Check if user wants to test a saved model
+    if len(sys.argv) > 1 and sys.argv[1] == "test":
+        if len(sys.argv) < 3:
+            print("Usage: python train_sac.py test <model_path> [n_episodes]")
+            sys.exit(1)
+        
+        model_path = sys.argv[2]
+        n_episodes = int(sys.argv[3]) if len(sys.argv) > 3 else 5
+        
+        print(f"Loading model from {model_path}...")
+        model = SAC.load(model_path)
+        
+        print("Creating test environment...")
+        test_env = MinimalEnv(render_mode=None)
+        
+        print(f"Testing model for {n_episodes} episodes...")
+        test_model(model, test_env, n_episodes=n_episodes)
+    else:
+        # Normal training flow
+        config_override_path = os.environ.get(CONFIG_ENV_VAR)
+        train_kwargs = load_training_config(config_override_path)
+        
+        # Train SAC agent
+        model = train_sac(**train_kwargs)
+        
+        print("\nTraining complete!")

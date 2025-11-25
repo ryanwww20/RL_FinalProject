@@ -15,12 +15,11 @@ import os
 
 # Add the parent directory to sys.path if running directly
 if __name__ == "__main__":
-    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    sys.path.append(os.path.dirname(
+        os.path.dirname(os.path.abspath(__file__))))
 
 from contextlib import redirect_stdout, redirect_stderr
 from config import config
-
-SAVE_FIG = False
 
 
 class WaveguideSimulation:
@@ -50,8 +49,9 @@ class WaveguideSimulation:
         self.output_y_separation = config.simulation.output_y_separation
         # New coupling lengths
         self.input_coupler_length = config.simulation.input_coupler_length
-        self.output_coupler_length = config.simulation.output_coupler_length # Used for output 1 and 2
-        
+        # Used for output 1 and 2
+        self.output_coupler_length = config.simulation.output_coupler_length
+
         # Design region remains 2um x 2um centered at (0,0)
         self.design_region_x_min = -1.0
         self.design_region_x_max = 1.0
@@ -65,9 +65,9 @@ class WaveguideSimulation:
         self.ez_data = None
         self.flux = None  # Single flux monitor object
         self.flux_regions = []  # List of flux monitors for y-axis distribution
-        self.input_flux_region = None # Flux monitor at the input waveguide
-        self.output_flux_region_1 = None # Flux monitor at the output waveguide 1
-        self.output_flux_region_2 = None # Flux monitor at the output waveguide 2
+        self.input_flux_region = None  # Flux monitor at the input waveguide
+        self.output_flux_region_1 = None  # Flux monitor at the output waveguide 1
+        self.output_flux_region_2 = None  # Flux monitor at the output waveguide 2
         self.num_flux_regions = config.simulation.num_flux_regions
         self.simulation_time = config.simulation.simulation_time
         self.output_x = config.simulation.output_x
@@ -91,25 +91,27 @@ class WaveguideSimulation:
 
         # --- 1. Input Waveguide (Left side) ---
         # Starts inside PML, ends exactly at the design region boundary (x=-1.0)
-        input_start_x = self.design_region_x_min - self.input_coupler_length # e.g., -1.0 - 1.5 = -2.5
+        input_start_x = self.design_region_x_min - \
+            self.input_coupler_length  # e.g., -1.0 - 1.5 = -2.5
         input_end_x = self.design_region_x_min                              # x = -1.0
         input_length = self.input_coupler_length
         input_center_x = input_start_x + input_length / 2.0
-        
+
         input_waveguide = mp.Block(
             center=mp.Vector3(input_center_x, 0, 0),
             size=mp.Vector3(input_length, self.waveguide_width, 0),
             material=mp.Medium(index=self.waveguide_index)
         )
         geometry.append(input_waveguide)
-        
+
         # --- 2. Two Output Waveguides (Right side) ---
         # Starts at the design region boundary (x=1.0), extends right
         output_start_x = self.design_region_x_max                          # x = 1.0
-        output_end_x = self.design_region_x_max + self.output_coupler_length # e.g., 1.0 + 1.5 = 2.5
+        output_end_x = self.design_region_x_max + \
+            self.output_coupler_length  # e.g., 1.0 + 1.5 = 2.5
         output_length = self.output_coupler_length
         output_center_x = output_start_x + output_length / 2.0
-        
+
         # Symmetrical output positions (use the default 0.3 or a new class parameter) # You can make this a configurable class property later
 
         # Output Waveguide 1 (Top)
@@ -119,7 +121,7 @@ class WaveguideSimulation:
             material=mp.Medium(index=self.waveguide_index)
         )
         geometry.append(output_waveguide_1)
-        
+
         # Output Waveguide 2 (Bottom)
         output_waveguide_2 = mp.Block(
             center=mp.Vector3(output_center_x, -self.output_y_separation, 0),
@@ -127,7 +129,6 @@ class WaveguideSimulation:
             material=mp.Medium(index=self.waveguide_index)
         )
         geometry.append(output_waveguide_2)
-
         # --- 3. Add material distribution from matrix (Design Region) ---
         if material_matrix is not None:
             material_matrix = np.array(material_matrix)
@@ -138,9 +139,9 @@ class WaveguideSimulation:
                     f"material_matrix must be {self.pixel_num_x}x{self.pixel_num_y}, got shape {material_matrix.shape}")
 
             # Design region boundaries: x from -1 to 1, y from -1 to 1
-            square_x_min = self.design_region_x_min # -1.0
-            square_y_min = self.design_region_y_min # -1.0
-            dx = self.pixel_size 
+            square_x_min = self.design_region_x_min  # -1.0
+            square_y_min = self.design_region_y_min  # -1.0
+            dx = self.pixel_size
             dy = self.pixel_size
 
             # Create pixel blocks, mapping 0-49 indices to -1 to +1 coordinates
@@ -166,17 +167,17 @@ class WaveguideSimulation:
                         geometry.append(silica_pixel)
 
         self.geometry = geometry
-    
+
     def plot_geometry(self, save_path=None, show_plot=True, x_range=None, y_range=None):
         """
         Plot the generated geometry (waveguides and design region) based solely on 
         class parameters, ensuring visibility of all major components.
         """
-        
+
         # CRITICAL: Ensure geometry is created with the current parameters
         if self.geometry is None:
             # Calling create_geometry populates the design region boundaries correctly
-            self.create_geometry(material_matrix=None) 
+            self.create_geometry(material_matrix=None)
 
         plt.figure(figsize=(10, 5))
         ax = plt.gca()
@@ -189,9 +190,9 @@ class WaveguideSimulation:
         x_max = x_range[1] if x_range is not None else x_max_default
         y_min = y_range[0] if y_range is not None else y_min_default
         y_max = y_range[1] if y_range is not None else y_max_default
-        
+
         # --- 2. Calculate Waveguide Positions ---
-        waveguide_color = 'blue' # Fixed separation, same as in create_geometry
+        waveguide_color = 'blue'  # Fixed separation, same as in create_geometry
 
         # 2a. Input Waveguide (Ends at x = -1.0)
         input_length = self.input_coupler_length
@@ -206,44 +207,49 @@ class WaveguideSimulation:
         output2_y_start = -self.output_y_separation - self.waveguide_width / 2
 
         # --- 3. Plot Waveguides Explicitly ---
-        
+
         # Input Waveguide
         ax.add_patch(Rectangle(
-            (input_x_start, input_y_start), input_length, self.waveguide_width, 
+            (input_x_start, input_y_start), input_length, self.waveguide_width,
             linewidth=1, edgecolor='k', facecolor=waveguide_color, alpha=0.6, label='Input Waveguide'
         ))
 
         # Output Waveguide 1
         ax.add_patch(Rectangle(
-            (output_x_start, output1_y_start), output_length, self.waveguide_width, 
+            (output_x_start, output1_y_start), output_length, self.waveguide_width,
             linewidth=1, edgecolor='k', facecolor=waveguide_color, alpha=0.6, label='Output Waveguide'
         ))
 
         # Output Waveguide 2
         ax.add_patch(Rectangle(
-            (output_x_start, output2_y_start), output_length, self.waveguide_width, 
+            (output_x_start, output2_y_start), output_length, self.waveguide_width,
             linewidth=1, edgecolor='k', facecolor=waveguide_color, alpha=0.6
         ))
+        print('===============================================')
+        print(
+            f"Output Waveguide 1: {output1_y_start}, Output Waveguide 2: {output2_y_start}")
+        print('===============================================')
 
         # --- 4. Mark the Design Region ---
         design_region_rect = Rectangle(
-            (self.design_region_x_min, self.design_region_y_min), # Lower-left corner: (-1.0, -1.0)
-            2.0, 2.0, # Width=2.0, Height=2.0
-            linewidth=2, edgecolor='lime', facecolor='none', 
+            # Lower-left corner: (-1.0, -1.0)
+            (self.design_region_x_min, self.design_region_y_min),
+            2.0, 2.0,  # Width=2.0, Height=2.0
+            linewidth=2, edgecolor='lime', facecolor='none',
             linestyle='--', label='Design Region (2x2um)')
         ax.add_patch(design_region_rect)
 
         # --- 5. Add Annotations for Verification (Fixing the visual length issue) ---
-        
+
         # Input Waveguide Length Label
-        input_center_x = self.design_region_x_min - self.input_coupler_length / 2 
+        input_center_x = self.design_region_x_min - self.input_coupler_length / 2
         ax.annotate(
             f"L={self.input_coupler_length}µm",
             xy=(input_center_x, self.waveguide_width * 1.5),
             ha='center', va='bottom', fontsize=9, color='darkred',
             bbox=dict(boxstyle="round,pad=0.3", fc="white", alpha=0.7)
         )
-        
+
         # Output Waveguide Length Label
         output_center_x = self.design_region_x_max + self.output_coupler_length / 2
         ax.annotate(
@@ -253,30 +259,31 @@ class WaveguideSimulation:
             bbox=dict(boxstyle="round,pad=0.3", fc="white", alpha=0.7)
         )
 
-        # --- 6. Final Plot Setup --- 
+        # --- 6. Final Plot Setup ---
         ax.set_xlim(x_min, x_max)
         ax.set_ylim(y_min, y_max)
-        
+
         # FIX: Ensure 1:1 scale for the axes
-        ax.set_aspect('equal', adjustable='box') 
+        ax.set_aspect('equal', adjustable='box')
 
         ax.set_aspect('equal')
         plt.xlabel('x (microns)')
         plt.ylabel('y (microns)')
         plt.title(f'Waveguide Geometry (Centered Design)')
-        
+
         # Clean up legend handles
         handles, labels = ax.get_legend_handles_labels()
         unique_handles = dict(zip(labels, handles))
-        
+
         # FIX: Move legend outside the plot area
-        ax.legend(unique_handles.values(), unique_handles.keys(), 
-                loc='upper left',        # Position within the bbox_to_anchor
-                bbox_to_anchor=(1.02, 1), # Place just outside the top-right corner of the axes
-                borderaxespad=0.)        # No padding between the legend and the anchor point
-        
+        ax.legend(unique_handles.values(), unique_handles.keys(),
+                  loc='upper left',        # Position within the bbox_to_anchor
+                  # Place just outside the top-right corner of the axes
+                  bbox_to_anchor=(1.02, 1),
+                  borderaxespad=0.)        # No padding between the legend and the anchor point
+
         plt.grid(True, alpha=0.2)
-        plt.tight_layout() # IMPORTANT: Adjust plot to make room for the legend
+        plt.tight_layout()  # IMPORTANT: Adjust plot to make room for the legend
 
         if show_plot:
             plt.show()
@@ -288,14 +295,15 @@ class WaveguideSimulation:
         """Create eigenmode source at left edge of input coupler"""
         # Calculate the starting point of the input waveguide (cell's left edge)
         input_coupler_start_x = self.design_region_x_min - self.input_coupler_length
-        
+
         sources = [mp.EigenModeSource(
             src=mp.ContinuousSource(
                 wavelength=self.wavelength,
                 width=20
             ),
             # Position source at the start of the input coupler
-            center=mp.Vector3(input_coupler_start_x * self.src_pos_shift_coeff, 0, 0), 
+            center=mp.Vector3(input_coupler_start_x *
+                              self.src_pos_shift_coeff, 0.0, 0),
             size=mp.Vector3(0, self.waveguide_width, 0),
             eig_band=1,
             direction=mp.NO_DIRECTION,
@@ -430,7 +438,7 @@ class WaveguideSimulation:
 
         self.flux_regions = flux_monitors
         return flux_monitors
-    
+
     def add_input_flux_monitor(self):
         """
         Add flux monitor at the input waveguide
@@ -445,9 +453,10 @@ class WaveguideSimulation:
             center=mp.Vector3(self.input_waveguide_flux_region_x, 0, 0),
             size=mp.Vector3(0, self.waveguide_width, 0)
         )
-        self.input_flux_region = self.sim.add_flux(frequency, 0, 1, self.input_flux_region)
+        self.input_flux_region = self.sim.add_flux(
+            frequency, 0, 1, self.input_flux_region)
         return self.input_flux_region
-    
+
     def add_output_flux_monitors(self):
         """
         Add flux monitors at the output waveguides
@@ -460,15 +469,17 @@ class WaveguideSimulation:
             center=mp.Vector3(self.output_x, self.output_y_separation, 0),
             size=mp.Vector3(0, self.waveguide_width, 0)
         )
-        self.output_flux_region_1 = self.sim.add_flux(frequency, 0, 1, self.output_flux_region_1)
+        self.output_flux_region_1 = self.sim.add_flux(
+            frequency, 0, 1, self.output_flux_region_1)
 
         self.output_flux_region_2 = mp.FluxRegion(
             center=mp.Vector3(self.output_x, -self.output_y_separation, 0),
             size=mp.Vector3(0, self.waveguide_width, 0)
         )
-        self.output_flux_region_2 = self.sim.add_flux(frequency, 0, 1, self.output_flux_region_2)
+        self.output_flux_region_2 = self.sim.add_flux(
+            frequency, 0, 1, self.output_flux_region_2)
         return self.output_flux_region_1, self.output_flux_region_2
-    
+
     def get_flux_distribution_along_y(self):
         """
         Get flux values for all y-axis flux monitors
@@ -504,7 +515,7 @@ class WaveguideSimulation:
             y_min + region_height/2, y_max - region_height/2, num_regions)
 
         return y_positions, flux_values
-    
+
     def get_input_flux_value(self):
         """
         Get flux value at the input waveguide
@@ -522,7 +533,7 @@ class WaveguideSimulation:
             raise ValueError(
                 "No output flux monitors added. Call add_output_flux_monitors() first.")
         return mp.get_fluxes(self.output_flux_region_1)[0]
-    
+
     def get_output_flux_values_2(self):
         """
         Get flux values at the output waveguides
@@ -532,71 +543,6 @@ class WaveguideSimulation:
                 "No output flux monitors added. Call add_output_flux_monitors() first.")
         return mp.get_fluxes(self.output_flux_region_2)[0]
 
-    def plot_flux_distribution_y(self, save_path=None, show_plot=True):
-        """
-        Plot flux distribution along y-axis at a specific x position
-
-        Args:
-            x_position: x coordinate where flux was measured
-            save_path: optional path to save the plot
-            show_plot: whether to display the plot
-        """
-        y_positions, flux_values = self.get_flux_distribution_along_y()
-
-        # Add timestamp to filename if not provided
-        if save_path is None:
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            save_path = f'flux_distribution_x{self.output_x}_{timestamp}.png'
-
-        # Create plot
-        plt.figure(figsize=(10, 6))
-        plt.plot(y_positions, flux_values, 'b-', linewidth=2,
-                 label=f'Flux at x = {self.output_x}')
-        plt.axhline(y=0, color='k', linestyle='--', linewidth=1, alpha=0.5)
-        plt.xlabel('y (microns)')
-        plt.ylabel('Flux')
-        plt.title(f'Flux Distribution along Y-axis at x = {self.output_x}μm')
-        plt.grid(True, alpha=0.3)
-        plt.legend()
-
-        # Add statistics
-        total_flux = np.sum(
-            flux_values) * (y_positions[1] - y_positions[0]) if len(y_positions) > 1 else flux_values[0]
-        max_flux = np.max(flux_values)
-        min_flux = np.min(flux_values)
-        plt.text(0.02, 0.98,
-                 f'Total flux: {total_flux:.6e}\n'
-                 f'Max: {max_flux:.6e}\n'
-                 f'Min: {min_flux:.6e}',
-                 transform=plt.gca().transAxes,
-                 verticalalignment='top',
-                 bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
-
-        if SAVE_FIG:
-            plt.savefig(save_path, dpi=150, bbox_inches='tight')
-        print(f"Flux distribution plot saved to '{save_path}'")
-
-        if show_plot:
-            plt.show()
-        else:
-            plt.close()
-
-    def get_flux_value(self):
-        """
-        Get the flux value from the flux monitor
-
-        Returns:
-            flux_value: total flux through the monitor
-        """
-        if self.flux is None:
-            raise ValueError(
-                "No flux monitor added. Call add_flux_monitor() first.")
-
-        # Get flux value
-        flux_value = mp.get_fluxes(self.flux)[0]
-
-        return flux_value
-
     def run(self):
         """Run the simulation"""
         if self.sim is None:
@@ -605,7 +551,7 @@ class WaveguideSimulation:
         with open(os.devnull, 'w') as devnull:
             with redirect_stdout(devnull), redirect_stderr(devnull):
                 self.sim.run(until=self.simulation_time)
-        # self.plot_results(save_path=None, show_plot=False)
+        # self.plot_design(save_path=None, show_plot=False)
         return self.sim
 
     def get_field_data(self, component=mp.Ez):
@@ -625,173 +571,79 @@ class WaveguideSimulation:
         self.ez_data = ez_data.T
         return self.ez_data
 
-    def get_power_density_at_point(self, position, component='x'):
+    def plot_design(self, material_matrix=None, save_path=None, show_plot=True):
         """
-        Get power density (Poynting vector) at a specific point.
+        Plot and visualize the simulation results (Ez field + geometry overlays).
+        This version includes input/output waveguides and the output measurement plane.
 
         Args:
-            position: mp.Vector3 or tuple (x, y) position where to measure
-            component: 'x', 'y', or 'total' for power density direction
-
-        Returns:
-            power_density: Power density value at the point (real part)
+            material_matrix: 2D array (pixel_num_x x pixel_num_y) where 1=silicon, 0=silica.
+                           If provided, will overlay material distribution as grey boxes.
+            save_path: Path to save the plot
+            show_plot: Whether to display the plot
         """
-        if self.sim is None:
-            raise ValueError(
-                "Simulation must be run first. Call run() method.")
-
-        # Convert tuple to Vector3 if needed
-        if isinstance(position, (tuple, list)):
-            position = mp.Vector3(position[0], position[1], 0)
-        elif not isinstance(position, mp.Vector3):
-            position = mp.Vector3(position.x, position.y, 0)
-
-        # Method 1: Use Meep's built-in S-field (Poynting vector) components
-        # Note: get_sfield_x() returns an array, so we need to get the array
-        # and then interpolate to the point, OR use get_array with mp.Sx component
-
-        # Method 2: Calculate from E and H fields (more direct for point values)
-        # Get fields for 2D TM mode (Ez, Hx, Hy)
-        Ez = self.sim.get_field_point(mp.Ez, position)
-        Hx = self.sim.get_field_point(mp.Hx, position)
-        Hy = self.sim.get_field_point(mp.Hy, position)
-
-        # Calculate Poynting vector for 2D TM: Sx = -Ez * Hy, Sy = Ez * Hx
-        # This is the standard way: S = (1/2) * Re(E × H*)
-        # For real fields in 2D TM: Sx = -Ez * Hy, Sy = Ez * Hx
-        Sx = -Ez * Hy  # Power flow in x-direction
-        Sy = Ez * Hx   # Power flow in y-direction
-
-        # Return real part (power density is typically real)
-        if component == 'x':
-            return np.real(Sx)
-        elif component == 'y':
-            return np.real(Sy)
-        elif component == 'z':
-            return 0.0  # No z-component in 2D
-        elif component == 'total':
-            return np.real(np.sqrt(Sx**2 + Sy**2))
-        else:
-            raise ValueError("component must be 'x', 'y', 'z', or 'total'")
-
-    def get_field_at_point(self, position, field_component=mp.Ez):
-        """
-        Get field value at a specific point.
-
-        Args:
-            position: mp.Vector3 or tuple (x, y) position where to measure
-            field_component: Field component (mp.Ez, mp.Hx, mp.Hy, etc.)
-
-        Returns:
-            field_value: Field value at the point
-        """
-        if self.sim is None:
-            raise ValueError(
-                "Simulation must be run first. Call run() method.")
-
-        # Convert tuple to Vector3 if needed
-        if isinstance(position, (tuple, list)):
-            position = mp.Vector3(position[0], position[1], 0)
-        elif not isinstance(position, mp.Vector3):
-            position = mp.Vector3(position.x, position.y, 0)
-
-        return self.sim.get_field_point(field_component, position)
-    
-    
-    '''
-    def plot_results(self, save_path=None, show_plot=True):
-        """Plot and visualize the simulation results"""
         if self.ez_data is None:
             self.get_field_data()
 
-        # Add timestamp to filename if not provided
         if save_path is None:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             save_path = f'meep_2d_result_{timestamp}.png'
 
-        # Create figure
         plt.figure(figsize=(12, 6))
+        ax = plt.gca()  # Get current axes for adding patches
 
         # Set extent dynamically based on cell_size
-        # cell spans from -cell_size.x/2 to +cell_size.x/2 in x, -cell_size.y/2 to +cell_size.y/2 in y
         extent = [-self.cell_size.x/2, self.cell_size.x/2,
                   -self.cell_size.y/2, self.cell_size.y/2]
 
         # Plot electric field
-        plt.imshow(self.ez_data, interpolation='spline36', cmap='RdBu',
-                   aspect='auto', extent=extent, origin='lower')
-        plt.colorbar(label='Ez (electric field)')
-        plt.xlabel('x (microns) → right')
-        plt.ylabel('y (microns) → top')
-        plt.title(f'Waveguide Simulation - 1550nm Continuous Wave from Left\n'
-                  f'Waveguide width: {self.waveguide_width}um, Index: {self.waveguide_index}')
-
-        # Mark waveguide outline
-        waveguide_rect = Rectangle(
-            (self.waveguide_x_min, -self.waveguide_width/2),
-            self.waveguide_length,
-            self.waveguide_width,
-            linewidth=2.5,
-            edgecolor='yellow',
-            facecolor='none',
-            linestyle='-',
-            alpha=0.9,
-            label='Waveguide outline'
-        )
-        plt.gca().add_patch(waveguide_rect)
-
-        # Mark square region edges (2um x 2um, x from 0 to 2)
-        plt.axvline(x=0, color='lime', linestyle='-', linewidth=2.5,
-                    alpha=0.9, label='2um×2um square edges')
-        plt.axvline(x=2, color='lime', linestyle='-', linewidth=2.5, alpha=0.9)
-        plt.plot([0, 2], [-1, -1], color='lime',
-                 linestyle='-', linewidth=2.5, alpha=0.9)
-        plt.plot([0, 2], [1, 1], color='lime',
-                 linestyle='-', linewidth=2.5, alpha=0.9)
-        plt.legend(loc='upper right', fontsize=10)
-
-        # Save and show
-        if SAVE_FIG:
-            plt.savefig(save_path, dpi=150, bbox_inches='tight')
-        print(f"Simulation complete! Results saved to '{save_path}'")
-        print(
-            f"Waveguide: {self.waveguide_width}um wide, {self.waveguide_index} index")
-        print(
-            f"EigenModeSource: Continuous wave at {self.wavelength}um (1550nm), from left")
-
-        if show_plot:
-            plt.show()
-        else:
-            plt.close()
-    '''
-    def plot_results(self, save_path=None, show_plot=True):
-        """
-        Plot and visualize the simulation results (Ez field + geometry overlays).
-        This version includes input/output waveguides and the output measurement plane.
-        """
-        if self.ez_data is None:
-            self.get_field_data()
-
-        if save_path is None:
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            save_path = f'meep_2d_result_{timestamp}.png'
-        
-        plt.figure(figsize=(12, 6))
-        ax = plt.gca() # Get current axes for adding patches
-
-        # Set extent dynamically based on cell_size
-        extent = [-self.cell_size.x/2, self.cell_size.x/2,
-                -self.cell_size.y/2, self.cell_size.y/2]
-
-        # Plot electric field
         # Transpose ez_data because imshow expects (rows, cols) where rows=y, cols=x
         # Meep's get_array gives (x, y), so transpose for correct orientation
-        plt.imshow(self.ez_data, interpolation='spline36', cmap='RdBu',
-                aspect='auto', extent=extent, origin='lower')
+        field_magnitude = np.abs(self.ez_data)
+        plt.imshow(field_magnitude, interpolation='spline36', cmap='viridis',
+                   aspect='auto', extent=extent, origin='lower')
         plt.colorbar(label='Ez (electric field)')
         plt.xlabel('x (microns)')
         plt.ylabel('y (microns)')
-        plt.title(f'Waveguide Simulation - Ez Field (L_in={self.input_coupler_length}µm, L_out={self.output_coupler_length}µm)')
+        plt.title(
+            f'Waveguide Simulation - Ez Field (L_in={self.input_coupler_length}µm, L_out={self.output_coupler_length}µm)')
+
+        # --- 0. Overlay Material Matrix (if provided) ---
+        silicon_label_added = False
+        silica_label_added = False
+        if material_matrix is not None:
+            material_matrix = np.array(material_matrix)
+            if material_matrix.shape == (self.pixel_num_x, self.pixel_num_y):
+                square_x_min = self.design_region_x_min  # -1.0
+                square_y_min = self.design_region_y_min  # -1.0
+                dx = self.pixel_size
+                dy = self.pixel_size
+
+                # Plot each pixel as a rectangle
+                for i in range(self.pixel_num_x):
+                    for j in range(self.pixel_num_y):
+                        # Calculate lower-left corner position
+                        x_left = square_x_min + i * dx
+                        y_bottom = square_y_min + j * dy
+
+                        if material_matrix[i, j] == 1:
+                            # Silicon - darker grey
+                            ax.add_patch(Rectangle(
+                                (x_left, y_bottom), dx, dy,
+                                facecolor='darkgrey', edgecolor='none', alpha=0.4,
+                                label='Silicon' if not silicon_label_added else ''
+                            ))
+                            if not silicon_label_added:
+                                silicon_label_added = True
+                        else:
+                            # Silica - lighter grey
+                            ax.add_patch(Rectangle(
+                                (x_left, y_bottom), dx, dy,
+                                facecolor='lightgrey', edgecolor='none', alpha=0.4,
+                                label='Silica' if not silica_label_added else ''
+                            ))
+                            if not silica_label_added:
+                                silica_label_added = True
 
         # --- 1. Overlays: Input Waveguide ---
         input_waveguide_x_start = self.design_region_x_min - self.input_coupler_length
@@ -805,7 +657,8 @@ class WaveguideSimulation:
         ))
 
         # --- 2. Overlays: Output Waveguides ---
-        output_y_separation = 0.3 # Use the same fixed separation as in create_geometry
+        # Use the same fixed separation as in create_geometry
+        output_y_separation = self.output_y_separation
         output_waveguide_x_start = self.design_region_x_max
         output_waveguide_length = self.output_coupler_length
 
@@ -815,9 +668,8 @@ class WaveguideSimulation:
             (output_waveguide_x_start, output1_waveguide_y_start),
             output_waveguide_length, self.waveguide_width,
             linewidth=2.5, edgecolor='orange', facecolor='none', linestyle='-', alpha=0.9,
-            label='Output Waveguide Outline' # Only label once
+            label='Output Waveguide Outline'  # Only label once
         ))
-
         # Output Waveguide 2 (Bottom)
         output2_waveguide_y_start = -output_y_separation - self.waveguide_width / 2
         ax.add_patch(Rectangle(
@@ -826,100 +678,101 @@ class WaveguideSimulation:
             linewidth=2.5, edgecolor='orange', facecolor='none', linestyle='-', alpha=0.9
             # No label here to avoid duplicate legend entry
         ))
-
         # --- 3. Overlays: Design Region ---
         ax.add_patch(Rectangle(
-            (self.design_region_x_min, self.design_region_y_min), # Lower-left corner: (-1.0, -1.0)
-            2.0, 2.0, # Width=2.0, Height=2.0
-            linewidth=2.5, edgecolor='lime', facecolor='none', 
+            # Lower-left corner: (-1.0, -1.0)
+            (self.design_region_x_min, self.design_region_y_min),
+            2.0, 2.0,  # Width=2.0, Height=2.0
+            linewidth=2.5, edgecolor='lime', facecolor='none',
             linestyle='--', alpha=0.9, label='Design Region (2x2um)')
         )
 
         # --- 4. Overlays: Output Measurement Plane ---
         # Draw a vertical dashed line at self.output_x
-        plt.axvline(x=self.output_x, color='red', linestyle=':', linewidth=2, 
+        plt.axvline(x=self.output_x, color='red', linestyle=':', linewidth=2,
                     label=f'Output Flux Plane (x={self.output_x}µm)')
-        
+
         # --- 5. Legend and Final Setup ---
         # Use ax.legend() to collect labels from patches
         handles, labels = ax.get_legend_handles_labels()
         # Remove duplicate labels (e.g., if 'Output Waveguide Outline' appears twice)
         unique_handles = {}
         for h, l in zip(handles, labels):
-            unique_handles[l] = h # Dict automatically handles duplicates, keeping last one
-        
+            # Dict automatically handles duplicates, keeping last one
+            unique_handles[l] = h
+
         # FIX: Move legend outside the plot area
-        ax.legend(unique_handles.values(), unique_handles.keys(), 
-              loc='lower right',       # Tells the legend to position its lower-right corner at the anchor point
-              bbox_to_anchor=(0.3, -0.4),   # Sets the anchor point to the bottom-left corner of the axes (x=0, y=0)
-              borderaxespad=0.)        # No padding between the legend and the anchor point
-        
+        ax.legend(unique_handles.values(), unique_handles.keys(),
+                  # Tells the legend to position its lower-right corner at the anchor point
+                  loc='lower right',
+                  # Sets the anchor point to the bottom-left corner of the axes (x=0, y=0)
+                  bbox_to_anchor=(0.3, -0.4),
+                  borderaxespad=0.)        # No padding between the legend and the anchor point
+
         # FIX: Ensure 1:1 scale for the axes
         ax.set_aspect('equal', adjustable='box')
-        
-        plt.tight_layout() # IMPORTANT: Adjust plot to make room for the legend
+
+        plt.tight_layout()  # IMPORTANT: Adjust plot to make room for the legend
 
         # Save and show
         if save_path:
-            plt.savefig(save_path, dpi=150, bbox_inches='tight')
-            print(f"Simulation results saved to '{save_path}'")
-        print(f"Waveguide: {self.waveguide_width}um wide, {self.waveguide_index} index")
-        print(f"EigenModeSource: Continuous wave at {self.wavelength}um, from left")
+            try:
+                # Create directory if it doesn't exist
+                save_dir = os.path.dirname(save_path)
+                if save_dir and not os.path.exists(save_dir):
+                    os.makedirs(save_dir, exist_ok=True)
+                plt.savefig(save_path, dpi=150, bbox_inches='tight')
+                print(f"Simulation results saved to '{save_path}'")
+            except (FileNotFoundError, OSError) as e:
+                print(f"Warning: Could not save plot to '{save_path}': {e}")
+            except Exception as e:
+                print(f"Error saving plot: {e}")
+        print(
+            f"Waveguide: {self.waveguide_width}um wide, {self.waveguide_index} index")
+        print(
+            f"EigenModeSource: Continuous wave at {self.wavelength}um, from left")
 
         if show_plot:
             plt.show()
         else:
             plt.close()
-    def run_full_simulation(self, until=30, save_path=None, show_plot=False,
-                            measure_flux_at_x=None, flux_along_y=False, num_flux_regions=50):
+
+    def plot_distribution(self, output_all_flux, input_flux, save_path=None, show_plot=True):
         """
-        Run complete simulation workflow
+        Plot the flux distribution along the output plane.
 
         Args:
-            until: simulation time
-            save_path: path to save plot
-            show_plot: whether to show plot
-            measure_flux_at_x: if provided, measure flux at this x position
-            flux_along_y: if True, measure flux distribution along y-axis
-            num_flux_regions: number of flux regions for y-axis distribution
+            output_all_flux: 1D array of flux values at each detector position
+            save_path: Optional path to save the plot
+            show_plot: Whether to display the plot
         """
-        # Add flux monitors if requested
-        if measure_flux_at_x is not None:
-            if self.sim is None:
-                self.create_simulation()
+        plt.figure(figsize=(10, 6))
+        plt.plot(output_all_flux/input_flux, 'b-',
+                 linewidth=2, label='Flux Distribution')
+        plt.xlabel('Detector Index')
+        plt.ylabel('Flux Ratio (Output/Input)')
+        plt.title('Flux Distribution Ratio at Output Plane')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
 
-            if flux_along_y:
-                # Add multiple flux monitors along y-axis
-                self.add_flux_monitors_along_y(
-                    measure_flux_at_x, num_regions=num_flux_regions)
-            else:
-                # Add single flux monitor
-                self.add_flux_monitor(measure_flux_at_x)
+        if save_path:
+            try:
+                # Create directory if it doesn't exist
+                save_dir = os.path.dirname(save_path)
+                if save_dir and not os.path.exists(save_dir):
+                    os.makedirs(save_dir, exist_ok=True)
+                plt.savefig(save_path, dpi=150, bbox_inches='tight')
+                print(f"Flux distribution plot saved to '{save_path}'")
+            except (FileNotFoundError, OSError) as e:
+                print(f"Warning: Could not save plot to '{save_path}': {e}")
+            except Exception as e:
+                print(f"Error saving plot: {e}")
 
-        self.run(until=until)
-        self.get_field_data()
-        self.plot_results(save_path=save_path, show_plot=show_plot)
+        if show_plot:
+            plt.show()
+        else:
+            plt.close()
 
-        # Calculate and print flux
-        if self.flux_regions:
-            # Multiple flux regions along y-axis
-            y_positions, flux_values = self.get_flux_distribution_along_y()
-            total_flux = np.sum(flux_values) * (y_positions[1] - y_positions[0]) if len(
-                y_positions) > 1 else np.sum(flux_values)
-            print(f"\nFlux distribution at x = {measure_flux_at_x}:")
-            print(f"  Total flux: {total_flux:.6e}")
-            print(f"  Max flux: {np.max(flux_values):.6e}")
-            print(f"  Min flux: {np.min(flux_values):.6e}")
-
-            # Plot flux distribution
-            self.plot_flux_distribution_y(
-                measure_flux_at_x, save_path=None, show_plot=False)
-
-        elif self.flux is not None:
-            # Single flux monitor
-            flux_value = self.get_flux_value()
-            print(f"\nFlux at x = {measure_flux_at_x}: {flux_value:.6e}")
-    
     def calculate_flux(self, material_matrix):
         # Create simulation
 
@@ -945,54 +798,52 @@ class WaveguideSimulation:
         ez_data = self.get_field_data()
 
         return input_flux_value, output_flux_value_1, output_flux_value_2, output_all_flux, ez_data
-'''
-if __name__ == "__main__":
-    # Example usage
-    material_matrix = np.zeros((50, 50))
-    material_matrix[0:5, :] = 1  # Add silicon at x=0 to 0.2um
 
-    calculator = WaveguideSimulation()
-    flux_array = calculator.calculate_flux(material_matrix)
 
-    print(f"Flux array shape: {flux_array.shape}")
-    print(f"Total flux: {np.sum(flux_array):.6e}")
-    print(f"Max flux: {np.max(flux_array):.6e}")
-    print(f"Min flux: {np.min(flux_array):.6e}")
-'''
 if __name__ == "__main__":
-    
     # Example 1: Standard centered setup
     calculator_A = WaveguideSimulation()
-    
+
     # Create a simple test matrix
-    material_matrix = np.ones((50, 50)) 
+    material_matrix = np.ones((50, 50))
+    material_matrix[25, :] = 0
 
     # Apply the geometry
-    calculator_A.create_geometry(material_matrix=material_matrix) 
+    calculator_A.create_geometry(material_matrix=material_matrix)
 
     # Plot to verify the new centering and lengths
     print("Plotting Centered Geometry (Design at x=[-1, 1])")
     calculator_A.plot_geometry(
-        show_plot=False, 
-        save_path='img/geometry_plot.png', # Provide a file name here
-        x_range=(-3.0, 3.0), 
+        show_plot=False,
+        save_path='sample_img/geometry_plot.png',  # Provide a file name here
+        x_range=(-3.0, 3.0),
         y_range=(-2, 2)
     )
 
     # Example 2: Run a quick simulation test with the new geometry
     calculator_A.create_simulation()
-    
+
     # Since the outputs are separated, define flux monitor location at x=2.5
-    calculator_A.output_x = 2.5 
-    calculator_A.add_flux_monitors_along_y() # Add monitors to measure flux split
-    
+    calculator_A.output_x = 2.5
+    calculator_A.add_flux_monitors_along_y()  # Add monitors to measure flux split
+    calculator_A.add_input_flux_monitor()
+
     print("\nRunning simulation with centered geometry...")
     calculator_A.run()
-    calculator_A.plot_results(
+    calculator_A.plot_design(
+        material_matrix=material_matrix,
         show_plot=False,
-        save_path='img/simulation_ez_field.png' # Provide a file name here
+        save_path='sample_img/meep_simulation_ez_field.png'  # Provide a file name here
     )
-    
+
     # Get total flux
     _, flux_values = calculator_A.get_flux_distribution_along_y()
     print(f"Total flux measured: {np.sum(flux_values):.4e}")
+    # get input flux
+    input_flux = calculator_A.get_input_flux_value()
+    calculator_A.plot_distribution(
+        output_all_flux=flux_values,
+        input_flux=input_flux,
+        show_plot=False,
+        save_path='sample_img/flux_distribution.png'  # Provide a file name here
+    )
