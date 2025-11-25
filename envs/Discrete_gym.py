@@ -176,8 +176,13 @@ class MinimalEnv(gym.Env):
         return observation, reward, terminated, truncated, info
 
     def get_reward(self, input_flux, output_flux_1, output_flux_2):
-        current_score = -((output_flux_1 - input_flux*0.5)**2 +
-                          (output_flux_2 - input_flux*0.5)**2)
+
+        total_transmission= (output_flux_1 + output_flux_2) / input_flux
+        transmission_score = min(max(total_transmission, 0), 1)
+        diff_ratio = abs(output_flux_1 - output_flux_2) / (output_flux_1 + output_flux_2)
+        balance_score = max(1 - diff_ratio, 0)
+
+        current_score = transmission_score * balance_score
         reward = current_score - self.last_score if self.last_score is not None else 0
         self.last_score = current_score
         self.reward_history.append(reward)
