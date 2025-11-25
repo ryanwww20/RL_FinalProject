@@ -9,6 +9,7 @@ from envs.meep_simulation import WaveguideSimulation
 from datetime import datetime
 from config import config
 import os
+import math
 
 
 class MinimalEnv(gym.Env):
