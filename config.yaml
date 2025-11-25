@@ -40,7 +40,8 @@ simulation:
   src_pos_shift_coeff: 0.95
   input_coupler_length: 1.5
   output_coupler_length: 1.5
-  input_waveguide_flux_region_x: -1.0
+  input_flux_monitor_x: -1.5
+  output_flux_monitor_x: 2
 
 plots:
   figsize: [10, 6]

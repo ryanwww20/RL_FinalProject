@@ -80,7 +80,8 @@ class WaveguideSimulation:
         self.pixel_num_x = config.simulation.pixel_num_x
         self.pixel_num_y = config.simulation.pixel_num_y
         self.src_pos_shift_coeff = config.simulation.src_pos_shift_coeff
-        self.input_waveguide_flux_region_x = config.simulation.input_waveguide_flux_region_x
+        self.input_flux_monitor_x = config.simulation.input_flux_monitor_x
+        self.output_flux_monitor_x = config.simulation.output_flux_monitor_x
 
     def create_geometry(self, material_matrix=None):
         """
@@ -451,7 +452,7 @@ class WaveguideSimulation:
             raise ValueError(
                 "Simulation must be created first. Call create_simulation() method.")
         self.input_flux_region = mp.FluxRegion(
-            center=mp.Vector3(self.input_waveguide_flux_region_x, 0, 0),
+            center=mp.Vector3(self.input_flux_monitor_x, 0, 0),
             size=mp.Vector3(0, self.waveguide_width, 0)
         )
         self.input_flux_region = self.sim.add_flux(
@@ -467,14 +468,14 @@ class WaveguideSimulation:
             raise ValueError(
                 "Simulation must be created first. Call create_simulation() method.")
         self.output_flux_region_1 = mp.FluxRegion(
-            center=mp.Vector3(self.output_x, self.output_y_separation, 0),
+            center=mp.Vector3(self.output_flux_monitor_x, self.output_y_separation, 0),
             size=mp.Vector3(0, self.waveguide_width, 0)
         )
         self.output_flux_region_1 = self.sim.add_flux(
             frequency, 0, 1, self.output_flux_region_1)
 
         self.output_flux_region_2 = mp.FluxRegion(
-            center=mp.Vector3(self.output_x, -self.output_y_separation, 0),
+            center=mp.Vector3(self.output_flux_monitor_x, -self.output_y_separation, 0),
             size=mp.Vector3(0, self.waveguide_width, 0)
         )
         self.output_flux_region_2 = self.sim.add_flux(
@@ -891,6 +892,7 @@ if __name__ == "__main__":
     # Since the outputs are separated, define flux monitor location at x=2.5
     calculator_A.add_flux_monitors_along_y()  # Add monitors to measure flux split
     calculator_A.add_input_flux_monitor()
+    calculator_A.add_output_flux_monitors()
     calculator_A.add_design_region_flux_monitor()
 
     print("\nRunning simulation with centered geometry...")
@@ -919,6 +921,12 @@ if __name__ == "__main__":
     print(f"Design region flux value down: {design_region_flux_value_down:.4e}")
     print(f"Design region flux value left: {design_region_flux_value_left:.4e}")
     print(f"Design region flux value right: {design_region_flux_value_right:.4e}")
+
+    output_flux_value_1 = calculator_A.get_output_flux_values_1()
+    output_flux_value_2 = calculator_A.get_output_flux_values_2()
+    print(f"Input flux: {input_flux:.4e}")
+    print(f"Output flux value 1: {output_flux_value_1:.4e}")
+    print(f"Output flux value 2: {output_flux_value_2:.4e}")
 
     end = time.time()       # Record end time
     print("Time elapsed:", end - start, "seconds")
