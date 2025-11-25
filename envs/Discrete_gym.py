@@ -48,6 +48,9 @@ class MinimalEnv(gym.Env):
         self.simulation = WaveguideSimulation()
         self.last_score = None
 
+        self.reward_history = []
+        self.current_score_history = []
+
         # Determine project root and log paths
         # Assuming this file is in envs/ and project root is one level up
         current_file_path = os.path.abspath(__file__)
@@ -147,6 +150,9 @@ class MinimalEnv(gym.Env):
                 show_plot=False
             )
 
+            self.reward_history = []
+            self.current_score_history = []
+
             print(
                 f'Output Flux 1: {output_flux_1/input_flux:.2f}, Output Flux 2: {output_flux_2/input_flux:.2f}, Loss: {(input_flux - (output_flux_1 + output_flux_2))/input_flux:.2f}')
 
@@ -173,5 +179,12 @@ class MinimalEnv(gym.Env):
                           (output_flux_2 - input_flux*0.5)**2)
         reward = current_score - self.last_score if self.last_score is not None else 0
         self.last_score = current_score
+        self.reward_history.append(reward)
+        self.current_score_history.append(current_score)
 
         return current_score, reward
+
+    def normalize_reward(self, current_score, reward):
+        norm_reward = (reward - np.mean(self.reward_history)) / math.sqrt(np.std(self.reward_history) ** 2 + e)
+        norm_current_score = (current_score - np.mean(self.current_score_history)) / math.sqrt(np.std(self.current_score_history) ** 2 + e)
+        return norm_current_score, norm_reward
