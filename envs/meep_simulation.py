@@ -80,6 +80,7 @@ class WaveguideSimulation:
         self.pixel_num_y = config.simulation.pixel_num_y
         self.src_pos_shift_coeff = config.simulation.src_pos_shift_coeff
         self.input_waveguide_flux_region_x = config.simulation.input_waveguide_flux_region_x
+        self.last_output_x_position = None  # Store the last used output x position
 
     def create_geometry(self, material_matrix=None):
         """
@@ -396,12 +397,12 @@ class WaveguideSimulation:
 
         return self.flux
 
-    def add_flux_monitors_along_y(self, region_height=None):
+    def add_flux_monitors_along_y(self, output_x_position=None, region_height=None):
         """
         Add multiple flux monitors along y-axis at a specific x position
 
         Args:
-            x_position: x coordinate in microns where to measure flux
+            output_x_position: x coordinate in microns where to measure flux (default: self.output_x)
             num_regions: number of flux regions along y-axis
             region_height: height of each flux region (default: cell_height / num_regions)
 
@@ -411,6 +412,10 @@ class WaveguideSimulation:
         if self.sim is None:
             raise ValueError(
                 "Simulation must be created first. Call create_simulation() method.")
+
+        # Use provided x_position or default to self.output_x
+        if output_x_position is None:
+            output_x_position = self.output_x
 
         # Calculate frequency from wavelength
         frequency = 1.0 / self.wavelength
@@ -430,7 +435,7 @@ class WaveguideSimulation:
         flux_monitors = []
         for y_pos in y_positions:
             flux_region = mp.FluxRegion(
-                center=mp.Vector3(self.output_x, y_pos, 0),
+                center=mp.Vector3(output_x_position, y_pos, 0),
                 size=mp.Vector3(0, region_height, 0)  # Small vertical segment
             )
             flux_monitor = self.sim.add_flux(frequency, 0, 1, flux_region)
@@ -457,23 +462,31 @@ class WaveguideSimulation:
             frequency, 0, 1, self.input_flux_region)
         return self.input_flux_region
 
-    def add_output_flux_monitors(self):
+    def add_output_flux_monitors(self, output_x_position=None):
         """
         Add flux monitors at the output waveguides
+
+        Args:
+            output_x_position: x coordinate in microns where to measure flux (default: self.output_x)
         """
         frequency = 1.0 / self.wavelength
         if self.sim is None:
             raise ValueError(
                 "Simulation must be created first. Call create_simulation() method.")
+        
+        # Use provided x_position or default to self.output_x
+        if output_x_position is None:
+            output_x_position = self.output_x
+        
         self.output_flux_region_1 = mp.FluxRegion(
-            center=mp.Vector3(self.output_x, self.output_y_separation, 0),
+            center=mp.Vector3(output_x_position, self.output_y_separation, 0),
             size=mp.Vector3(0, self.waveguide_width, 0)
         )
         self.output_flux_region_1 = self.sim.add_flux(
             frequency, 0, 1, self.output_flux_region_1)
 
         self.output_flux_region_2 = mp.FluxRegion(
-            center=mp.Vector3(self.output_x, -self.output_y_separation, 0),
+            center=mp.Vector3(output_x_position, -self.output_y_separation, 0),
             size=mp.Vector3(0, self.waveguide_width, 0)
         )
         self.output_flux_region_2 = self.sim.add_flux(
@@ -571,7 +584,7 @@ class WaveguideSimulation:
         self.ez_data = ez_data.T
         return self.ez_data
 
-    def plot_design(self, material_matrix=None, save_path=None, show_plot=True):
+    def plot_design(self, material_matrix=None, save_path=None, show_plot=True, output_x_position=None):
         """
         Plot and visualize the simulation results (Ez field + geometry overlays).
         This version includes input/output waveguides and the output measurement plane.
@@ -581,6 +594,7 @@ class WaveguideSimulation:
                            If provided, will overlay material distribution as grey boxes.
             save_path: Path to save the plot
             show_plot: Whether to display the plot
+            output_x_position: x coordinate in microns for the output flux plane (default: last used position or self.output_x)
         """
         if self.ez_data is None:
             self.get_field_data()
@@ -688,9 +702,16 @@ class WaveguideSimulation:
         )
 
         # --- 4. Overlays: Output Measurement Plane ---
-        # Draw a vertical dashed line at self.output_x
-        plt.axvline(x=self.output_x, color='red', linestyle=':', linewidth=2,
-                    label=f'Output Flux Plane (x={self.output_x}µm)')
+        # Determine output x position: use provided parameter, or last used position, or default
+        if output_x_position is None:
+            if self.last_output_x_position is not None:
+                output_x_position = self.last_output_x_position
+            else:
+                output_x_position = self.output_x
+        
+        # Draw a vertical dashed line at the output x position
+        plt.axvline(x=output_x_position, color='red', linestyle=':', linewidth=2,
+                    label=f'Output Flux Plane (x={output_x_position:.3f}µm)')
 
         # --- 5. Legend and Final Setup ---
         # Use ax.legend() to collect labels from patches
@@ -773,7 +794,19 @@ class WaveguideSimulation:
         else:
             plt.close()
 
-    def calculate_flux(self, material_matrix):
+    def calculate_flux(self, material_matrix, output_x_position=None):
+        """
+        Calculate flux for the given material matrix
+        
+        Args:
+            material_matrix: 2D array representing material distribution
+            output_x_position: x coordinate in microns where to measure flux (default: self.output_x)
+        """
+        # Store the output x position for use in plotting
+        if output_x_position is None:
+            output_x_position = self.output_x
+        self.last_output_x_position = output_x_position
+
         # Create simulation
 
         # Create geometry with material matrix
@@ -781,9 +814,9 @@ class WaveguideSimulation:
 
         # Create simulation and add flux monitors
         self.create_simulation()
-        self.add_flux_monitors_along_y()
+        self.add_flux_monitors_along_y(output_x_position=output_x_position)
         self.add_input_flux_monitor()
-        self.add_output_flux_monitors()
+        self.add_output_flux_monitors(output_x_position=output_x_position)
 
         # Run simulation
         self.run()

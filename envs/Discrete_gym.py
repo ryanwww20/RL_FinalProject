@@ -48,6 +48,7 @@ class MinimalEnv(gym.Env):
         self.max_steps = config.environment.max_steps
         self.simulation = WaveguideSimulation()
         self.last_score = None
+        self.current_output_x_position = None
 
         self.reward_history = []
         self.current_score_history = []
@@ -109,10 +110,17 @@ class MinimalEnv(gym.Env):
 
         # Action is a binary array of length 50
         self.material_matrix[self.material_matrix_idx] = action
+        
+        # Calculate output plane x-position: left_border of design + pixel_width * matrix_index
+        output_x_position = self.simulation.design_region_x_min + self.simulation.pixel_size * (self.material_matrix_idx+0.5)
+        
         self.material_matrix_idx += 1
 
         input_flux, output_flux_1, output_flux_2, output_all_flux, ez_data = self.simulation.calculate_flux(
-            self.material_matrix)
+            self.material_matrix, output_x_position=output_x_position)
+        
+        # Store output_x_position for use in plotting
+        self.current_output_x_position = output_x_position
         print(f"Input flux: {input_flux:.4e}")
         print(f"Output flux 1: {output_flux_1:.4e}")
         print(f"Output flux 2: {output_flux_2:.4e}")
@@ -148,7 +156,8 @@ class MinimalEnv(gym.Env):
             self.simulation.plot_design(
                 material_matrix=self.material_matrix,
                 save_path=field_img_path,
-                show_plot=False
+                show_plot=False,
+                output_x_position=self.current_output_x_position
             )
 
             self.reward_history = []

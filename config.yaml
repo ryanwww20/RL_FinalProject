@@ -27,7 +27,7 @@ simulation:
   waveguide_center_x: -0.9
   waveguide_length: 1.8
   output_y_separation: 0.6
-  simulation_time: 300
+  simulation_time: 2000
   num_flux_regions: *state_dim_minus_1
   output_x: 2.0
   design_region_x: 2.0
@@ -52,13 +52,13 @@ plots:
 training:
   ppo:
     total_timesteps: 1000000
-    n_envs: 1
+    n_envs: 48
     learning_rate: 0.0003
     n_steps: 50
-    batch_size: 50
-    n_epochs: 50
-    gamma: 0.99
-    gae_lambda: 0.95
+    batch_size: 100
+    n_epochs: 10
+    gamma: 1
+    gae_lambda: 1
     clip_range: 0.2
     ent_coef: 0.01
     vf_coef: 0.5
