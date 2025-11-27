@@ -158,7 +158,7 @@ class MinimalEnv(gym.Env):
         # This gives the agent feedback about the current state
         if self.material_matrix_idx > 0:
             # Calculate current flux as observation
-            observation = output_all_flux.copy()
+            observation = output_all_flux.copy()/input_flux
 
         else:
             # Initial state: return zeros
