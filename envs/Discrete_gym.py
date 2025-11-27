@@ -169,15 +169,15 @@ class MinimalEnv(gym.Env):
             # Initial state: return zeros
             observation = np.zeros(self.obs_size, dtype=np.float32)
 
-        # Info dictionary (can contain debugging info)
-        info = {}
+        # Info dictionary with custom metrics for WandB logging
+        info = self._step_metrics if hasattr(self, '_step_metrics') else {}
         observation = np.append(observation, self.material_matrix_idx)
 
         return observation, reward, terminated, truncated, info
 
     def get_reward(self, input_flux, output_flux_1, output_flux_2):
 
-        total_transmission= (output_flux_1 + output_flux_2) / input_flux
+        total_transmission = (output_flux_1 + output_flux_2) / input_flux
         transmission_score = min(max(total_transmission, 0), 1)
         diff_ratio = abs(output_flux_1 - output_flux_2) / (output_flux_1 + output_flux_2)
         balance_score = max(1 - diff_ratio, 0)
@@ -188,7 +188,23 @@ class MinimalEnv(gym.Env):
         self.reward_history.append(reward)
         self.current_score_history.append(current_score)
 
+        # Calculate ratios for logging
+        output_flux_1_ratio = output_flux_1 / input_flux
+        output_flux_2_ratio = output_flux_2 / input_flux
+        loss_ratio = (input_flux - (output_flux_1 + output_flux_2)) / input_flux
+
         print(f"Total transmission: {total_transmission:.4e}, Transmission score: {transmission_score:.4e}, Balance score: {balance_score:.4e}, Current score: {current_score:.4e}, Reward: {reward:.4e}")
+
+        # Store metrics for info dict
+        self._step_metrics = {
+            "total_transmission": total_transmission,
+            "transmission_score": transmission_score,
+            "balance_score": balance_score,
+            "current_score": current_score,
+            "output_flux_1_ratio": output_flux_1_ratio,
+            "output_flux_2_ratio": output_flux_2_ratio,
+            "loss_ratio": loss_ratio,
+        }
 
         return current_score, reward
 
