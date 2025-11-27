@@ -14,6 +14,16 @@ simulation = WaveguideSimulation()
 input_flux, output_flux_1, output_flux_2, output_all_flux, ez_data = simulation.calculate_flux(
     material_matrix)
 
+total_transmission = (output_flux_1 + output_flux_2) / input_flux
+transmission_score = min(max(total_transmission, 0), 1)
+diff_ratio = abs(output_flux_1 - output_flux_2) / (output_flux_1 + output_flux_2)
+balance_score = max(1 - diff_ratio, 0)
+
+current_score = transmission_score * balance_score
+last_score = current_score
+
+print(f'Total transmission: {total_transmission}, Transmission score: {transmission_score}, Balance score: {balance_score}, Current score: {current_score}')
+
 # plot the flux distribution, using simulation.plot_distribution
 simulation.plot_distribution(
     output_all_flux, input_flux, save_path='sample_img/flux_distribution.png', show_plot=False)
