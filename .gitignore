@@ -4,6 +4,7 @@ __pycache__/
 events.out.tfevents.*
 **/events.out.tfevents.*
 sample_img/
+simul_time_dis/
 
 ppo_model_logs*/
 ppo_tensorboard*/

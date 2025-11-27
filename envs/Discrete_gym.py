@@ -112,7 +112,7 @@ class MinimalEnv(gym.Env):
         self.material_matrix[self.material_matrix_idx] = action
         
         # Calculate output plane x-position: left_border of design + pixel_width * matrix_index
-        output_x_position = self.simulation.design_region_x_min + self.simulation.pixel_size * (self.material_matrix_idx+0.5)
+        output_x_position = self.simulation.design_region_x_min + self.simulation.pixel_size * (self.material_matrix_idx+3)
         
         self.material_matrix_idx += 1
 
@@ -187,10 +187,11 @@ class MinimalEnv(gym.Env):
     def get_reward(self, input_flux, output_flux_1, output_flux_2):
         current_score = -((output_flux_1 - input_flux*0.5)**2 +
                           (output_flux_2 - input_flux*0.5)**2)
+        current_score = current_score / 10**6
         reward = current_score - self.last_score if self.last_score is not None else 0
         self.last_score = current_score
-        self.reward_history.append(reward)
-        self.current_score_history.append(current_score)
+        # self.reward_history.append(reward)
+        # self.current_score_history.append(current_score)
 
         return current_score, reward
 

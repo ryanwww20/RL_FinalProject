@@ -81,6 +81,8 @@ class WaveguideSimulation:
         self.src_pos_shift_coeff = config.simulation.src_pos_shift_coeff
         self.input_waveguide_flux_region_x = config.simulation.input_waveguide_flux_region_x
         self.last_output_x_position = None  # Store the last used output x position
+        self.output_flux_region_list = None  # Store the list of test output flux monitors
+        self.test_output_x_values = None  # Store the x values of the test output flux monitors
 
     def create_geometry(self, material_matrix=None):
         """
@@ -456,7 +458,8 @@ class WaveguideSimulation:
                 "Simulation must be created first. Call create_simulation() method.")
         self.input_flux_region = mp.FluxRegion(
             center=mp.Vector3(self.input_waveguide_flux_region_x, 0, 0),
-            size=mp.Vector3(0, self.waveguide_width, 0)
+            size=mp.Vector3(0, self.design_region_y, 0)
+            # size=mp.Vector3(0, self.waveguide_width, 0)
         )
         self.input_flux_region = self.sim.add_flux(
             frequency, 0, 1, self.input_flux_region)
@@ -768,7 +771,6 @@ class WaveguideSimulation:
             show_plot: Whether to display the plot
         """
         plt.figure(figsize=(10, 6))
-        plt.ylim(0, 2)
         plt.plot(output_all_flux/input_flux, 'b-',
                  linewidth=2, label='Flux Distribution')
         plt.xlabel('Detector Index')
@@ -795,43 +797,143 @@ class WaveguideSimulation:
         else:
             plt.close()
 
-    def calculate_flux(self, material_matrix, output_x_position=None):
+    def add_test_output_flux_monitors(self):
         """
-        Calculate flux for the given material matrix
+        Add test output flux monitors
+        """
+        frequency = 1.0 / self.wavelength
+        self.output_flux_region_list = []
+        for i in range(101):
+            # each monitor is a full plane along x-axis, spaced by cell_size.x, at the end of each layer
+            self.output_flux_region_list.append(mp.FluxRegion(
+                center=mp.Vector3(self.test_output_x_values[i], 0, 0),
+                # size=mp.Vector3(0, 10, 0)
+                size=mp.Vector3(0, self.design_region_y, 0)
+            ))
+            # print the center of the flux region
+            # print(self.output_flux_region_list[i].center.x)
+            self.output_flux_region_list[i] = self.sim.add_flux(frequency, 0, 1, self.output_flux_region_list[i])
+        
+        return self.output_flux_region_list
+
+    def get_test_output_flux_values(self):
+        """
+        Get flux values at the test output flux monitors
+        """
+        if self.output_flux_region_list is None:
+            raise ValueError(
+                "No test output flux monitors added. Call add_test_output_flux_monitors() first.")
+        return [mp.get_fluxes(flux_region)[0] for flux_region in self.output_flux_region_list]
+
+    def calculate_flux(self, material_matrix, output_x_position=None, simulation_times=None):
+        """
+        Calculate flux for the given material matrix with multiple simulation times
         
         Args:
             material_matrix: 2D array representing material distribution
             output_x_position: x coordinate in microns where to measure flux (default: self.output_x)
+            simulation_times: list of simulation times in picoseconds (default: [100, 200, 300, 500, 1000, 2000])
         """
         # Store the output x position for use in plotting
         if output_x_position is None:
             output_x_position = self.output_x
         self.last_output_x_position = output_x_position
 
-        # Create simulation
+        # Default simulation times if not provided
+        if simulation_times is None:
+            # simulation_times = [100, 200, 300]
+            simulation_times = [400, 600, 800, 1000, 1500, 2000]
 
-        # Create geometry with material matrix
+        # Create geometry with material matrix (only once, same for all times)
         self.create_geometry(material_matrix=material_matrix)
 
-        # Create simulation and add flux monitors
-        self.create_simulation()
-        self.add_flux_monitors_along_y(output_x_position=output_x_position)
-        self.add_input_flux_monitor()
-        self.add_output_flux_monitors(output_x_position=output_x_position)
+        # Set up test output x values (same for all times)
+        self.test_output_x_values = [self.design_region_x_min + (i-50) * self.pixel_size for i in range(101)]
 
-        # Run simulation
-        self.run()
+        # Store original simulation time
+        original_simulation_time = self.simulation_time
 
-        # Get flux distribution
-        _, output_all_flux = self.get_flux_distribution_along_y()
-        input_flux_value = self.get_input_flux_value()
-        output_flux_value_1 = self.get_output_flux_values_1()
-        output_flux_value_2 = self.get_output_flux_values_2()
+        # Colors for different simulation times
+        colors = ['b', 'r', 'g', 'm', 'c', 'y', 'k', 'orange', 'purple', 'brown']
+        
+        # Store results for both plots
+        all_flux_ratios = []
+        all_flux_values = []
+        
+        # Run simulation for each time
+        for idx, sim_time in enumerate(simulation_times):
+            print(f"Running simulation with time: {sim_time}ps")
+            
+            # Set simulation time
+            self.simulation_time = sim_time
 
-        # Get field data
-        ez_data = self.get_field_data()
+            # Reset flux region list for new simulation
+            self.output_flux_region_list = None
+            self.input_flux_region = None
 
-        return input_flux_value, output_flux_value_1, output_flux_value_2, output_all_flux, ez_data
+            # Create simulation and add flux monitors (need to recreate for each time)
+            self.create_simulation()
+            self.add_test_output_flux_monitors()
+            self.add_input_flux_monitor()
+
+            # Run simulation
+            self.run()
+
+            # Get flux distribution
+            input_flux_value = self.get_input_flux_value()
+            test_output_flux_values = self.get_test_output_flux_values()
+
+            # Convert to numpy array and calculate ratios
+            test_output_flux_values = np.array(test_output_flux_values)
+            flux_ratios = test_output_flux_values / input_flux_value
+
+            # Store results
+            all_flux_ratios.append(flux_ratios)
+            all_flux_values.append(test_output_flux_values)
+
+            print(f"  Input flux: {input_flux_value:.4e}")
+            print(f"  Max flux ratio: {np.max(flux_ratios):.4f}")
+
+        # Restore original simulation time
+        self.simulation_time = original_simulation_time
+
+        # Plot 1: Flux ratios (divided by input flux)
+        plt.figure(figsize=(10, 6))
+        plt.ylim(0, 2)
+        plt.xlim(-3, 3)
+        
+        for idx, (sim_time, flux_ratios) in enumerate(zip(simulation_times, all_flux_ratios)):
+            color = colors[idx % len(colors)]
+            plt.plot(self.test_output_x_values, flux_ratios, 
+                    color=color, linewidth=2, 
+                    label=f'Simulation Time: {sim_time}ps')
+
+        plt.xlabel('x (microns)')
+        plt.ylabel('Flux Ratio (Output/Input)')
+        plt.title('Flux Distribution Ratio at Test Output Planes (Multiple Simulation Times)')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        plt.savefig(f'test_distribution_design_multiple_times.png', dpi=150, bbox_inches='tight')
+        plt.close()
+
+        # Plot 2: Absolute flux values (not divided by input flux)
+        plt.figure(figsize=(10, 6))
+        # Auto-scale y-axis based on data
+        plt.xlim(-3, 3)
+        
+        for idx, (sim_time, flux_values) in enumerate(zip(simulation_times, all_flux_values)):
+            color = colors[idx % len(colors)]
+            plt.plot(self.test_output_x_values, flux_values, 
+                    color=color, linewidth=2, 
+                    label=f'Simulation Time: {sim_time}ps')
+
+        plt.xlabel('x (microns)')
+        plt.ylabel('Flux (Absolute Value)')
+        plt.title('Flux Distribution at Test Output Planes (Multiple Simulation Times)')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        plt.savefig(f'test_distribution_design_multiple_times_absolute.png', dpi=150, bbox_inches='tight')
+        plt.close()
 
 
 if __name__ == "__main__":
@@ -840,44 +942,7 @@ if __name__ == "__main__":
 
     # Create a simple test matrix
     material_matrix = np.ones((50, 50))
-    material_matrix[25, :] = 0
 
-    # Apply the geometry
-    calculator_A.create_geometry(material_matrix=material_matrix)
+    calculator_A.calculate_flux(material_matrix)
 
-    # Plot to verify the new centering and lengths
-    print("Plotting Centered Geometry (Design at x=[-1, 1])")
-    calculator_A.plot_geometry(
-        show_plot=False,
-        save_path='sample_img/geometry_plot.png',  # Provide a file name here
-        x_range=(-3.0, 3.0),
-        y_range=(-2, 2)
-    )
-
-    # Example 2: Run a quick simulation test with the new geometry
-    calculator_A.create_simulation()
-
-    # Since the outputs are separated, define flux monitor location at x=2.5
-    calculator_A.output_x = 2.5
-    calculator_A.add_flux_monitors_along_y()  # Add monitors to measure flux split
-    calculator_A.add_input_flux_monitor()
-
-    print("\nRunning simulation with centered geometry...")
-    calculator_A.run()
-    calculator_A.plot_design(
-        material_matrix=material_matrix,
-        show_plot=False,
-        save_path='sample_img/meep_simulation_ez_field.png'  # Provide a file name here
-    )
-
-    # Get total flux
-    _, flux_values = calculator_A.get_flux_distribution_along_y()
-    print(f"Total flux measured: {np.sum(flux_values):.4e}")
-    # get input flux
-    input_flux = calculator_A.get_input_flux_value()
-    calculator_A.plot_distribution(
-        output_all_flux=flux_values,
-        input_flux=input_flux,
-        show_plot=False,
-        save_path='sample_img/flux_distribution.png'  # Provide a file name here
-    )
+   
