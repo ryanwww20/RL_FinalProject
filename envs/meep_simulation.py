@@ -5,6 +5,7 @@
 - EigenModeSource with continuous wave at 1550nm, entering from left
 """
 
+import time
 import meep as mp
 import numpy as np
 import matplotlib.pyplot as plt
@@ -468,20 +469,22 @@ class WaveguideSimulation:
             raise ValueError(
                 "Simulation must be created first. Call create_simulation() method.")
         self.output_flux_region_1 = mp.FluxRegion(
-            center=mp.Vector3(self.output_flux_monitor_x, self.output_y_separation, 0),
+            center=mp.Vector3(self.output_flux_monitor_x,
+                              self.output_y_separation, 0),
             size=mp.Vector3(0, self.waveguide_width, 0)
         )
         self.output_flux_region_1 = self.sim.add_flux(
             frequency, 0, 1, self.output_flux_region_1)
 
         self.output_flux_region_2 = mp.FluxRegion(
-            center=mp.Vector3(self.output_flux_monitor_x, -self.output_y_separation, 0),
+            center=mp.Vector3(self.output_flux_monitor_x, -
+                              self.output_y_separation, 0),
             size=mp.Vector3(0, self.waveguide_width, 0)
         )
         self.output_flux_region_2 = self.sim.add_flux(
             frequency, 0, 1, self.output_flux_region_2)
         return self.output_flux_region_1, self.output_flux_region_2
-    
+
     def add_design_region_flux_monitor(self):
         """
         Add flux monitor at the design region
@@ -496,21 +499,21 @@ class WaveguideSimulation:
         )
         self.design_region_flux_region_up = self.sim.add_flux(
             frequency, 0, 1, self.design_region_flux_region_up)
-        
+
         self.design_region_flux_region_down = mp.FluxRegion(
             center=mp.Vector3(0, -1, 0),
             size=mp.Vector3(self.design_region_x, 0, 0)
         )
         self.design_region_flux_region_down = self.sim.add_flux(
             frequency, 0, 1, self.design_region_flux_region_down)
-        
+
         self.design_region_flux_region_left = mp.FluxRegion(
             center=mp.Vector3(-1, 0, 0),
             size=mp.Vector3(0, self.design_region_y, 0)
         )
         self.design_region_flux_region_left = self.sim.add_flux(
             frequency, 0, 1, self.design_region_flux_region_left)
-        
+
         self.design_region_flux_region_right = mp.FluxRegion(
             center=mp.Vector3(1, 0, 0),
             size=mp.Vector3(0, self.design_region_y, 0)
@@ -582,7 +585,6 @@ class WaveguideSimulation:
                 "No output flux monitors added. Call add_output_flux_monitors() first.")
         return mp.get_fluxes(self.output_flux_region_2)[0]
 
-
     def get_design_region_flux_value(self):
 
         return mp.get_fluxes(self.design_region_flux_region_up)[0], mp.get_fluxes(self.design_region_flux_region_down)[0], mp.get_fluxes(self.design_region_flux_region_left)[0], mp.get_fluxes(self.design_region_flux_region_right)[0]
@@ -645,7 +647,7 @@ class WaveguideSimulation:
         """
         if self.ez_data is None:
             self.get_ezfield_data()
-        
+
         if self.hz_data is None:
             self.get_hzfield_data()
 
@@ -859,14 +861,13 @@ class WaveguideSimulation:
         output_flux_value_2 = self.get_output_flux_values_2()
 
         # Get field data
-        ez_data = self.get_field_data()
+        ez_data = self.get_ezfield_data()
 
         return input_flux_value, output_flux_value_1, output_flux_value_2, output_all_flux, ez_data
 
-import time
 
 if __name__ == "__main__":
-    start = time.time() 
+    start = time.time()
     # Example 1: Standard centered setup
     calculator_A = WaveguideSimulation()
 
@@ -897,7 +898,7 @@ if __name__ == "__main__":
 
     print("\nRunning simulation with centered geometry...")
     calculator_A.run()
-    print("output_x",calculator_A.output_x)
+    print("output_x", calculator_A.output_x)
     calculator_A.plot_design(
         material_matrix=material_matrix,
         show_plot=False,
@@ -918,9 +919,12 @@ if __name__ == "__main__":
 
     design_region_flux_value_up, design_region_flux_value_down, design_region_flux_value_left, design_region_flux_value_right = calculator_A.get_design_region_flux_value()
     print(f"Design region flux value up: {design_region_flux_value_up:.4e}")
-    print(f"Design region flux value down: {design_region_flux_value_down:.4e}")
-    print(f"Design region flux value left: {design_region_flux_value_left:.4e}")
-    print(f"Design region flux value right: {design_region_flux_value_right:.4e}")
+    print(
+        f"Design region flux value down: {design_region_flux_value_down:.4e}")
+    print(
+        f"Design region flux value left: {design_region_flux_value_left:.4e}")
+    print(
+        f"Design region flux value right: {design_region_flux_value_right:.4e}")
 
     output_flux_value_1 = calculator_A.get_output_flux_values_1()
     output_flux_value_2 = calculator_A.get_output_flux_values_2()
