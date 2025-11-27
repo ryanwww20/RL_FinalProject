@@ -4,11 +4,10 @@ import sys
 import numpy as np
 from envs.meep_simulation import WaveguideSimulation
 
-def main():
-    parser = argparse.ArgumentParser(description='Run quick simulation from a material matrix file.')
-    parser.add_argument('matrix_file', type=str, nargs='?', default='matrix_for_quick_simulation.txt',
-                        help='Path to the text file containing the material matrix (default: matrix_for_quick_simulation.txt)')
-    args = parser.parse_args()
+# read from matrix_for_quick_simulation.txt
+with open('matrix_for_quick_simulation_20x20.txt', 'r') as file:
+    material_matrix = np.array(
+        [list(map(int, line.strip().split())) for line in file.readlines()])
 
     try:
         with open(args.matrix_file, 'r') as file:
