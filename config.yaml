@@ -68,7 +68,7 @@ training:
     save_path: models/ppo_model
     wandb_project: "RL_FinalProject" # Set to your project name to enable wandb logging
     wandb_entity: null
-    wandb_run_name: PPO_test
+    wandb_run_name: PPO_norm_reward
   sac:
     total_timesteps: 1000000
     learning_rate: 0.0003 # 0.0001 0.0003 0.001
