@@ -863,9 +863,9 @@ class WaveguideSimulation:
         output_flux_value_2 = self.get_output_flux_values_2()
 
         # Get field data
-        ez_data = self.get_ezfield_data()
+        hz_data = self.get_hzfield_data()
 
-        return input_flux_value, output_flux_value_1, output_flux_value_2, output_all_flux, ez_data
+        return input_flux_value, output_flux_value_1, output_flux_value_2, output_all_flux, hz_data
 
 
 if __name__ == "__main__":

@@ -185,4 +185,6 @@ class MinimalEnv(gym.Env):
         reward = current_score - self.last_score if self.last_score is not None else 0
         self.last_score = current_score
 
+        print(f"Total transmission: {total_transmission:.4e}, Transmission score: {transmission_score:.4e}, Balance score: {balance_score:.4e}, Current score: {current_score:.4e}, Reward: {reward:.4e}")
+
         return current_score, reward
