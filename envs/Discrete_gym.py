@@ -9,8 +9,9 @@ from envs.meep_simulation import WaveguideSimulation
 from datetime import datetime
 from config import config
 import os
+import math
 
-
+e = 1e-6
 class MinimalEnv(gym.Env):
 
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
@@ -47,6 +48,8 @@ class MinimalEnv(gym.Env):
         self.max_steps = config.environment.max_steps
         self.simulation = WaveguideSimulation()
         self.last_score = None
+        self.reward_history = []
+        self.current_score_history = []
 
         # Determine project root and log paths
         # Assuming this file is in envs/ and project root is one level up
@@ -115,6 +118,8 @@ class MinimalEnv(gym.Env):
 
         current_score, reward = self.get_reward(
             input_flux, output_flux_1, output_flux_2)
+        current_score, reward = self.normalize_reward(current_score, reward)
+
         # Save reward to CSV
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         csv_path = os.path.join(self.log_dir, 'episode_rewards.csv')
@@ -177,6 +182,8 @@ class MinimalEnv(gym.Env):
 
         current_score = transmission_score * balance_score
         reward = current_score - self.last_score if self.last_score is not None else 0
+        self.reward_history.append(reward)
+        self.current_score_history.append(current_score)
         self.last_score = current_score
 
         # Calculate ratios for logging
@@ -198,3 +205,8 @@ class MinimalEnv(gym.Env):
         }
 
         return current_score, reward
+
+    def normalize_reward(self, current_score, reward):
+        norm_reward = (reward - np.mean(self.reward_history)) / math.sqrt(np.std(self.reward_history) ** 2 + e)
+        norm_current_score = (current_score - np.mean(self.current_score_history)) / math.sqrt(np.std(self.current_score_history) ** 2 + e)
+        return norm_current_score, norm_reward
