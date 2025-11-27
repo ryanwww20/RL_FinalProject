@@ -15,8 +15,7 @@ def main():
             material_matrix = np.array(
                 [list(map(int, line.strip().split())) for line in file.readlines()])
             # Preserve the transformations from the original script
-            material_matrix = np.flipud(material_matrix)
-            material_matrix = material_matrix.T 
+            material_matrix = np.rot90(material_matrix, k=-1)
     except FileNotFoundError:
         print(f"Error: File '{args.matrix_file}' not found.")
         sys.exit(1)
