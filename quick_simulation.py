@@ -30,23 +30,31 @@ with open('matrix_for_quick_simulation_20x20.txt', 'r') as file:
     input_flux, output_flux_1, output_flux_2, output_all_flux, field_data = simulation.calculate_flux(
         material_matrix)
 
-    # plot the flux distribution, using simulation.plot_distribution
-    simulation.plot_distribution(
-        output_all_flux, input_flux, save_path='sample_img/flux_distribution.png', show_plot=False)
-    simulation.plot_design(
-        material_matrix, save_path='sample_img/design.png', show_plot=False)
+total_transmission = (output_flux_1 + output_flux_2) / input_flux
+transmission_score = min(max(total_transmission, 0), 1)
+diff_ratio = abs(output_flux_1 - output_flux_2) / (output_flux_1 + output_flux_2)
+balance_score = max(1 - diff_ratio, 0)
 
-    # calculate the loss, format to .4f
-    print('=============== Flux Results ===============')
-    print(f'Input Flux: {input_flux:.4f}')
-    if input_flux != 0:
-        print(f'Output Flux 1: {output_flux_1/input_flux*100:.2f}%')
-        print(f'Output Flux 2: {output_flux_2/input_flux*100:.2f}%')
-        print(f'Loss: {(input_flux - (output_flux_1 + output_flux_2))/input_flux*100:.2f}%')
-        print(f'Output_all_flux: {sum(output_all_flux)/input_flux*100:.2f}%')
-    else:
-        print("Input Flux is 0, cannot calculate percentages.")
-    print('============================================')
+current_score = transmission_score * balance_score
+last_score = current_score
 
-if __name__ == "__main__":
-    main()
+print(f'Total transmission: {total_transmission}, Transmission score: {transmission_score}, Balance score: {balance_score}, Current score: {current_score}')
+
+# plot the flux distribution, using simulation.plot_distribution
+simulation.plot_distribution(
+    output_all_flux, input_flux, save_path='sample_img/flux_distribution.png', show_plot=False)
+simulation.plot_design(
+    material_matrix, save_path='sample_img/design.png', show_plot=False)
+
+# calculate the loss, format to .4f
+print('=============== Flux Results ===============')
+print(f'Input Flux: {input_flux:.4f}')
+if input_flux != 0:
+    print(f'Output Flux 1: {output_flux_1/input_flux*100:.2f}%')
+    print(f'Output Flux 2: {output_flux_2/input_flux*100:.2f}%')
+    print(f'Loss: {(input_flux - (output_flux_1 + output_flux_2))/input_flux*100:.2f}%')
+    print(f'Output_all_flux: {sum(output_all_flux)/input_flux*100:.2f}%')
+else:
+    print("Input Flux is 0, cannot calculate percentages.")
+print('============================================')
+
