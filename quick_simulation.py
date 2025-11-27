@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # read from matrix_for_quick_simulation.txt
-with open('matrix_for_quick_simulation.txt', 'r') as file:
+with open('matrix_for_quick_simulation_20x20.txt', 'r') as file:
     material_matrix = np.array(
         [list(map(int, line.strip().split())) for line in file.readlines()])
 
