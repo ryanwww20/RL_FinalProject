@@ -106,9 +106,11 @@ class MinimalEnv(gym.Env):
         # Action is a binary array of length 50
         self.material_matrix[self.material_matrix_idx] = action
         self.material_matrix_idx += 1
+        output_plane_x = -1 + (self.material_matrix_idx+0.1) * \
+            config.simulation.pixel_size
 
         input_flux, output_flux_1, output_flux_2, output_all_flux, ez_data = self.simulation.calculate_flux(
-            self.material_matrix)
+            self.material_matrix, output_plane_x=output_plane_x)
         print(f"Input flux: {input_flux:.4e}")
         print(f"Output flux 1: {output_flux_1:.4e}")
         print(f"Output flux 2: {output_flux_2:.4e}")

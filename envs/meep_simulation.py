@@ -839,8 +839,10 @@ class WaveguideSimulation:
         else:
             plt.close()
 
-    def calculate_flux(self, material_matrix):
-        # Create simulation
+    def calculate_flux(self, material_matrix, output_plane_x=None):
+
+        if output_plane_x is not None:
+            self.output_x = output_plane_x
 
         # Create geometry with material matrix
         self.create_geometry(material_matrix=material_matrix)
