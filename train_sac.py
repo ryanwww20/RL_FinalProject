@@ -9,6 +9,8 @@ from pathlib import Path
 from datetime import datetime
 
 import yaml
+import wandb
+from wandb.integration.sb3 import WandbCallback
 from stable_baselines3 import SAC
 from envs.Continuous_gym import MinimalEnv
 
@@ -30,6 +32,10 @@ TRAIN_SAC_KWARGS = {
     "use_sde",
     "tensorboard_log",
     "save_path",
+    "wandb_project",
+    "wandb_entity",
+    "wandb_run_name",
+    "wandb_tags",
 }
 
 
@@ -48,7 +54,11 @@ def train_sac(
     target_entropy="auto",
     use_sde=False,
     tensorboard_log="./sac_tensorboard/",
-    save_path="./sac_model"
+    save_path="./sac_model",
+    wandb_project=None,
+    wandb_entity=None,
+    wandb_run_name=None,
+    wandb_tags=None,
 ):
     """
     Train a SAC agent on the MinimalEnv environment.
@@ -69,7 +79,28 @@ def train_sac(
         use_sde: Whether to use State Dependent Exploration
         tensorboard_log: Directory for tensorboard logs
         save_path: Path to save the trained model
+        wandb_project: WandB project name (optional)
+        wandb_entity: WandB entity/username (optional)
+        wandb_run_name: WandB run name (optional)
+        wandb_tags: List of tags for WandB run (optional)
     """
+
+    # Initialize WandB if project name is provided
+    callback = None
+    if wandb_project:
+        run = wandb.init(
+            project=wandb_project,
+            entity=wandb_entity,
+            name=wandb_run_name,
+            tags=wandb_tags,
+            sync_tensorboard=True,  # Sync TensorBoard logs
+            monitor_gym=True,       # Monitor Gym environment
+            save_code=True,         # Save code
+        )
+        callback = WandbCallback(
+            model_save_path=f"models/{run.id}",
+            verbose=2,
+        )
 
     print("Creating environment...")
     env = MinimalEnv(render_mode=None)
@@ -104,6 +135,7 @@ def train_sac(
     try:
         model.learn(
             total_timesteps=total_timesteps,
+            callback=callback,
             progress_bar=False  # Set to False to avoid tqdm/rich dependency
         )
     except KeyboardInterrupt:
@@ -128,6 +160,9 @@ def train_sac(
     # Test the trained model
     print("\nTesting trained model...")
     test_model(model, eval_env, n_episodes=5)
+
+    if wandb_project:
+        wandb.finish()
 
     return model
 
