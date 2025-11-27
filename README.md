@@ -13,7 +13,7 @@ Ensure you have the following installed:
 - NumPy, Matplotlib, Pandas, PyYAML
 
 ```bash
-pip install stable-baselines3 gymnasium numpy matplotlib pandas pyyaml
+pip install stable-baselines3 gymnasium numpy matplotlib pandas pyyaml tensorboard
 # Install meep according to official instructions (e.g., via conda)
 conda install -c conda-forge pymeep
 ```
