@@ -12,7 +12,44 @@ import yaml
 import wandb
 from wandb.integration.sb3 import WandbCallback
 from stable_baselines3 import SAC
+from stable_baselines3.common.callbacks import BaseCallback
 from envs.Continuous_gym import MinimalEnv
+
+
+class CustomMetricsCallback(BaseCallback):
+    """
+    Custom callback to log environment-specific metrics to WandB.
+    Logs every step for detailed tracking.
+    """
+    def __init__(self, verbose=0):
+        super().__init__(verbose)
+        self.metric_keys = [
+            "total_transmission",
+            "transmission_score",
+            "balance_score",
+            "current_score",
+            "output_flux_1_ratio",
+            "output_flux_2_ratio",
+            "loss_ratio",
+        ]
+
+    def _on_step(self) -> bool:
+        # Get info from the environment
+        infos = self.locals.get("infos", [])
+        if not isinstance(infos, list):
+            infos = [infos]
+        for info in infos:
+            if isinstance(info, dict):
+                metrics_to_log = {}
+                for key in self.metric_keys:
+                    if key in info:
+                        metrics_to_log[f"env/{key}"] = info[key]
+                
+                # Log immediately if we have metrics
+                if metrics_to_log:
+                    wandb.log(metrics_to_log, step=self.num_timesteps)
+
+        return True
 
 CONFIG_ENV_VAR = "TRAINING_CONFIG_PATH"
 DEFAULT_CONFIG_PATH = Path(__file__).resolve().parent / "config.yaml"
@@ -86,7 +123,7 @@ def train_sac(
     """
 
     # Initialize WandB if project name is provided
-    callback = None
+    callbacks = []
     if wandb_project:
         run = wandb.init(
             project=wandb_project,
@@ -97,10 +134,11 @@ def train_sac(
             monitor_gym=True,       # Monitor Gym environment
             save_code=True,         # Save code
         )
-        callback = WandbCallback(
+        callbacks.append(WandbCallback(
             model_save_path=f"models/{run.id}",
             verbose=2,
-        )
+        ))
+        callbacks.append(CustomMetricsCallback(verbose=1))
 
     print("Creating environment...")
     env = MinimalEnv(render_mode=None)
@@ -135,7 +173,7 @@ def train_sac(
     try:
         model.learn(
             total_timesteps=total_timesteps,
-            callback=callback,
+            callback=callbacks if callbacks else None,
             progress_bar=False  # Set to False to avoid tqdm/rich dependency
         )
     except KeyboardInterrupt:
