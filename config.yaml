@@ -66,6 +66,9 @@ training:
     max_grad_norm: 0.5
     tensorboard_log: ./ppo_tensorboard/
     save_path: models/ppo_model
+    wandb_project: "RL_FinalProject" # Set to your project name to enable wandb logging
+    wandb_entity: null
+    wandb_run_name: PPO_test
   sac:
     total_timesteps: 1000000
     learning_rate: 0.0003 # 0.0001 0.0003 0.001
@@ -82,3 +85,6 @@ training:
     use_sde: false
     tensorboard_log: ./sac_tensorboard/
     save_path: models/sac_model
+    wandb_project: "RL_FinalProject" # Set to your project name to enable wandb logging
+    wandb_entity: null
+    wandb_run_name: PPO_test
