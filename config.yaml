@@ -29,7 +29,7 @@ simulation:
   output_y_separation: 0.6
   simulation_time: 400
   num_flux_regions: *state_dim_minus_1
-  output_x: 1
+  output_x: 2
   design_region_x: 2.0
   design_region_y: 2.0
   pixel_size: 0.1

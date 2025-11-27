@@ -696,7 +696,7 @@ class WaveguideSimulation:
                             # Silicon - darker grey
                             ax.add_patch(Rectangle(
                                 (x_left, y_bottom), dx, dy,
-                                facecolor='darkgrey', edgecolor='none', alpha=0.4,
+                                facecolor='black', edgecolor='none', alpha=0.4,
                                 label='Silicon' if not silicon_label_added else ''
                             ))
                             if not silicon_label_added:
@@ -875,6 +875,9 @@ if __name__ == "__main__":
 
     # Create a simple test matrix
     material_matrix = np.ones((20, 20))
+    # material_matrix[19, :] = 0
+    # material_matrix[18, :] = 0
+    # material_matrix[17, :] = 0
     # material_matrix[25, :] = 0
 
     # Apply the geometry
