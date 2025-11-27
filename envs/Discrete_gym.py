@@ -188,6 +188,8 @@ class MinimalEnv(gym.Env):
         self.reward_history.append(reward)
         self.current_score_history.append(current_score)
 
+        print(f"Total transmission: {total_transmission:.4e}, Transmission score: {transmission_score:.4e}, Balance score: {balance_score:.4e}, Current score: {current_score:.4e}, Reward: {reward:.4e}")
+
         return current_score, reward
 
     def normalize_reward(self, current_score, reward):
