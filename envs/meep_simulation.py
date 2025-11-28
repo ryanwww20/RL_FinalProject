@@ -567,6 +567,40 @@ class WaveguideSimulation:
                 "No flux monitor added. Call add_flux_monitor() first.")
         return mp.get_fluxes(self.input_flux_region)[0]
 
+    def get_input_mode_coefficient(self, band_num=1):
+        """
+        Get mode coefficient (power) at input waveguide using eigenmode expansion.
+        
+        Args:
+            band_num: The mode band number (1 = fundamental mode TE0)
+            
+        Returns:
+            Mode power (|alpha|^2) for the specified mode at input
+        """
+        if self.sim is None:
+            raise ValueError(
+                "Simulation must be run first. Call run() method.")
+        if self.input_flux_region is None:
+            raise ValueError(
+                "No input flux monitor added. Call add_input_flux_monitor() first.")
+        
+        # Get eigenmode coefficients at input
+        res = self.sim.get_eigenmode_coefficients(
+            self.input_flux_region, 
+            [band_num],
+            eig_parity=mp.NO_PARITY,
+            direction=mp.X
+        )
+        
+        # alpha[band_idx, freq_idx, direction_idx]
+        # direction_idx=0 for forward (+X direction)
+        alpha_forward = res.alpha[0, 0, 0]
+        
+        # Mode power = |alpha|^2
+        mode_power = np.abs(alpha_forward) ** 2
+        
+        return mode_power
+
     def get_output_flux_values_1(self):
         """
         Get flux values at the output waveguides
@@ -584,6 +618,75 @@ class WaveguideSimulation:
             raise ValueError(
                 "No output flux monitors added. Call add_output_flux_monitors() first.")
         return mp.get_fluxes(self.output_flux_region_2)[0]
+
+    def get_output_mode_coefficient_1(self, band_num=1):
+        """
+        Get mode coefficient (transmission) at output waveguide 1 using eigenmode expansion.
+        
+        Args:
+            band_num: The mode band number (1 = fundamental mode TE0)
+            
+        Returns:
+            Mode transmission power (|alpha|^2) for the specified mode
+        """
+        if self.sim is None:
+            raise ValueError(
+                "Simulation must be run first. Call run() method.")
+        if self.output_flux_region_1 is None:
+            raise ValueError(
+                "No output flux monitors added. Call add_output_flux_monitors() first.")
+        
+        # Get eigenmode coefficients
+        # Returns EigenmodeData with alpha array of shape (num_bands, num_freqs, 2)
+        # The last dimension is [forward, backward] coefficients
+        res = self.sim.get_eigenmode_coefficients(
+            self.output_flux_region_1, 
+            [band_num],
+            eig_parity=mp.NO_PARITY,
+            direction=mp.X
+        )
+        
+        # alpha[band_idx, freq_idx, direction_idx]
+        # band_idx=0 for first band, freq_idx=0 for single frequency, direction_idx=0 for forward
+        alpha_forward = res.alpha[0, 0, 0]
+        
+        # Mode transmission = |alpha|^2
+        mode_transmission = np.abs(alpha_forward) ** 2
+        
+        return mode_transmission
+
+    def get_output_mode_coefficient_2(self, band_num=1):
+        """
+        Get mode coefficient (transmission) at output waveguide 2 using eigenmode expansion.
+        
+        Args:
+            band_num: The mode band number (1 = fundamental mode TE0)
+            
+        Returns:
+            Mode transmission power (|alpha|^2) for the specified mode
+        """
+        if self.sim is None:
+            raise ValueError(
+                "Simulation must be run first. Call run() method.")
+        if self.output_flux_region_2 is None:
+            raise ValueError(
+                "No output flux monitors added. Call add_output_flux_monitors() first.")
+        
+        # Get eigenmode coefficients
+        res = self.sim.get_eigenmode_coefficients(
+            self.output_flux_region_2, 
+            [band_num],
+            eig_parity=mp.NO_PARITY,
+            direction=mp.X
+        )
+        
+        # alpha[band_idx, freq_idx, direction_idx]
+        alpha_forward = res.alpha[0, 0, 0]
+        
+        # Mode transmission = |alpha|^2
+        mode_transmission = np.abs(alpha_forward) ** 2
+        
+        return mode_transmission
 
     def get_design_region_flux_value(self):
 
@@ -861,11 +964,16 @@ class WaveguideSimulation:
         input_flux_value = self.get_input_flux_value()
         output_flux_value_1 = self.get_output_flux_values_1()
         output_flux_value_2 = self.get_output_flux_values_2()
+        
+        # Get mode coefficients (fundamental mode transmission)
+        input_mode = self.get_input_mode_coefficient(band_num=1)
+        output_mode_1 = self.get_output_mode_coefficient_1(band_num=1)
+        output_mode_2 = self.get_output_mode_coefficient_2(band_num=1)
 
         # Get field data
         hz_data = self.get_hzfield_data()
 
-        return input_flux_value, output_flux_value_1, output_flux_value_2, output_all_flux, hz_data
+        return input_flux_value, output_flux_value_1, output_flux_value_2, output_all_flux, hz_data, input_mode, output_mode_1, output_mode_2
 
 
 if __name__ == "__main__":
