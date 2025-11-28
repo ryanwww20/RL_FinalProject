@@ -113,10 +113,14 @@ class MinimalEnv(gym.Env):
             config.simulation.pixel_size
 
         input_flux, output_flux_1, output_flux_2, output_all_flux, ez_data = self.simulation.calculate_flux(
-            self.material_matrix, output_plane_x=output_plane_x)
-        # print(f"Input flux: {input_flux:.4e}")
-        # print(f"Output flux 1: {output_flux_1:.4e}")
-        # print(f"Output flux 2: {output_flux_2:.4e}")
+            self.material_matrix)
+        print('=============== Flux Results ===============')
+        print(f'Input Flux: {input_flux:.4f}')
+        print(f'Output Flux 1: {output_flux_1:.4f}')
+        print(f'Output Flux 2: {output_flux_2:.4f}')
+        print(f'Output Flux 1 ratio: {output_flux_1/input_flux*100:.2f}%\nOutput Flux 2 ratio: {output_flux_2/input_flux*100:.2f}%\nLoss ratio: {(input_flux - (output_flux_1 + output_flux_2))/input_flux*100:.2f}%')
+        print(f'Output_all_flux: {sum(output_all_flux)/input_flux*100:.2f}%')
+        print('============================================')
 
         current_score, reward = self.get_reward(
             input_flux, output_flux_1, output_flux_2)
