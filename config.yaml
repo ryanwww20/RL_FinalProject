@@ -72,6 +72,7 @@ training:
     wandb_run_name: PPO_mode_output
   sac:
     total_timesteps: 1000000
+    n_envs: 1
     learning_rate: 0.0003 # 0.0001 0.0003 0.001
     buffer_size: 100000
     learning_starts: 1000
