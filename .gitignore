@@ -17,6 +17,5 @@ models/
 
 .DS_Store
 
-
 job.sh
 rl_log_*.txt
