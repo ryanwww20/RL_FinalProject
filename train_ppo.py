@@ -98,7 +98,7 @@ class TrainingCallback(BaseCallback):
             
             # For plotting, use the first environment's data (as representative)
             material_matrix = all_metrics[0]['material_matrix']
-            efield_state = all_metrics[0]['efield_state']
+            hzfield_state = all_metrics[0]['hzfield_state']
             
         except Exception as e:
             print(f"Warning: Could not access environment attributes: {e}")
@@ -136,7 +136,7 @@ class TrainingCallback(BaseCallback):
             print(f"Warning: Could not save design plot: {e}")
         
         # Plot and save distribution
-        if efield_state is not None:
+        if hzfield_state is not None:
             distribution_path = self.distribution_dir / f"distribution_rollout_{self.rollout_count:04d}.png"
             self.distribution_image_paths.append(str(distribution_path))
             try:

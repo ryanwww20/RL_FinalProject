@@ -67,10 +67,10 @@ class MinimalEnv(gym.Env):
         self.material_matrix_idx = 0
         self.last_score = None
 
-        # Use calculate_flux to get initial efield_state for empty matrix
-        # This returns: input_mode_flux, output_mode_flux_1, output_mode_flux_2, efield_state, hz_data, input_mode, output_mode_1, output_mode_2
-        _, _, _, efield_state, _, _, _, _ = self.simulation.calculate_flux(self.material_matrix)
-        observation = efield_state.copy().astype(np.float32)
+        # Use calculate_flux to get initial hzfield_state for empty matrix
+        # This returns: input_mode_flux, output_mode_flux_1, output_mode_flux_2, hzfield_state, hz_data, input_mode, output_mode_1, output_mode_2
+        _, _, _, _, hzfield_state, _, _, _, _ = self.simulation.calculate_flux(self.material_matrix)
+        observation = hzfield_state.copy().astype(np.float32)
         # Append material_matrix_idx to match observation space shape (same as in step function)
         observation = np.append(observation, self.material_matrix_idx)
         info = {}
@@ -100,9 +100,8 @@ class MinimalEnv(gym.Env):
         self.material_matrix[self.material_matrix_idx] = action
         self.material_matrix_idx += 1
 
-        # calculate_flux returns: input_mode_flux, output_mode_flux_1, output_mode_flux_2, efield_state, hz_data, input_mode, output_mode_1, output_mode_2
-        _, _, _, efield_state, _, _, _, _ = self.simulation.calculate_flux(
-            self.material_matrix)
+        # calculate_flux returns: input_mode_flux, output_mode_flux_1, output_mode_flux_2, ezfield_state, hzfield_state, hz_data, input_mode, output_mode_1, output_mode_2
+        _, _, _, _, hzfield_state, _, _, _, _ = self.simulation.calculate_flux(self.material_matrix)
 
         # Use MODE coefficients for reward calculation (instead of raw flux)
         current_score, reward = self.get_reward()
@@ -114,7 +113,7 @@ class MinimalEnv(gym.Env):
         if terminated:
             self.last_episode_metrics = {
                 'material_matrix': self.material_matrix.copy(),
-                'efield_state': efield_state.copy(),
+                'hzfield_state': hzfield_state.copy(),
                 'total_transmission': self._step_metrics['total_transmission'],
                 'transmission_1': self._step_metrics['transmission_1'],
                 'transmission_2': self._step_metrics['transmission_2'],
@@ -122,11 +121,11 @@ class MinimalEnv(gym.Env):
                 'current_score': self._step_metrics['current_score'],
             }
 
-        # Get observation - return the current efield_state as observation
+        # Get observation - return the current hzfield_state as observation
         # This gives the agent feedback about the current state
         if self.material_matrix_idx > 0:
-            # Use efield_state directly as observation
-            observation = efield_state.copy().astype(np.float32)
+            # Use hzfield_state directly as observation
+            observation = hzfield_state.copy().astype(np.float32)
 
         else:
             # Initial state: return zeros
@@ -185,7 +184,7 @@ class MinimalEnv(gym.Env):
             return self.last_episode_metrics
         
         # Fallback: return current state (for first rollout before any episode completes)
-        _, _, _, efield_state, _, _, _, _ = self.simulation.calculate_flux(self.material_matrix)
+        _, _, _, _, hzfield_state, _, _, _, _ = self.simulation.calculate_flux(self.material_matrix)
         
         transmission_1, transmission_2, total_transmission, diff_transmission = \
             self.simulation.get_output_transmission(band_num=1)
@@ -201,7 +200,7 @@ class MinimalEnv(gym.Env):
         
         return {
             'material_matrix': self.material_matrix.copy(),
-            'efield_state': efield_state,
+            'hzfield_state': hzfield_state,
             'total_transmission': total_transmission,
             'transmission_1': transmission_1,
             'transmission_2': transmission_2,
@@ -224,13 +223,13 @@ class MinimalEnv(gym.Env):
 
     def save_distribution_plot(self, save_path):
         """Save distribution plot to file (called from subprocess).
-        Uses last completed episode's efield if available."""
+        Uses last completed episode's hzfield if available."""
         if self.last_episode_metrics is not None:
-            efield_state = self.last_episode_metrics['efield_state']
+            hzfield_state = self.last_episode_metrics['hzfield_state']
         else:
-            _, _, _, efield_state, _, _, _, _ = self.simulation.calculate_flux(self.material_matrix)
+            _, _, _, _, hzfield_state, _, _, _, _ = self.simulation.calculate_flux(self.material_matrix)
         self.simulation.plot_distribution(
-            efield_state=efield_state,
+            hzfield_state=hzfield_state,
             save_path=save_path,
             show_plot=False
         )
