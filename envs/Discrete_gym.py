@@ -68,6 +68,8 @@ class MinimalEnv(gym.Env):
         # This returns: input_mode_flux, output_mode_flux_1, output_mode_flux_2, efield_state, hz_data, input_mode, output_mode_1, output_mode_2
         _, _, _, efield_state, _, _, _, _ = self.simulation.calculate_flux(self.material_matrix)
         observation = efield_state.copy().astype(np.float32)
+        # Append material_matrix_idx to match observation space shape (same as in step function)
+        observation = np.append(observation, self.material_matrix_idx)
         info = {}
 
         return observation, info

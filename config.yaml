@@ -17,7 +17,7 @@ simulation:
   waveguide_center_x: -0.9
   waveguide_length: 1.8
   output_y_separation: 0.6
-  simulation_time: 400
+  simulation_time: 150
   num_flux_regions: *state_dim_minus_1
   state_output_x: 1.0
   design_region_x: 2.0
