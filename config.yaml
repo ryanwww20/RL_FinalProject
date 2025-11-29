@@ -36,7 +36,8 @@ simulation:
 
 training:
   ppo:
-    total_timesteps: 19200
+    # total_timesteps: 19200
+    total_timesteps: 640
     n_envs: 16
     learning_rate: 0.001
     n_steps: 20

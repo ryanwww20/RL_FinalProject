@@ -10,6 +10,7 @@ import meep as mp
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
+from matplotlib.animation import FuncAnimation, PillowWriter
 from datetime import datetime
 import sys
 import os
@@ -659,8 +660,8 @@ class WaveguideSimulation:
         mode_transmission_1 = np.abs(alpha_forward_1) ** 2
         alpha_forward_2 = res2.alpha[0, 0, 0]
         mode_transmission_2 = np.abs(alpha_forward_2) ** 2
-        diff_transmission = abs(mode_transmission_1 - mode_transmission_2)
-        return raw_flux_1, raw_flux_2, mode_transmission_1, mode_transmission_2, diff_transmission
+        
+        return raw_flux_1, raw_flux_2, mode_transmission_1, mode_transmission_2
 
     def get_flux_rectangle(self):
         """
@@ -720,13 +721,13 @@ class WaveguideSimulation:
             Transmission ratios relative to input mode
         """
         _, input_mode = self.get_flux_input_mode(band_num)
-        _, _, output_mode_1, output_mode_2, diff_transmission = self.get_flux_output_mode(band_num)
+        _, _, output_mode_1, output_mode_2 = self.get_flux_output_mode(band_num)
         
         transmission_1 = output_mode_1 / input_mode if input_mode > 0 else 0.0
         transmission_2 = output_mode_2 / input_mode if input_mode > 0 else 0.0
         total_transmission = transmission_1 + transmission_2
         
-        return transmission_1, transmission_2, total_transmission, diff_transmission
+        return transmission_1, transmission_2, total_transmission
 
     def plot_design(self, matrix=None, save_path=None, show_plot=True):
         """
@@ -967,12 +968,187 @@ class WaveguideSimulation:
         
         # Get input and output flux values and mode coefficients (using existing functions)
         input_mode_flux, input_mode = self.get_flux_input_mode(band_num=1)
-        output_mode_flux_1, output_mode_flux_2, output_mode_1, output_mode_2, _ = self.get_flux_output_mode(band_num=1)
+        output_mode_flux_1, output_mode_flux_2, output_mode_1, output_mode_2 = self.get_flux_output_mode(band_num=1)
 
         # Get field data
         hz_data = self.get_hzfield_data()
 
         return input_mode_flux, output_mode_flux_1, output_mode_flux_2, efield_state, hz_data, input_mode, output_mode_1, output_mode_2
+
+    def calculate_flux_time_evolution(self, matrix, chunk_time=20, num_runs=20, 
+                                       gif_path=None, transmission_plot_path=None):
+        """
+        Run simulation in chunks and collect state_efield and transmission over time.
+        Creates an animated GIF of state_efield distribution and a line graph of transmission.
+        
+        Args:
+            matrix: Material matrix (pixel_num_x x pixel_num_y), 1=silicon, 0=silica
+            chunk_time: Time units to run per chunk (default: 20)
+            num_runs: Number of times to run(until=chunk_time) (default: 20)
+            gif_path: Path to save the animated GIF (default: auto-generated)
+            transmission_plot_path: Path to save the transmission plot (default: auto-generated)
+            
+        Returns:
+            (timestamps, efield_states, transmissions_1, transmissions_2, total_transmissions)
+        """
+        # Create geometry with material matrix
+        self.create_geometry(matrix=matrix)
+        
+        # Create simulation and add monitors
+        self.create_simulation()
+        self.add_efield_monitor_state()
+        self.add_flux_monitor_input_mode()
+        self.add_flux_monitor_output_mode()
+        
+        # Store data over time
+        timestamps = []
+        efield_states = []
+        transmissions_1 = []
+        transmissions_2 = []
+        total_transmissions = []
+        
+        # Run simulation in chunks - run(until=chunk_time) for num_runs times
+        current_time = 0
+        
+        print(f"Running simulation {num_runs} times, each for {chunk_time} time units...")
+        
+        for run_idx in range(num_runs):
+            # Run simulation for this chunk (continues from current_time)
+            target_time = current_time + chunk_time
+            with open(os.devnull, 'w') as devnull:
+                with redirect_stdout(devnull), redirect_stderr(devnull):
+                    self.sim.run(until=target_time)
+            
+            # Collect data at this timestamp
+            efield_state = self.get_efield_state()
+            trans_1, trans_2, total_trans = self.get_output_transmission(band_num=1)
+            
+            timestamps.append(target_time)
+            efield_states.append(efield_state.copy())
+            transmissions_1.append(trans_1)
+            transmissions_2.append(trans_2)
+            total_transmissions.append(total_trans)
+            
+            current_time = target_time
+            print(f"  Run {run_idx + 1}/{num_runs}: t={target_time}, "
+                  f"Trans1={trans_1*100:.1f}%, Trans2={trans_2*100:.1f}%, "
+                  f"Total={total_trans*100:.1f}%")
+        
+        # Create animated GIF of state_efield distribution
+        if gif_path is None:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            gif_path = f'sample_img/efield_evolution_{timestamp}.gif'
+        
+        # Ensure directory exists
+        gif_dir = os.path.dirname(gif_path)
+        if gif_dir and not os.path.exists(gif_dir):
+            os.makedirs(gif_dir, exist_ok=True)
+        
+        print(f"Creating animated GIF: {gif_path}")
+        self._create_efield_animation(timestamps, efield_states, gif_path)
+        
+        # Create transmission line graph
+        if transmission_plot_path is None:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            transmission_plot_path = f'sample_img/transmission_evolution_{timestamp}.png'
+        
+        # Ensure directory exists
+        plot_dir = os.path.dirname(transmission_plot_path)
+        if plot_dir and not os.path.exists(plot_dir):
+            os.makedirs(plot_dir, exist_ok=True)
+        
+        print(f"Creating transmission plot: {transmission_plot_path}")
+        self._plot_transmission_evolution(timestamps, transmissions_1, transmissions_2, 
+                                         total_transmissions, transmission_plot_path)
+        
+        return timestamps, efield_states, transmissions_1, transmissions_2, total_transmissions
+    
+    def _create_efield_animation(self, timestamps, efield_states, save_path):
+        """
+        Create an animated GIF showing the evolution of electric field distribution.
+        
+        Args:
+            timestamps: List of time values
+            efield_states: List of efield_state arrays (one per timestamp)
+            save_path: Path to save the GIF
+        """
+        # Use y-coordinates as x-axis if available
+        if hasattr(self, 'efield_region_y_positions') and len(self.efield_region_y_positions) > 0:
+            x_data = self.efield_region_y_positions
+            x_label = 'Y Position (μm)'
+        else:
+            # Fallback to index
+            x_data = np.arange(len(efield_states[0]))
+            x_label = 'Detector Index'
+        
+        # Set up the figure and axis
+        fig, ax = plt.subplots(figsize=(10, 6))
+        line, = ax.plot([], [], 'b-', linewidth=2, label='Electric Field |Ez|²')
+        
+        # Set axis limits
+        ax.set_xlim(x_data[0], x_data[-1])
+        max_efield = max([np.max(state) for state in efield_states])
+        ax.set_ylim(0, max_efield * 1.1)
+        ax.set_xlabel(x_label)
+        ax.set_ylabel('|Ez|²')
+        ax.set_title('Electric Field Distribution Evolution')
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+        
+        # Animation function
+        def animate(frame):
+            line.set_data(x_data, efield_states[frame])
+            ax.set_title(f'Electric Field Distribution Evolution (t={timestamps[frame]:.1f})')
+            return line,
+        
+        # Create animation
+        anim = FuncAnimation(fig, animate, frames=len(timestamps), 
+                           interval=200, blit=True, repeat=True)
+        
+        # Save as GIF
+        try:
+            writer = PillowWriter(fps=5)
+            anim.save(save_path, writer=writer)
+            print(f"Animated GIF saved to '{save_path}'")
+        except Exception as e:
+            print(f"Error saving GIF: {e}")
+        finally:
+            plt.close(fig)
+    
+    def _plot_transmission_evolution(self, timestamps, transmissions_1, transmissions_2, 
+                                    total_transmissions, save_path):
+        """
+        Create a line graph showing transmission evolution over time.
+        
+        Args:
+            timestamps: List of time values
+            transmissions_1: List of transmission values for output 1
+            transmissions_2: List of transmission values for output 2
+            total_transmissions: List of total transmission values
+            save_path: Path to save the plot
+        """
+        plt.figure(figsize=(10, 6))
+        plt.plot(timestamps, np.array(transmissions_1) * 100, 'b-', 
+                linewidth=2, label='Output 1 Transmission', marker='o', markersize=4)
+        plt.plot(timestamps, np.array(transmissions_2) * 100, 'r-', 
+                linewidth=2, label='Output 2 Transmission', marker='s', markersize=4)
+        plt.plot(timestamps, np.array(total_transmissions) * 100, 'g--', 
+                linewidth=2, label='Total Transmission', marker='^', markersize=4)
+        
+        plt.xlabel('Simulation Time')
+        plt.ylabel('Transmission (%)')
+        plt.title('Transmission Evolution Over Time')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        plt.ylim(0, 105)
+        
+        try:
+            plt.savefig(save_path, dpi=150, bbox_inches='tight')
+            print(f"Transmission plot saved to '{save_path}'")
+        except Exception as e:
+            print(f"Error saving plot: {e}")
+        finally:
+            plt.close()
 
 
 if __name__ == "__main__":
@@ -993,15 +1169,11 @@ if __name__ == "__main__":
     # matrix[sim.pixel_num_x // 2, :] = 0
     
     # 3. Run simulation and get results
-    results = sim.calculate_flux(matrix)
-    input_mode_flux, output_mode_flux_1, output_mode_flux_2, efield_state, hz_data, input_mode, output_mode_1, output_mode_2 = results
+    timestamps, efield_states, trans_1_list, trans_2_list, total_trans_list = sim.calculate_flux_time_evolution(matrix, chunk_time=20, num_runs=20)
     
     # 4. Display results
-    trans_1, trans_2, total_trans, diff_trans = sim.get_output_transmission(band_num=1)
-    print(f"Transmission: Output1={trans_1*100:.1f}%, Output2={trans_2*100:.1f}%, Total={total_trans*100:.1f}%, Diff={diff_trans:.6f}")
-    
-    # Optional: Plot results
-    sim.plot_design(matrix=matrix, show_plot=False, 
-                   save_path='sample_img/field_result.png')
-    sim.plot_distribution(efield_state=efield_state,
-                         save_path='sample_img/efield_distribution.png', show_plot=False)
+    print(f"\nFinal transmission values:")
+    print(f"  Output1: {trans_1_list[-1]*100:.1f}%")
+    print(f"  Output2: {trans_2_list[-1]*100:.1f}%")
+    print(f"  Total: {total_trans_list[-1]*100:.1f}%")
+    print(f"\nData collected at {len(timestamps)} timestamps: {timestamps}")
