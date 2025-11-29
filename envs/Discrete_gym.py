@@ -144,10 +144,11 @@ class MinimalEnv(gym.Env):
         Uses get_output_transmission() method directly.
         """
         # Get transmission using the method from meep_simulation
+        _, input_mode = self.simulation.get_flux_input_mode(band_num=1)
         transmission_1, transmission_2, total_transmission, diff_transmission = self.simulation.get_output_transmission(band_num=1)
         
-        transmission_score = min(max(total_transmission, 0), 1)
-        
+        transmission_score = min(max(total_transmission/input_mode, 0), 1)
+
         # Calculate balance score (how evenly distributed between outputs)
         if total_transmission > 0:
             diff_ratio = diff_transmission / total_transmission

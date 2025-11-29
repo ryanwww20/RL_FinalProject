@@ -724,8 +724,8 @@ class WaveguideSimulation:
         _, input_mode = self.get_flux_input_mode(band_num)
         _, _, output_mode_1, output_mode_2, diff_transmission = self.get_flux_output_mode(band_num)
         
-        transmission_1 = output_mode_1 / input_mode if input_mode > 0 else 0.0
-        transmission_2 = output_mode_2 / input_mode if input_mode > 0 else 0.0
+        transmission_1 = output_mode_1
+        transmission_2 = output_mode_2
         total_transmission = transmission_1 + transmission_2
         
         return transmission_1, transmission_2, total_transmission, diff_transmission
