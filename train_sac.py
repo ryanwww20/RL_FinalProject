@@ -12,7 +12,8 @@ import yaml
 import wandb
 from wandb.integration.sb3 import WandbCallback
 from stable_baselines3 import SAC
-from stable_baselines3.common.callbacks import BaseCallback
+from stable_baselines3.common.env_util import make_vec_env, SubprocVecEnv
+from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback
 from envs.Continuous_gym import MinimalEnv
 
 
@@ -36,18 +37,15 @@ class CustomMetricsCallback(BaseCallback):
     def _on_step(self) -> bool:
         # Get info from the environment
         infos = self.locals.get("infos", [])
-        if not isinstance(infos, list):
-            infos = [infos]
         for info in infos:
-            if isinstance(info, dict):
-                metrics_to_log = {}
-                for key in self.metric_keys:
-                    if key in info:
-                        metrics_to_log[f"env/{key}"] = info[key]
-                
-                # Log immediately if we have metrics
-                if metrics_to_log:
-                    wandb.log(metrics_to_log, step=self.num_timesteps)
+            metrics_to_log = {}
+            for key in self.metric_keys:
+                if key in info:
+                    metrics_to_log[f"env/{key}"] = info[key]
+            
+            # Log immediately if we have metrics
+            if metrics_to_log:
+                wandb.log(metrics_to_log, step=self.num_timesteps)
 
         return True
 
@@ -55,6 +53,7 @@ CONFIG_ENV_VAR = "TRAINING_CONFIG_PATH"
 DEFAULT_CONFIG_PATH = Path(__file__).resolve().parent / "config.yaml"
 TRAIN_SAC_KWARGS = {
     "total_timesteps",
+    "n_envs",
     "learning_rate",
     "buffer_size",
     "learning_starts",
@@ -69,6 +68,7 @@ TRAIN_SAC_KWARGS = {
     "use_sde",
     "tensorboard_log",
     "save_path",
+    "checkpoint_freq",
     "wandb_project",
     "wandb_entity",
     "wandb_run_name",
@@ -78,6 +78,7 @@ TRAIN_SAC_KWARGS = {
 
 def train_sac(
     total_timesteps=100000,
+    n_envs=4,
     learning_rate=3e-4,
     buffer_size=100000,
     learning_starts=1000,
@@ -92,6 +93,7 @@ def train_sac(
     use_sde=False,
     tensorboard_log="./sac_tensorboard/",
     save_path="./sac_model",
+    checkpoint_freq=200,
     wandb_project=None,
     wandb_entity=None,
     wandb_run_name=None,
@@ -102,6 +104,7 @@ def train_sac(
 
     Args:
         total_timesteps: Total number of timesteps to train
+        n_envs: Number of parallel environments
         learning_rate: Learning rate for optimizer
         buffer_size: Replay buffer size
         learning_starts: Timesteps before training begins
@@ -116,6 +119,7 @@ def train_sac(
         use_sde: Whether to use State Dependent Exploration
         tensorboard_log: Directory for tensorboard logs
         save_path: Path to save the trained model
+        checkpoint_freq: Frequency (in timesteps) to save checkpoints
         wandb_project: WandB project name (optional)
         wandb_entity: WandB entity/username (optional)
         wandb_run_name: WandB run name (optional)
@@ -124,6 +128,24 @@ def train_sac(
 
     # Initialize WandB if project name is provided
     callbacks = []
+    
+    # Create checkpoint directory with timestamp
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    checkpoint_dir = f"{save_path}_checkpoints_{timestamp}"
+    os.makedirs(checkpoint_dir, exist_ok=True)
+    
+    # Add checkpoint callback to save model every checkpoint_freq steps
+    checkpoint_callback = CheckpointCallback(
+        save_freq=checkpoint_freq,
+        save_path=checkpoint_dir,
+        name_prefix="sac_checkpoint",
+        save_replay_buffer=True,
+        save_vecnormalize=True,
+        verbose=1,
+    )
+    callbacks.append(checkpoint_callback)
+    print(f"Checkpoints will be saved every {checkpoint_freq} steps to {checkpoint_dir}")
+    
     if wandb_project:
         run = wandb.init(
             project=wandb_project,
@@ -140,8 +162,11 @@ def train_sac(
         ))
         callbacks.append(CustomMetricsCallback(verbose=1))
 
+    # Create vectorized environment (parallel environments)
     print("Creating environment...")
-    env = MinimalEnv(render_mode=None)
+    env = make_vec_env(MinimalEnv, n_envs=n_envs,
+                       env_kwargs={"render_mode": None},
+                       vec_env_cls=SubprocVecEnv)
 
     # Create evaluation environment
     eval_env = MinimalEnv(render_mode=None)
@@ -183,8 +208,7 @@ def train_sac(
         print(f"Error during training: {e}")
 
     # Save the final model (even if interrupted)
-    # Add timestamp to model name
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    # Use same timestamp as checkpoint directory
     save_path_with_timestamp = f"{save_path}_{timestamp}"
 
     # Create directory if it doesn't exist
@@ -197,7 +221,7 @@ def train_sac(
 
     # Test the trained model
     print("\nTesting trained model...")
-    test_model(model, eval_env, n_episodes=5)
+    test_model(model, eval_env, n_episodes=3)
 
     if wandb_project:
         wandb.finish()
@@ -269,31 +293,10 @@ def load_training_config(config_path=None):
 
 
 if __name__ == "__main__":
-    import sys
-    
-    # Check if user wants to test a saved model
-    if len(sys.argv) > 1 and sys.argv[1] == "test":
-        if len(sys.argv) < 3:
-            print("Usage: python train_sac.py test <model_path> [n_episodes]")
-            sys.exit(1)
-        
-        model_path = sys.argv[2]
-        n_episodes = int(sys.argv[3]) if len(sys.argv) > 3 else 5
-        
-        print(f"Loading model from {model_path}...")
-        model = SAC.load(model_path)
-        
-        print("Creating test environment...")
-        test_env = MinimalEnv(render_mode=None)
-        
-        print(f"Testing model for {n_episodes} episodes...")
-        test_model(model, test_env, n_episodes=n_episodes)
-    else:
-        # Normal training flow
-        config_override_path = os.environ.get(CONFIG_ENV_VAR)
-        train_kwargs = load_training_config(config_override_path)
-        
-        # Train SAC agent
-        model = train_sac(**train_kwargs)
-        
-        print("\nTraining complete!")
+    config_override_path = os.environ.get(CONFIG_ENV_VAR)
+    train_kwargs = load_training_config(config_override_path)
+
+    # Train SAC agent
+    model = train_sac(**train_kwargs)
+
+    print("\nTraining complete!")

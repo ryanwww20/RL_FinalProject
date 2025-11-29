@@ -54,15 +54,10 @@ training:
   ppo:
     total_timesteps: 1000000
     n_envs: 16
-    learning_rate: 0.0003
+    learning_rate: 0.001
     n_steps: 20
-<<<<<<< HEAD
-    batch_size: 160
+    batch_size: 64
     n_epochs: 10
-=======
-    batch_size: 20
-    n_epochs: 50
->>>>>>> c73366e (Update training parameters and enhance logging in environment classes)
     gamma: 0.99
     gae_lambda: 0.95
     clip_range: 0.2
@@ -74,9 +69,10 @@ training:
     checkpoint_freq: 200
     wandb_project: "RL_FinalProject" # Set to your project name to enable wandb logging
     wandb_entity: null
-    wandb_run_name: PPO_norm_reward
+    wandb_run_name: PPO_mode_output_hyperparameter_tuning
   sac:
     total_timesteps: 1000000
+    n_envs: 1
     learning_rate: 0.0003 # 0.0001 0.0003 0.001
     buffer_size: 100000
     learning_starts: 1000

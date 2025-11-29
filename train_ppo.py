@@ -12,7 +12,7 @@ import yaml
 import wandb
 from wandb.integration.sb3 import WandbCallback
 from stable_baselines3 import PPO
-from stable_baselines3.common.env_util import make_vec_env
+from stable_baselines3.common.env_util import make_vec_env, SubprocVecEnv
 from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback
 from envs.Discrete_gym import MinimalEnv
 
@@ -201,7 +201,8 @@ def train_ppo(
     # Create vectorized environment (parallel environments)
     print("Creating environment...")
     env = make_vec_env(MinimalEnv, n_envs=n_envs,
-                       env_kwargs={"render_mode": None})
+                       env_kwargs={"render_mode": None},
+                       vec_env_cls=SubprocVecEnv)
 
     # Create evaluation environment
     eval_env = MinimalEnv(render_mode=None)

@@ -112,18 +112,28 @@ class MinimalEnv(gym.Env):
         output_plane_x = -1 + (self.material_matrix_idx+0.1) * \
             config.simulation.pixel_size
 
-        input_flux, output_flux_1, output_flux_2, output_all_flux, ez_data = self.simulation.calculate_flux(
+        input_flux, output_flux_1, output_flux_2, output_all_flux, ez_data, input_mode, output_mode_1, output_mode_2 = self.simulation.calculate_flux(
             self.material_matrix)
         print('=============== Flux Results ===============')
         print(f'Input Flux: {input_flux:.4f}')
         print(f'Output Flux 1: {output_flux_1:.4f}')
         print(f'Output Flux 2: {output_flux_2:.4f}')
-        print(f'Output Flux 1 ratio: {output_flux_1/input_flux*100:.2f}%\nOutput Flux 2 ratio: {output_flux_2/input_flux*100:.2f}%\nLoss ratio: {(input_flux - (output_flux_1 + output_flux_2))/input_flux*100:.2f}%')
+        print(f'Output Flux 1 ratio: {output_flux_1/input_flux*100:.2f}%\nOutput Flux 2 ratio: {output_flux_2/input_flux*100:.2f}%\nFlux Loss ratio: {(input_flux - (output_flux_1 + output_flux_2))/input_flux*100:.2f}%')
         print(f'Output_all_flux: {sum(output_all_flux)/input_flux*100:.2f}%')
         print('============================================')
+        print('=============== Mode Results ===============')
+        print(f'Input Mode (TE0): {input_mode:.4e}')
+        print(f'Output Mode 1 (TE0): {output_mode_1:.4e}')
+        print(f'Output Mode 2 (TE0): {output_mode_2:.4e}')
+        print(f'Output Mode 1 ratio: {output_mode_1/input_mode*100:.2f}%')
+        print(f'Output Mode 2 ratio: {output_mode_2/input_mode*100:.2f}%')
+        print(f'Total Mode transmission: {(output_mode_1 + output_mode_2)/input_mode*100:.2f}%')
+        print(f'Mode Loss ratio: {(input_mode - (output_mode_1 + output_mode_2))/input_mode*100:.2f}%')
+        print('============================================')
 
+        # Use MODE coefficients for reward calculation (instead of raw flux)
         current_score, reward = self.get_reward(
-            input_flux, output_flux_1, output_flux_2)
+            input_mode, output_mode_1, output_mode_2)
         current_score, reward = self.normalize_reward(current_score, reward)
 
         # Save reward to CSV
@@ -134,9 +144,9 @@ class MinimalEnv(gym.Env):
         if not os.path.exists(csv_path):
             with open(csv_path, 'w') as f:
                 f.write(
-                    'timestamp, current_score, reward, output_flux_1_ratio, output_flux_2_ratio, loss_ratio\n')
+                    'timestamp, current_score, reward, output_mode_1_ratio, output_mode_2_ratio, output_flux_1_ratio, output_flux_2_ratio, mode_loss_ratio, flux_loss_ratio\n')
         with open(csv_path, 'a') as f:
-            f.write(f'{timestamp}, {current_score}, {reward}, {output_flux_1/input_flux}, {output_flux_2/input_flux}, {(input_flux - (output_flux_1 + output_flux_2))/input_flux}\n')
+            f.write(f'{timestamp}, {current_score}, {reward}, {output_mode_1/input_mode}, {output_mode_2/input_mode}, {output_flux_1/input_flux}, {output_flux_2/input_flux}, {(input_mode - (output_mode_1 + output_mode_2))/input_mode}, {(input_flux - (output_flux_1 + output_flux_2))/input_flux}\n')
        
         terminated = self.material_matrix_idx >= self.max_steps  # Goal reached
         if terminated:
@@ -162,9 +172,9 @@ class MinimalEnv(gym.Env):
 
             if not os.path.exists(csv_path_terminated):
                 with open(csv_path_terminated, 'w') as f:
-                    f.write('timestamp, current_score, reward, output_flux_1_ratio, output_flux_2_ratio, loss_ratio\n')
+                    f.write('timestamp, current_score, reward, output_mode_1_ratio, output_mode_2_ratio, output_flux_1_ratio, output_flux_2_ratio, mode_loss_ratio, flux_loss_ratio\n')
             with open(csv_path_terminated, 'a') as f:
-                f.write(f'{timestamp}, {current_score}, {reward}, {output_flux_1/input_flux}, {output_flux_2/input_flux}, {(input_flux - (output_flux_1 + output_flux_2))/input_flux}\n')
+                f.write(f'{timestamp}, {current_score}, {reward}, {output_mode_1/input_mode}, {output_mode_2/input_mode}, {output_flux_1/input_flux}, {output_flux_2/input_flux}, {(input_mode - (output_mode_1 + output_mode_2))/input_mode}, {(input_flux - (output_flux_1 + output_flux_2))/input_flux}\n')
         truncated = False   # Time limit exceeded
 
         # Get observation - return the current flux distribution as observation
@@ -183,11 +193,24 @@ class MinimalEnv(gym.Env):
 
         return observation, reward, terminated, truncated, info
 
-    def get_reward(self, input_flux, output_flux_1, output_flux_2):
-
-        total_transmission = (output_flux_1 + output_flux_2) / input_flux
-        transmission_score = min(max(total_transmission, 0), 1)
-        diff_ratio = abs(output_flux_1 - output_flux_2) / (output_flux_1 + output_flux_2)
+    def get_reward(self, input_mode, output_mode_1, output_mode_2):
+        """
+        Calculate reward using MODE coefficients (fundamental mode transmission).
+        This is more accurate than raw flux as it only counts light coupled into the waveguide mode.
+        
+        Args:
+            input_mode: Input mode coefficient (|alpha_in|^2)
+            output_mode_1: Output mode 1 coefficient (|alpha_out1|^2)
+            output_mode_2: Output mode 2 coefficient (|alpha_out2|^2)
+        """
+        total_mode_transmission = (output_mode_1 + output_mode_2) / input_mode
+        transmission_score = min(max(total_mode_transmission, 0), 1)
+        
+        # Avoid division by zero
+        if (output_mode_1 + output_mode_2) > 0:
+            diff_ratio = abs(output_mode_1 - output_mode_2) / (output_mode_1 + output_mode_2)
+        else:
+            diff_ratio = 1.0  # If no mode transmission, balance is worst
         balance_score = max(1 - diff_ratio, 0)
 
         current_score = transmission_score * balance_score
@@ -196,22 +219,22 @@ class MinimalEnv(gym.Env):
         self.current_score_history.append(current_score)
         self.last_score = current_score
 
-        # Calculate ratios for logging
-        output_flux_1_ratio = output_flux_1 / input_flux
-        output_flux_2_ratio = output_flux_2 / input_flux
-        loss_ratio = (input_flux - (output_flux_1 + output_flux_2)) / input_flux
+        # Calculate ratios for logging (mode-to-mode transmission)
+        output_mode_1_ratio = output_mode_1 / input_mode
+        output_mode_2_ratio = output_mode_2 / input_mode
+        mode_loss_ratio = (input_mode - (output_mode_1 + output_mode_2)) / input_mode
 
-        print(f"Total transmission: {total_transmission:.4e}, Transmission score: {transmission_score:.4e}, Balance score: {balance_score:.4e}, Current score: {current_score:.4e}, Reward: {reward:.4e}")
+        print(f"[MODE] Total transmission: {total_mode_transmission:.4e}, Transmission score: {transmission_score:.4e}, Balance score: {balance_score:.4e}, Current score: {current_score:.4e}, Reward: {reward:.4e}")
 
         # Store metrics for info dict
         self._step_metrics = {
-            "total_transmission": total_transmission,
+            "total_mode_transmission": total_mode_transmission,
             "transmission_score": transmission_score,
             "balance_score": balance_score,
             "current_score": current_score,
-            "output_flux_1_ratio": output_flux_1_ratio,
-            "output_flux_2_ratio": output_flux_2_ratio,
-            "loss_ratio": loss_ratio,
+            "output_mode_1_ratio": output_mode_1_ratio,
+            "output_mode_2_ratio": output_mode_2_ratio,
+            "mode_loss_ratio": mode_loss_ratio,
         }
 
         return current_score, reward
