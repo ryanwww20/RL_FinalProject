@@ -63,8 +63,11 @@ class MinimalEnv(gym.Env):
             (config.simulation.pixel_num_x, config.simulation.pixel_num_y))
         self.material_matrix_idx = 0
         self.last_score = None
-        # Return initial observation (zeros since no material set yet)
-        observation = np.zeros(self.obs_size, dtype=np.float32)
+
+        # Use calculate_flux to get initial efield_state for empty matrix
+        # This returns: input_mode_flux, output_mode_flux_1, output_mode_flux_2, efield_state, hz_data, input_mode, output_mode_1, output_mode_2
+        _, _, _, efield_state, _, _, _, _ = self.simulation.calculate_flux(self.material_matrix)
+        observation = efield_state.copy().astype(np.float32)
         info = {}
 
         return observation, info
@@ -91,10 +94,9 @@ class MinimalEnv(gym.Env):
         # Action is a binary array of length 50
         self.material_matrix[self.material_matrix_idx] = action
         self.material_matrix_idx += 1
-        output_plane_x = -1 + (self.material_matrix_idx+0.1) * \
-            config.simulation.pixel_size
 
-        input_flux, output_flux_1, output_flux_2, output_all_flux, ez_data, input_mode, output_mode_1, output_mode_2 = self.simulation.calculate_flux(
+        # calculate_flux returns: input_mode_flux, output_mode_flux_1, output_mode_flux_2, efield_state, hz_data, input_mode, output_mode_1, output_mode_2
+        _, _, _, efield_state, _, _, _, _ = self.simulation.calculate_flux(
             self.material_matrix)
 
         # Use MODE coefficients for reward calculation (instead of raw flux)
@@ -103,11 +105,11 @@ class MinimalEnv(gym.Env):
         terminated = self.material_matrix_idx >= self.max_steps  # Goal reached
         truncated = False   # Time limit exceeded
 
-        # Get observation - return the current flux distribution as observation
+        # Get observation - return the current efield_state as observation
         # This gives the agent feedback about the current state
         if self.material_matrix_idx > 0:
-            # Calculate current flux as observation
-            observation = output_all_flux.copy()/input_flux
+            # Use efield_state directly as observation
+            observation = efield_state.copy().astype(np.float32)
 
         else:
             # Initial state: return zeros
@@ -129,9 +131,9 @@ class MinimalEnv(gym.Env):
         
         transmission_score = min(max(total_transmission, 0), 1)
         
-        # Avoid division by zero
-        if (transmission_1 + transmission_2) > 0:
-            diff_ratio = abs(transmission_1 - transmission_2) / (transmission_1 + transmission_2)
+        # Calculate balance score (how evenly distributed between outputs)
+        if total_transmission > 0:
+            diff_ratio = abs(transmission_1 - transmission_2) / total_transmission
         else:
             diff_ratio = 1.0  # If no transmission, balance is worst
         balance_score = max(1 - diff_ratio, 0)
