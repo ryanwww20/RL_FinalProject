@@ -659,6 +659,8 @@ class WaveguideSimulation:
                 new_indices = np.linspace(0, 1, self.num_flux_regions)
                 hzfield_values = np.interp(new_indices, old_indices, hzfield_values)
 
+        hzfield_values = hzfield_values * 1e9 # scale up
+
         return np.array(hzfield_values)
 
     def get_flux_input_mode(self, band_num=1):
