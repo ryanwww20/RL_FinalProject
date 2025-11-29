@@ -6,6 +6,8 @@
 """
 
 import time
+
+from sympy.logic.boolalg import true
 import meep as mp
 import numpy as np
 import matplotlib.pyplot as plt
@@ -1001,7 +1003,7 @@ if __name__ == "__main__":
     print(f"Transmission: Output1={trans_1*100:.1f}%, Output2={trans_2*100:.1f}%, Total={total_trans*100:.1f}%, Diff={diff_trans:.6f}")
     
     # Optional: Plot results
-    sim.plot_design(matrix=matrix, show_plot=False, 
+    sim.plot_design(matrix=matrix, show_plot=true, 
                    save_path='sample_img/field_result.png')
     sim.plot_distribution(efield_state=efield_state,
                          save_path='sample_img/efield_distribution.png', show_plot=False)

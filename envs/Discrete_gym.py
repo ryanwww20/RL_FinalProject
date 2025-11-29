@@ -43,6 +43,9 @@ class MinimalEnv(gym.Env):
         self.max_steps = config.environment.max_steps
         self.simulation = WaveguideSimulation()
         self.last_score = None
+        
+        # Store the last completed episode's final metrics (for callback logging)
+        self.last_episode_metrics = None
 
     def reset(self, seed=None, options=None):
         """
@@ -106,6 +109,18 @@ class MinimalEnv(gym.Env):
        
         terminated = self.material_matrix_idx >= self.max_steps  # Goal reached
         truncated = False   # Time limit exceeded
+        
+        # Save final metrics when episode ends (before reset happens)
+        if terminated:
+            self.last_episode_metrics = {
+                'material_matrix': self.material_matrix.copy(),
+                'efield_state': efield_state.copy(),
+                'total_transmission': self._step_metrics['total_transmission'],
+                'transmission_1': self._step_metrics['transmission_1'],
+                'transmission_2': self._step_metrics['transmission_2'],
+                'balance_score': self._step_metrics['balance_score'],
+                'current_score': self._step_metrics['current_score'],
+            }
 
         # Get observation - return the current efield_state as observation
         # This gives the agent feedback about the current state
@@ -159,24 +174,27 @@ class MinimalEnv(gym.Env):
 
     def get_current_metrics(self):
         """
-        Get current metrics for callback logging.
-        Returns serializable data that can be passed across processes.
+        Get metrics for callback logging.
+        Returns the LAST COMPLETED EPISODE's metrics if available,
+        otherwise returns current state metrics.
+        This ensures we log the final design quality, not a reset/partial state.
         """
-        # Get current efield_state
+        # Return last completed episode metrics if available
+        if self.last_episode_metrics is not None:
+            return self.last_episode_metrics
+        
+        # Fallback: return current state (for first rollout before any episode completes)
         _, _, _, efield_state, _, _, _, _ = self.simulation.calculate_flux(self.material_matrix)
         
-        # Get transmission values
         transmission_1, transmission_2, total_transmission, diff_transmission = \
             self.simulation.get_output_transmission(band_num=1)
         
-        # Calculate balance score
         if total_transmission > 0:
             diff_ratio = diff_transmission / total_transmission
         else:
             diff_ratio = 1.0
         balance_score = max(1 - diff_ratio, 0)
         
-        # Calculate score
         transmission_score = min(max(total_transmission, 0), 1)
         current_score = transmission_score * balance_score
         
@@ -191,16 +209,25 @@ class MinimalEnv(gym.Env):
         }
 
     def save_design_plot(self, save_path):
-        """Save design plot to file (called from subprocess)."""
+        """Save design plot to file (called from subprocess).
+        Uses last completed episode's design if available."""
+        if self.last_episode_metrics is not None:
+            matrix = self.last_episode_metrics['material_matrix']
+        else:
+            matrix = self.material_matrix
         self.simulation.plot_design(
-            matrix=self.material_matrix,
+            matrix=matrix,
             save_path=save_path,
             show_plot=False
         )
 
     def save_distribution_plot(self, save_path):
-        """Save distribution plot to file (called from subprocess)."""
-        _, _, _, efield_state, _, _, _, _ = self.simulation.calculate_flux(self.material_matrix)
+        """Save distribution plot to file (called from subprocess).
+        Uses last completed episode's efield if available."""
+        if self.last_episode_metrics is not None:
+            efield_state = self.last_episode_metrics['efield_state']
+        else:
+            _, _, _, efield_state, _, _, _, _ = self.simulation.calculate_flux(self.material_matrix)
         self.simulation.plot_distribution(
             efield_state=efield_state,
             save_path=save_path,
