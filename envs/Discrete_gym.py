@@ -156,8 +156,7 @@ class MinimalEnv(gym.Env):
             flux_img_path = os.path.join(
                 self.log_dir, 'flux_images', f'flux_distribution_{timestamp}.png')
             self.simulation.plot_distribution(
-                output_all_flux=output_all_flux,
-                input_flux=input_flux,
+                state_flux=output_all_flux,
                 save_path=flux_img_path,
                 show_plot=False
             )

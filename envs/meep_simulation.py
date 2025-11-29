@@ -67,6 +67,7 @@ class WaveguideSimulation:
         
         # Flux monitor regions
         self.flux_regions = []  # State flux monitors (along y-axis)
+        self.flux_region_y_positions = []  # Y-coordinates of state flux monitors
         self.input_flux_region = None  # Input mode flux monitor
         self.output_flux_region_1 = None  # Output mode flux monitor 1
         self.output_flux_region_2 = None  # Output mode flux monitor 2
@@ -413,6 +414,9 @@ class WaveguideSimulation:
         y_max = self.cell_size.y / 2
         y_positions = np.linspace(
             y_min + region_height/2, y_max - region_height/2, self.num_flux_regions)
+
+        # Store y positions for plotting
+        self.flux_region_y_positions = y_positions.copy()
 
         # Create flux monitors for each y position
         flux_monitors = []
@@ -857,21 +861,30 @@ class WaveguideSimulation:
         else:
             plt.close()
 
-    def plot_distribution(self, state_flux, input_flux, save_path=None, show_plot=True):
+    def plot_distribution(self, state_flux, save_path=None, show_plot=True):
         """
         Plot the flux distribution along the output plane.
 
         Args:
-            output_all_flux: 1D array of flux values at each detector position
+            state_flux: 1D array of flux values at each detector position
             save_path: Optional path to save the plot
             show_plot: Whether to display the plot
         """
+        # Use y-coordinates as x-axis if available
+        if len(self.flux_region_y_positions) == len(state_flux):
+            x_data = self.flux_region_y_positions
+            x_label = 'Y Position (μm)'
+        else:
+            # Fallback to index if y positions not available
+            x_data = np.arange(len(state_flux))
+            x_label = 'Detector Index'
+        
         plt.figure(figsize=(10, 6))
-        plt.plot(state_flux/input_flux, 'b-',
+        plt.plot(x_data, state_flux, 'b-',
                  linewidth=2, label='Flux Distribution')
-        plt.xlabel('Detector Index')
-        plt.ylabel('Flux Ratio (Output/Input)')
-        plt.title('Flux Distribution Ratio at Output Plane')
+        plt.xlabel(x_label)
+        plt.ylabel('Flux')
+        plt.title('Flux Distribution at Output Plane')
         plt.legend()
         plt.grid(True, alpha=0.3)
 
@@ -962,5 +975,5 @@ if __name__ == "__main__":
     # Optional: Plot results
     sim.plot_design(matrix=matrix, show_plot=False, 
                    save_path='sample_img/field_result.png')
-    sim.plot_distribution(state_flux=state_flux, input_flux=input_flux,
+    sim.plot_distribution(state_flux=state_flux,
                          save_path='sample_img/flux_distribution.png', show_plot=False)
