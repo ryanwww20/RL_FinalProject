@@ -43,17 +43,18 @@ class TrainingCallback(BaseCallback):
     Callback to record metrics, plot designs, save to CSV, and create GIFs.
     Follows README structure: ppo_model_log_<start_time>/ with img/, plot/, result.csv
     """
-    def __init__(self, save_dir, verbose=1, eval_env=None, model_save_path=None):
+    def __init__(self, save_dir, verbose=1, eval_env=None, model_save_path=None, eval_freq=5):
         super(TrainingCallback, self).__init__(verbose)
         self.save_dir = Path(save_dir)
         self.save_dir.mkdir(parents=True, exist_ok=True)
         self.rollout_count = 0
         self.eval_env = eval_env
         self.model_save_path = model_save_path  # Path to save best model
+        self.eval_freq = eval_freq  # Run full evaluation every N rollouts
         
-        # Best model tracking
-        self.best_score = -float('inf')
-        self.best_rollout = 0
+        # Best model tracking (based on evaluation score)
+        self.best_eval_score = -float('inf')
+        self.best_eval_rollout = 0
         
         # Create directory structure according to README
         self.img_dir = self.save_dir / "img"
@@ -67,10 +68,16 @@ class TrainingCallback(BaseCallback):
         self.design_dir.mkdir(exist_ok=True)
         self.distribution_dir.mkdir(exist_ok=True)
         
-        # CSV file for metrics (result.csv as per README)
-        self.csv_path = self.save_dir / "result.csv"
-        if not self.csv_path.exists():
-            with open(self.csv_path, 'w') as f:
+        # CSV file for training metrics (every rollout)
+        self.train_csv_path = self.save_dir / "train_metrics.csv"
+        if not self.train_csv_path.exists():
+            with open(self.train_csv_path, 'w') as f:
+                f.write('timestamp,rollout_count,type,transmission,balance_score,score,reward\n')
+        
+        # CSV file for evaluation metrics (every eval_freq rollouts)
+        self.eval_csv_path = self.save_dir / "eval_metrics.csv"
+        if not self.eval_csv_path.exists():
+            with open(self.eval_csv_path, 'w') as f:
                 f.write('timestamp,rollout_count,transmission,balance_score,score,reward\n')
         
         # Store image paths for GIF creation
@@ -84,126 +91,145 @@ class TrainingCallback(BaseCallback):
     def _on_rollout_end(self) -> None:
         """Called when rollout collection ends."""
         self.rollout_count += 1
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
-        # Calculate metrics using ModelEvaluator
-        if self.eval_env is not None:
-            print(f"\nRunning evaluation for rollout {self.rollout_count}...")
+        # ============================================================
+        # 1. TRAINING METRICS: Get metrics from all parallel training envs
+        # ============================================================
+        env = self.training_env
+        try:
+            if hasattr(env, 'envs'):
+                # DummyVecEnv - get metrics from all environments directly
+                all_metrics = [e.unwrapped.get_current_metrics() for e in env.envs]
+            else:
+                # SubprocVecEnv - call on ALL environments
+                all_metrics = env.env_method('get_current_metrics')
+            
+            # Calculate average across all environments
+            n_envs = len(all_metrics)
+            train_transmission = sum(m['total_transmission'] for m in all_metrics) / n_envs
+            train_balance = sum(m['balance_score'] for m in all_metrics) / n_envs
+            train_score = sum(m['current_score'] for m in all_metrics) / n_envs
+            
+            # Get episode reward from rollout buffer
+            train_reward = 0.0
+            if hasattr(self.model, 'rollout_buffer') and self.model.rollout_buffer is not None:
+                rewards = self.model.rollout_buffer.rewards
+                episode_rewards = np.sum(rewards, axis=0)
+                train_reward = float(np.mean(episode_rewards))
+                
+        except Exception as e:
+            print(f"Warning: Could not get training env metrics: {e}")
+            train_transmission = 0.0
+            train_balance = 0.0
+            train_score = 0.0
+            train_reward = 0.0
+        
+        # Record training metrics to CSV
+        with open(self.train_csv_path, 'a') as f:
+            f.write(f'{timestamp},{self.rollout_count},train,{train_transmission},{train_balance},{train_score},{train_reward}\n')
+        
+        # Print training metrics
+        print(f"\n[Train] Rollout {self.rollout_count} (avg of {n_envs} envs): "
+              f"Trans={train_transmission:.4f}, Bal={train_balance:.4f}, "
+              f"Score={train_score:.4f}, Reward={train_reward:.4f}")
+        
+        # ============================================================
+        # 2. EVALUATION: Run full eval every eval_freq rollouts
+        # ============================================================
+        run_eval = (self.rollout_count % self.eval_freq == 0) or (self.rollout_count == 1)
+        
+        if run_eval and self.eval_env is not None:
+            print(f"[Eval]  Running full evaluation...")
             evaluator = ModelEvaluator(self.model, self.eval_env)
-            # Run 1 episode, deterministic (consistent with eval.py logic)
             results_df = evaluator.evaluate(n_episodes=1, deterministic=True)
             
             if len(results_df) > 0:
-                # Use the first (and likely only) row
                 metrics = results_df.iloc[0]
-                
-                # Extract metrics with fallbacks
-                avg_transmission = metrics.get('total_mode_transmission', metrics.get('total_transmission', 0.0))
-                avg_balance = metrics.get('balance_score', 0.0)
-                avg_score = metrics.get('current_score', 0.0)
-                avg_episode_reward = metrics.get('total_reward', 0.0)
+                eval_transmission = metrics.get('total_mode_transmission', metrics.get('total_transmission', 0.0))
+                eval_balance = metrics.get('balance_score', 0.0)
+                eval_score = metrics.get('current_score', 0.0)
+                eval_reward = metrics.get('total_reward', 0.0)
             else:
-                avg_transmission = 0.0
-                avg_balance = 0.0
-                avg_score = 0.0
-                avg_episode_reward = 0.0
-                
-            # Use the evaluation environment's last state for plotting
-            # Since evaluate() runs episodes, the env should be in the final state of the last episode
-            # MinimalEnv stores the last metrics in self.last_episode_metrics
-            # But ModelEvaluator runs reset() at start of episode. 
-            # After evaluate(), the env is at the end of the last episode.
-            pass # Continue to logging
+                eval_transmission = 0.0
+                eval_balance = 0.0
+                eval_score = 0.0
+                eval_reward = 0.0
             
-        else:
-             print("Warning: eval_env not provided to callback, using training env metrics.")
-             # Fallback to old logic if no eval_env
-             # Get environment from training_env
-             env = self.training_env
-             # ... (Rest of old logic if needed, but we assume eval_env is provided)
-             # To keep it simple, I'll just skip the fallback implementation detail here 
-             # and assume eval_env is passed.
-             avg_transmission = 0
-             avg_balance = 0
-             avg_score = 0
-             avg_episode_reward = 0
-
-        # Record AVERAGE metrics to CSV
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        with open(self.csv_path, 'a') as f:
-            f.write(f'{timestamp},{self.rollout_count},{avg_transmission},{avg_balance},{avg_score},{avg_episode_reward}\n')
-        
-        # Plot and save design (use evaluation environment)
-        design_path = self.design_dir / f"design_rollout_{self.rollout_count:04d}.png"
-        self.design_image_paths.append(str(design_path))
-        title_suffix = f"Rollout {self.rollout_count}"
-        try:
-            if self.eval_env is not None:
-                 # MinimalEnv has save_design_plot method
-                 # If wrapped in Monitor/DummyVecEnv, might need unwrapped
-                 if hasattr(self.eval_env, 'unwrapped'):
-                     self.eval_env.unwrapped.save_design_plot(str(design_path), title_suffix=title_suffix)
-                 else:
-                     self.eval_env.save_design_plot(str(design_path), title_suffix=title_suffix)
-            else:
-                # Fallback to training env
-                if hasattr(self.training_env, 'envs'):
-                    self.training_env.envs[0].unwrapped.save_design_plot(str(design_path), title_suffix=title_suffix)
-                else:
-                    self.training_env.env_method('save_design_plot', str(design_path), title_suffix, indices=[0])
-        except Exception as e:
-            print(f"Warning: Could not save design plot: {e}")
-        
-        # Plot and save distribution
-        # Need efield_state. In MinimalEnv, calculate_flux returns it, 
-        # or it is stored in last_episode_metrics if using Discrete_gym
-        distribution_path = self.distribution_dir / f"distribution_rollout_{self.rollout_count:04d}.png"
-        self.distribution_image_paths.append(str(distribution_path))
-        try:
-            if self.eval_env is not None:
-                if hasattr(self.eval_env, 'unwrapped'):
-                     self.eval_env.unwrapped.save_distribution_plot(str(distribution_path), title_suffix=title_suffix)
-                else:
-                     self.eval_env.save_distribution_plot(str(distribution_path), title_suffix=title_suffix)
-            else:
-                # Fallback
-                 if hasattr(self.training_env, 'envs'):
-                    self.training_env.envs[0].unwrapped.save_distribution_plot(str(distribution_path), title_suffix=title_suffix)
-                 else:
-                    self.training_env.env_method('save_distribution_plot', str(distribution_path), title_suffix, indices=[0])
-        except Exception as e:
-            print(f"Warning: Could not save distribution plot: {e}")
-        
-        # Print AVERAGE metrics
-        print(f"Rollout {self.rollout_count} (Eval Result): "
-              f"Transmission={avg_transmission:.4f}, Balance={avg_balance:.4f}, "
-              f"Score={avg_score:.4f}, EpReward={avg_episode_reward:.4f}")
-        
-        # Check if this is the best score and save model if so
-        if avg_score > self.best_score:
-            self.best_score = avg_score
-            self.best_rollout = self.rollout_count
-            print(f"  ★ New best score! Saving best model...")
+            # Record evaluation metrics to CSV
+            with open(self.eval_csv_path, 'a') as f:
+                f.write(f'{timestamp},{self.rollout_count},{eval_transmission},{eval_balance},{eval_score},{eval_reward}\n')
             
-            if self.model_save_path:
-                best_model_path = self.model_save_path.replace('.zip', '_best.zip')
-                self.model.save(best_model_path)
-                print(f"  ★ Best model saved to: {best_model_path}")
+            # Also add to train_csv with 'eval' type for combined plotting
+            with open(self.train_csv_path, 'a') as f:
+                f.write(f'{timestamp},{self.rollout_count},eval,{eval_transmission},{eval_balance},{eval_score},{eval_reward}\n')
+            
+            # Print evaluation metrics
+            print(f"[Eval]  Rollout {self.rollout_count} (deterministic): "
+                  f"Trans={eval_transmission:.4f}, Bal={eval_balance:.4f}, "
+                  f"Score={eval_score:.4f}, Reward={eval_reward:.4f}")
+            
+            # Check if this is the best evaluation score
+            if eval_score > self.best_eval_score:
+                self.best_eval_score = eval_score
+                self.best_eval_rollout = self.rollout_count
+                print(f"[Eval]  ★ New best eval score! Saving best model...")
                 
-                # Also save best design and distribution
-                best_design_path = self.img_dir / "best_design.png"
-                best_distribution_path = self.img_dir / "best_distribution.png"
-                try:
-                    if self.eval_env is not None:
+                if self.model_save_path:
+                    best_model_path = self.model_save_path.replace('.zip', '_best.zip')
+                    self.model.save(best_model_path)
+                    print(f"[Eval]  ★ Best model saved to: {best_model_path}")
+                    
+                    # Save best design and distribution
+                    best_design_path = self.img_dir / "best_design.png"
+                    best_distribution_path = self.img_dir / "best_distribution.png"
+                    try:
+                        title = f"Best (Rollout {self.rollout_count}, Score={eval_score:.4f})"
                         if hasattr(self.eval_env, 'unwrapped'):
-                            self.eval_env.unwrapped.save_design_plot(str(best_design_path), title_suffix=f"Best (Rollout {self.rollout_count}, Score={avg_score:.4f})")
-                            self.eval_env.unwrapped.save_distribution_plot(str(best_distribution_path), title_suffix=f"Best (Rollout {self.rollout_count}, Score={avg_score:.4f})")
+                            self.eval_env.unwrapped.save_design_plot(str(best_design_path), title_suffix=title)
+                            self.eval_env.unwrapped.save_distribution_plot(str(best_distribution_path), title_suffix=title)
                         else:
-                            self.eval_env.save_design_plot(str(best_design_path), title_suffix=f"Best (Rollout {self.rollout_count}, Score={avg_score:.4f})")
-                            self.eval_env.save_distribution_plot(str(best_distribution_path), title_suffix=f"Best (Rollout {self.rollout_count}, Score={avg_score:.4f})")
-                except Exception as e:
-                    print(f"  Warning: Could not save best design/distribution plots: {e}")
+                            self.eval_env.save_design_plot(str(best_design_path), title_suffix=title)
+                            self.eval_env.save_distribution_plot(str(best_distribution_path), title_suffix=title)
+                    except Exception as e:
+                        print(f"[Eval]  Warning: Could not save best plots: {e}")
+            else:
+                print(f"[Eval]  (Best eval score: {self.best_eval_score:.4f} at rollout {self.best_eval_rollout})")
+            
+            # Save design/distribution plots from evaluation
+            design_path = self.design_dir / f"design_rollout_{self.rollout_count:04d}.png"
+            distribution_path = self.distribution_dir / f"distribution_rollout_{self.rollout_count:04d}.png"
+            self.design_image_paths.append(str(design_path))
+            self.distribution_image_paths.append(str(distribution_path))
+            
+            title_suffix = f"Rollout {self.rollout_count} (Eval)"
+            try:
+                if hasattr(self.eval_env, 'unwrapped'):
+                    self.eval_env.unwrapped.save_design_plot(str(design_path), title_suffix=title_suffix)
+                    self.eval_env.unwrapped.save_distribution_plot(str(distribution_path), title_suffix=title_suffix)
+                else:
+                    self.eval_env.save_design_plot(str(design_path), title_suffix=title_suffix)
+                    self.eval_env.save_distribution_plot(str(distribution_path), title_suffix=title_suffix)
+            except Exception as e:
+                print(f"Warning: Could not save plots: {e}")
+        
         else:
-            print(f"  (Best score: {self.best_score:.4f} at rollout {self.best_rollout})")
+            # No evaluation this rollout - save design from training env
+            design_path = self.design_dir / f"design_rollout_{self.rollout_count:04d}.png"
+            distribution_path = self.distribution_dir / f"distribution_rollout_{self.rollout_count:04d}.png"
+            self.design_image_paths.append(str(design_path))
+            self.distribution_image_paths.append(str(distribution_path))
+            
+            title_suffix = f"Rollout {self.rollout_count} (Train)"
+            try:
+                if hasattr(env, 'envs'):
+                    env.envs[0].unwrapped.save_design_plot(str(design_path), title_suffix=title_suffix)
+                    env.envs[0].unwrapped.save_distribution_plot(str(distribution_path), title_suffix=title_suffix)
+                else:
+                    env.env_method('save_design_plot', str(design_path), title_suffix, indices=[0])
+                    env.env_method('save_distribution_plot', str(distribution_path), title_suffix, indices=[0])
+            except Exception as e:
+                print(f"Warning: Could not save plots: {e}")
         
         # Update GIFs and plots after each rollout
         self._update_gifs_and_plots()
@@ -252,62 +278,95 @@ class TrainingCallback(BaseCallback):
         #     shutil.rmtree(self.distribution_dir)
     
     def _plot_metrics(self, verbose=True):
-        """Plot transmission, balance_score, and score from CSV."""
-        if not self.csv_path.exists():
+        """Plot transmission, balance_score, and score from CSV (both train and eval)."""
+        if not self.train_csv_path.exists():
             if verbose:
                 print("Warning: CSV file not found, cannot plot metrics")
             return
         
         try:
-            # Read CSV
-            df = pd.read_csv(self.csv_path)
+            # Read training CSV
+            df = pd.read_csv(self.train_csv_path)
             
             if len(df) == 0:
                 if verbose:
                     print("Warning: CSV file is empty, cannot plot metrics")
                 return
             
-            # Plot transmission
-            plt.figure(figsize=(10, 6))
-            plt.plot(df['rollout_count'], df['transmission'], 'b-', linewidth=2, marker='o', markersize=4)
+            # Separate train and eval data
+            train_df = df[df['type'] == 'train']
+            eval_df = df[df['type'] == 'eval']
+            
+            # Plot transmission (train + eval)
+            plt.figure(figsize=(12, 6))
+            if len(train_df) > 0:
+                plt.plot(train_df['rollout_count'], train_df['transmission'], 
+                        'b-', linewidth=1.5, marker='o', markersize=3, alpha=0.7, label='Train (avg)')
+            if len(eval_df) > 0:
+                plt.plot(eval_df['rollout_count'], eval_df['transmission'], 
+                        'r-', linewidth=2, marker='s', markersize=5, label='Eval (deterministic)')
             plt.xlabel('Rollout Count')
             plt.ylabel('Transmission')
             plt.title('Transmission Over Training')
+            plt.legend()
             plt.grid(True, alpha=0.3)
             plt.tight_layout()
-            transmission_plot_path = self.plot_dir / "transmission.png"
-            plt.savefig(transmission_plot_path, dpi=150, bbox_inches='tight')
+            plt.savefig(self.plot_dir / "transmission.png", dpi=150, bbox_inches='tight')
             plt.close()
-            if verbose:
-                print(f"Transmission plot saved to: {transmission_plot_path}")
             
-            # Plot balance score
-            plt.figure(figsize=(10, 6))
-            plt.plot(df['rollout_count'], df['balance_score'], 'g-', linewidth=2, marker='s', markersize=4)
+            # Plot balance score (train + eval)
+            plt.figure(figsize=(12, 6))
+            if len(train_df) > 0:
+                plt.plot(train_df['rollout_count'], train_df['balance_score'], 
+                        'b-', linewidth=1.5, marker='o', markersize=3, alpha=0.7, label='Train (avg)')
+            if len(eval_df) > 0:
+                plt.plot(eval_df['rollout_count'], eval_df['balance_score'], 
+                        'r-', linewidth=2, marker='s', markersize=5, label='Eval (deterministic)')
             plt.xlabel('Rollout Count')
             plt.ylabel('Balance Score')
             plt.title('Balance Score Over Training')
+            plt.legend()
             plt.grid(True, alpha=0.3)
             plt.tight_layout()
-            balance_plot_path = self.plot_dir / "balance.png"
-            plt.savefig(balance_plot_path, dpi=150, bbox_inches='tight')
+            plt.savefig(self.plot_dir / "balance.png", dpi=150, bbox_inches='tight')
             plt.close()
-            if verbose:
-                print(f"Balance score plot saved to: {balance_plot_path}")
             
-            # Plot score
-            plt.figure(figsize=(10, 6))
-            plt.plot(df['rollout_count'], df['score'], 'r-', linewidth=2, marker='^', markersize=4)
+            # Plot score (train + eval)
+            plt.figure(figsize=(12, 6))
+            if len(train_df) > 0:
+                plt.plot(train_df['rollout_count'], train_df['score'], 
+                        'b-', linewidth=1.5, marker='o', markersize=3, alpha=0.7, label='Train (avg)')
+            if len(eval_df) > 0:
+                plt.plot(eval_df['rollout_count'], eval_df['score'], 
+                        'r-', linewidth=2, marker='s', markersize=5, label='Eval (deterministic)')
             plt.xlabel('Rollout Count')
             plt.ylabel('Score')
             plt.title('Score Over Training')
+            plt.legend()
             plt.grid(True, alpha=0.3)
             plt.tight_layout()
-            score_plot_path = self.plot_dir / "score.png"
-            plt.savefig(score_plot_path, dpi=150, bbox_inches='tight')
+            plt.savefig(self.plot_dir / "score.png", dpi=150, bbox_inches='tight')
             plt.close()
+            
+            # Plot reward (train + eval)
+            plt.figure(figsize=(12, 6))
+            if len(train_df) > 0:
+                plt.plot(train_df['rollout_count'], train_df['reward'], 
+                        'b-', linewidth=1.5, marker='o', markersize=3, alpha=0.7, label='Train (avg)')
+            if len(eval_df) > 0:
+                plt.plot(eval_df['rollout_count'], eval_df['reward'], 
+                        'r-', linewidth=2, marker='s', markersize=5, label='Eval (deterministic)')
+            plt.xlabel('Rollout Count')
+            plt.ylabel('Reward')
+            plt.title('Reward Over Training')
+            plt.legend()
+            plt.grid(True, alpha=0.3)
+            plt.tight_layout()
+            plt.savefig(self.plot_dir / "reward.png", dpi=150, bbox_inches='tight')
+            plt.close()
+            
             if verbose:
-                print(f"Score plot saved to: {score_plot_path}")
+                print(f"Metric plots saved to: {self.plot_dir}")
             
         except Exception as e:
             if verbose:
@@ -416,7 +475,8 @@ def train_ppo(
         save_dir=callback_dir, 
         verbose=1, 
         eval_env=eval_env,
-        model_save_path=save_path_with_timestamp
+        model_save_path=save_path_with_timestamp,
+        eval_freq=5  # Run full evaluation every 5 rollouts
     )
 
     # Train the model
@@ -439,8 +499,11 @@ def train_ppo(
     print(f"Model saved to {save_path_with_timestamp}")
     
     # Print best model info
-    print(f"\nBest model was at rollout {callback.best_rollout} with score {callback.best_score:.4f}")
-    print(f"Best model saved to: {save_path_with_timestamp.replace('.zip', '_best.zip')}")
+    if callback.best_eval_rollout > 0:
+        print(f"\nBest model was at rollout {callback.best_eval_rollout} with eval score {callback.best_eval_score:.4f}")
+        print(f"Best model saved to: {save_path_with_timestamp.replace('.zip', '_best.zip')}")
+    else:
+        print("\nNo evaluation was run during training.")
 
     # Final evaluation using ModelEvaluator (same as rollout end)
     print("\nRunning final evaluation...")

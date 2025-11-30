@@ -203,6 +203,8 @@ class MinimalEnv(gym.Env):
             'material_matrix': self.material_matrix.copy(),
             'efield_state': efield_state,
             'total_transmission': total_transmission,
+            'transmission_score': transmission_score,
+            'diff_transmission': diff_transmission,
             'transmission_1': transmission_1,
             'transmission_2': transmission_2,
             'balance_score': balance_score,
