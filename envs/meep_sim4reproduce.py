@@ -71,6 +71,7 @@ class WaveguideSimulation:
         self.efield_monitor = None  # Electric field monitor for state (along y-axis)
         self.hfield_monitor = None  # Magnetic field monitor for state (along y-axis)
         self.efield_region_y_positions = []  # Y-coordinates of state efield monitor
+        self.hfield_region_y_positions = []  # Y-coordinates of state hfield monitor
         self.input_flux_region = None  # Input mode flux monitor
         self.output_flux_region_1 = None  # Output mode flux monitor 1
         self.output_flux_region_2 = None  # Output mode flux monitor 2
@@ -459,7 +460,7 @@ class WaveguideSimulation:
         y_positions = np.linspace(y_min, y_max, self.num_flux_regions)
         
         # Store y positions for plotting
-        self.efield_region_y_positions = y_positions.copy()
+        self.hfield_region_y_positions = y_positions.copy()
 
         # Create DFT field monitor for electric field (Ez component for 2D TM mode)
         # The monitor is a vertical line at x = state_output_x
