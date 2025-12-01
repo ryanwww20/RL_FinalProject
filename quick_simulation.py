@@ -111,7 +111,7 @@ def main():
     os.makedirs(args.output_dir, exist_ok=True)
 
     flux_dist_path = os.path.join(args.output_dir, "hfield_distribution.png")
-    design_path = os.path.join(args.output_dir, "design.png")
+    design_path = os.path.join(args.output_dir, "design_with_hfield.png")
 
     # plot_hfield_distribution(hfield_state, save_path, show_plot)
     simulation.plot_hfield_distribution(
