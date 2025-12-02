@@ -171,6 +171,7 @@ class MinimalEnv(gym.Env):
             self.last_episode_metrics = {
                 'material_matrix': self.material_matrix.copy(),
                 'hzfield_state': hzfield_state.copy(),
+                'hz_data': self.simulation.hz_data.copy(),  # Save hz_data for plot_design
                 'total_transmission': self._step_metrics['total_transmission'],
                 'transmission_1': self._step_metrics['transmission_1'],
                 'transmission_2': self._step_metrics['transmission_2'],
@@ -272,6 +273,8 @@ class MinimalEnv(gym.Env):
         Uses last completed episode's design if available."""
         if self.last_episode_metrics is not None:
             matrix = self.last_episode_metrics['material_matrix']
+            # Restore hz_data from saved metrics (avoid re-running simulation)
+            self.simulation.hz_data = self.last_episode_metrics['hz_data']
         else:
             matrix = self.material_matrix
         self.simulation.plot_design(
