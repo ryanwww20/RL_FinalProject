@@ -22,6 +22,11 @@ class MinimalEnv(gym.Env):
 
         self.obs_size = config.environment.obs_size
         self.action_size = config.environment.action_size
+        
+        # Validate that max_steps doesn't exceed material matrix size
+        assert config.environment.max_steps <= config.simulation.pixel_num_x, \
+            f"max_steps ({config.environment.max_steps}) must be <= pixel_num_x ({config.simulation.pixel_num_x})"
+        
         # Define observation and action spaces
         # State is an array of 100
         self.observation_space = spaces.Box(
@@ -266,7 +271,9 @@ class MinimalEnv(gym.Env):
             diff_ratio = 1.0  # If no transmission, balance is worst
         balance_score = max(1 - diff_ratio, 0)
 
-        current_score = transmission_score / 100 +  balance_score * 10
+        # Calculate current_score: explicitly normalize transmission by input_mode in the formula
+        # transmission_score is already (total_transmission/input_mode) normalized to [0,1]
+        current_score = (total_transmission / input_mode) / 100 + balance_score * 10
         reward = current_score - self.last_score if self.last_score is not None else 0
         self.last_score = current_score
 
@@ -295,6 +302,7 @@ class MinimalEnv(gym.Env):
             return self.last_episode_metrics
         
         # Fallback: return current state (for first rollout before any episode completes)
+        _, input_mode = self.simulation.get_flux_input_mode(band_num=1)
         _, _, _, hzfield_state, _, _, _, _ = self.simulation.calculate_flux(self.material_matrix)
         
         transmission_1, transmission_2, total_transmission, diff_transmission = \
@@ -306,8 +314,10 @@ class MinimalEnv(gym.Env):
             diff_ratio = 1.0
         balance_score = max(1 - diff_ratio, 0)
         
+        # Keep transmission_score as-is (without dividing by input_mode)
         transmission_score = min(max(total_transmission, 0), 1)
-        current_score = transmission_score * balance_score
+        # Use same formula as get_reward() for consistency (explicitly divide by input_mode here)
+        current_score = (total_transmission / input_mode) / 100 + balance_score * 10
         
         return {
             'material_matrix': self.material_matrix.copy(),
