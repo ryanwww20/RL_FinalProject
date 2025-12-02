@@ -24,3 +24,4 @@ eval_results/
 job_log/
 
 job.sh
+rl_log*.txt

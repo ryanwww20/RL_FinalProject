@@ -158,8 +158,9 @@ class MinimalEnv(gym.Env):
             self.material_matrix)
 
         # Use MODE coefficients for reward calculation (instead of raw flux)
+        connect_reward = 0.002 * (self.material_matrix[self.material_matrix_idx - 1] @ self.material_matrix[self.material_matrix_idx - 2])
         current_score, reward = self.get_reward()
-       
+        reward += connect_reward
         # Terminate when we've filled all rows OR reached max_steps
         max_rows = self.material_matrix.shape[0]
         terminated = self.material_matrix_idx >= min(self.max_steps, max_rows)
