@@ -24,3 +24,5 @@ eval_results/
 job_log/
 
 job.sh
+
+Slurm_User_Guide.pdf

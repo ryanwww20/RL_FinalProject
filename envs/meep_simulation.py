@@ -917,8 +917,14 @@ class WaveguideSimulation:
             x_label = 'Detector Index'
         
         plt.figure(figsize=(10, 6))
-        plt.plot(x_data, hzfield_state, 'b-',
-                 linewidth=2, label='Magnetic Field |Hz|²')
+        # Use markers for better visualization with fewer monitors (10 monitors)
+        if len(hzfield_state) <= 20:
+            # For small number of monitors, use markers with line
+            plt.plot(x_data, hzfield_state, 'b-o', linewidth=2, markersize=8,
+                     label='Magnetic Field |Hz|²', markeredgewidth=1.5)
+        else:
+            # For many monitors, use line only
+            plt.plot(x_data, hzfield_state, 'b-', linewidth=2, label='Magnetic Field |Hz|²')
         plt.xlabel(x_label)
         plt.ylabel('|Hz|²')
         

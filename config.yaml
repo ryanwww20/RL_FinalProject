@@ -21,7 +21,7 @@ simulation:
   waveguide_center_x: -0.9
   waveguide_length: 1.8
   output_y_separation: 0.6
-  simulation_time: 150
+  simulation_time: 200
   num_flux_regions: *num_monitors  # Now 10 monitors instead of 80
   monitor_length: 0.2  # Length of each monitor in um
   state_output_x: 1.0
@@ -43,11 +43,11 @@ simulation:
 
 training:
   ppo:
-    # total_timesteps: 19200
-    total_timesteps: 640
-    n_envs: 2
+    total_timesteps: 96000
+    # total_timesteps: 640
+    n_envs: 16
     learning_rate: 0.001
-    n_steps: 20
+    n_steps: 40
     batch_size: 64
     n_epochs: 50
     gamma: 0.99
