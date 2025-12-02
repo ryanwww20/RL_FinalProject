@@ -1,0 +1,3962 @@
+Job started at Tue Dec  2 08:44:14 PM CST 2025
+Creating environment...
+Creating PPO model...
+Using cpu device
+Training PPO agent for 256000 timesteps...
+Press Ctrl+C to interrupt training and save current model...
+Logging to ./ppo_tensorboard/PPO_22
+Episode 1/1 completed. Reward: -0.0046
+[Eval]  Rollout 1 (deterministic): Trans=330.0647, Bal=0.7480, Score=0.1351, Reward=-0.0046
+[Eval]  ★ New best eval score! Saving best model...
+[Eval]  ★ Best model saved to: models/ppo_model_20251202_204424_best.zip
+Simulation results saved to 'ppo_model_log_20251202_204424/img/best_design.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/img/best_distribution.png'
+Simulation results saved to 'ppo_model_log_20251202_204424/design_images/design_rollout_0001.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/distribution_images/distribution_rollout_0001.png'
+GIF created: ppo_model_log_20251202_204424/img/design.gif (1 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (1 frames)
+---------------------------------
+| rollout/           |          |
+|    ep_len_mean     | 16       |
+|    ep_rew_mean     | -0.0448  |
+| time/              |          |
+|    fps             | 5        |
+|    iterations      | 1        |
+|    time_elapsed    | 47       |
+|    total_timesteps | 256      |
+---------------------------------
+
+[Train] Rollout 2 (avg of 16 envs): Trans=148.4594, Bal=0.8277, Score=0.1095, Reward=-0.0412
+GIF created: ppo_model_log_20251202_204424/img/design.gif (2 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (2 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | -0.043      |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 2           |
+|    time_elapsed         | 82          |
+|    total_timesteps      | 512         |
+| train/                  |             |
+|    approx_kl            | 0.034367185 |
+|    clip_fraction        | 0.225       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -5.7        |
+|    explained_variance   | -2.33       |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0906     |
+|    n_updates            | 50          |
+|    policy_gradient_loss | -0.0448     |
+|    std                  | 1           |
+|    value_loss           | 0.0326      |
+-----------------------------------------
+
+[Train] Rollout 3 (avg of 16 envs): Trans=145.4080, Bal=0.8487, Score=0.1140, Reward=-0.0270
+GIF created: ppo_model_log_20251202_204424/img/design.gif (3 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (3 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | -0.0377     |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 3           |
+|    time_elapsed         | 116         |
+|    total_timesteps      | 768         |
+| train/                  |             |
+|    approx_kl            | 0.023261257 |
+|    clip_fraction        | 0.3         |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -5.72       |
+|    explained_variance   | -1.06       |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.103      |
+|    n_updates            | 100         |
+|    policy_gradient_loss | -0.0345     |
+|    std                  | 1.02        |
+|    value_loss           | 0.0109      |
+-----------------------------------------
+
+[Train] Rollout 4 (avg of 16 envs): Trans=164.2229, Bal=0.8086, Score=0.1013, Reward=-0.0531
+GIF created: ppo_model_log_20251202_204424/img/design.gif (4 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (4 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | -0.0415     |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 4           |
+|    time_elapsed         | 149         |
+|    total_timesteps      | 1024        |
+| train/                  |             |
+|    approx_kl            | 0.030376742 |
+|    clip_fraction        | 0.299       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -5.77       |
+|    explained_variance   | -1.11       |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.101      |
+|    n_updates            | 150         |
+|    policy_gradient_loss | -0.0372     |
+|    std                  | 1.02        |
+|    value_loss           | 0.00599     |
+-----------------------------------------
+Episode 1/1 completed. Reward: -0.0679
+[Eval]  Rollout 5 (deterministic): Trans=117.1382, Bal=0.8671, Score=0.0804, Reward=-0.0679
+[Eval]  (Best eval score: 0.1351 at rollout 1)
+Simulation results saved to 'ppo_model_log_20251202_204424/design_images/design_rollout_0005.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/distribution_images/distribution_rollout_0005.png'
+GIF created: ppo_model_log_20251202_204424/img/design.gif (5 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (5 frames)
+----------------------------------------
+| rollout/                |            |
+|    ep_len_mean          | 16         |
+|    ep_rew_mean          | -0.0371    |
+| time/                   |            |
+|    fps                  | 6          |
+|    iterations           | 5          |
+|    time_elapsed         | 197        |
+|    total_timesteps      | 1280       |
+| train/                  |            |
+|    approx_kl            | 0.02458535 |
+|    clip_fraction        | 0.328      |
+|    clip_range           | 0.2        |
+|    entropy_loss         | -5.76      |
+|    explained_variance   | -0.986     |
+|    learning_rate        | 0.001      |
+|    loss                 | -0.0764    |
+|    n_updates            | 200        |
+|    policy_gradient_loss | -0.0368    |
+|    std                  | 1.03       |
+|    value_loss           | 0.00593    |
+----------------------------------------
+
+[Train] Rollout 6 (avg of 16 envs): Trans=140.2129, Bal=0.8571, Score=0.1054, Reward=-0.0526
+GIF created: ppo_model_log_20251202_204424/img/design.gif (6 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (6 frames)
+----------------------------------------
+| rollout/                |            |
+|    ep_len_mean          | 16         |
+|    ep_rew_mean          | -0.0397    |
+| time/                   |            |
+|    fps                  | 6          |
+|    iterations           | 6          |
+|    time_elapsed         | 232        |
+|    total_timesteps      | 1536       |
+| train/                  |            |
+|    approx_kl            | 0.03450145 |
+|    clip_fraction        | 0.323      |
+|    clip_range           | 0.2        |
+|    entropy_loss         | -5.83      |
+|    explained_variance   | -0.174     |
+|    learning_rate        | 0.001      |
+|    loss                 | -0.112     |
+|    n_updates            | 250        |
+|    policy_gradient_loss | -0.0305    |
+|    std                  | 1.05       |
+|    value_loss           | 0.0077     |
+----------------------------------------
+
+[Train] Rollout 7 (avg of 16 envs): Trans=235.7342, Bal=0.8264, Score=0.1677, Reward=0.0139
+GIF created: ppo_model_log_20251202_204424/img/design.gif (7 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (7 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | -0.0332     |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 7           |
+|    time_elapsed         | 267         |
+|    total_timesteps      | 1792        |
+| train/                  |             |
+|    approx_kl            | 0.017569488 |
+|    clip_fraction        | 0.169       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -5.87       |
+|    explained_variance   | -0.175      |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0949     |
+|    n_updates            | 300         |
+|    policy_gradient_loss | -0.0216     |
+|    std                  | 1.05        |
+|    value_loss           | 0.00608     |
+-----------------------------------------
+
+[Train] Rollout 8 (avg of 16 envs): Trans=126.2547, Bal=0.8551, Score=0.1007, Reward=-0.0627
+GIF created: ppo_model_log_20251202_204424/img/design.gif (8 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (8 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | -0.0341     |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 8           |
+|    time_elapsed         | 301         |
+|    total_timesteps      | 2048        |
+| train/                  |             |
+|    approx_kl            | 0.018382581 |
+|    clip_fraction        | 0.19        |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -5.83       |
+|    explained_variance   | -0.00194    |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0776     |
+|    n_updates            | 350         |
+|    policy_gradient_loss | -0.0175     |
+|    std                  | 1.03        |
+|    value_loss           | 0.00683     |
+-----------------------------------------
+
+[Train] Rollout 9 (avg of 16 envs): Trans=268.3935, Bal=0.8495, Score=0.1838, Reward=0.0349
+GIF created: ppo_model_log_20251202_204424/img/design.gif (9 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (9 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | -0.0265     |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 9           |
+|    time_elapsed         | 336         |
+|    total_timesteps      | 2304        |
+| train/                  |             |
+|    approx_kl            | 0.030984212 |
+|    clip_fraction        | 0.314       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -5.79       |
+|    explained_variance   | -0.374      |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.117      |
+|    n_updates            | 400         |
+|    policy_gradient_loss | -0.03       |
+|    std                  | 1.03        |
+|    value_loss           | 0.00705     |
+-----------------------------------------
+Episode 1/1 completed. Reward: -0.0113
+[Eval]  Rollout 10 (deterministic): Trans=221.4092, Bal=0.9025, Score=0.1286, Reward=-0.0113
+[Eval]  (Best eval score: 0.1351 at rollout 1)
+Simulation results saved to 'ppo_model_log_20251202_204424/design_images/design_rollout_0010.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/distribution_images/distribution_rollout_0010.png'
+GIF created: ppo_model_log_20251202_204424/img/design.gif (10 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (10 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | -0.0172     |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 10          |
+|    time_elapsed         | 385         |
+|    total_timesteps      | 2560        |
+| train/                  |             |
+|    approx_kl            | 0.036725834 |
+|    clip_fraction        | 0.216       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -5.84       |
+|    explained_variance   | 0.0205      |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0844     |
+|    n_updates            | 450         |
+|    policy_gradient_loss | -0.0127     |
+|    std                  | 1.06        |
+|    value_loss           | 0.00777     |
+-----------------------------------------
+
+[Train] Rollout 11 (avg of 16 envs): Trans=198.1558, Bal=0.9324, Score=0.1424, Reward=-0.0195
+GIF created: ppo_model_log_20251202_204424/img/design.gif (11 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (11 frames)
+----------------------------------------
+| rollout/                |            |
+|    ep_len_mean          | 16         |
+|    ep_rew_mean          | -0.015     |
+| time/                   |            |
+|    fps                  | 6          |
+|    iterations           | 11         |
+|    time_elapsed         | 421        |
+|    total_timesteps      | 2816       |
+| train/                  |            |
+|    approx_kl            | 0.02812491 |
+|    clip_fraction        | 0.199      |
+|    clip_range           | 0.2        |
+|    entropy_loss         | -5.86      |
+|    explained_variance   | -0.228     |
+|    learning_rate        | 0.001      |
+|    loss                 | -0.0459    |
+|    n_updates            | 500        |
+|    policy_gradient_loss | -0.0218    |
+|    std                  | 1.04       |
+|    value_loss           | 0.00668    |
+----------------------------------------
+
+[Train] Rollout 12 (avg of 16 envs): Trans=188.1148, Bal=0.7742, Score=0.1397, Reward=-0.0060
+GIF created: ppo_model_log_20251202_204424/img/design.gif (12 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (12 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | -0.0104     |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 12          |
+|    time_elapsed         | 457         |
+|    total_timesteps      | 3072        |
+| train/                  |             |
+|    approx_kl            | 0.018352743 |
+|    clip_fraction        | 0.274       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -5.75       |
+|    explained_variance   | 0.00606     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.106      |
+|    n_updates            | 550         |
+|    policy_gradient_loss | -0.0368     |
+|    std                  | 1.01        |
+|    value_loss           | 0.00574     |
+-----------------------------------------
+
+[Train] Rollout 13 (avg of 16 envs): Trans=224.8475, Bal=0.9286, Score=0.1826, Reward=0.0408
+GIF created: ppo_model_log_20251202_204424/img/design.gif (13 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (13 frames)
+----------------------------------------
+| rollout/                |            |
+|    ep_len_mean          | 16         |
+|    ep_rew_mean          | -0.00285   |
+| time/                   |            |
+|    fps                  | 6          |
+|    iterations           | 13         |
+|    time_elapsed         | 492        |
+|    total_timesteps      | 3328       |
+| train/                  |            |
+|    approx_kl            | 0.04007683 |
+|    clip_fraction        | 0.254      |
+|    clip_range           | 0.2        |
+|    entropy_loss         | -5.71      |
+|    explained_variance   | -0.0501    |
+|    learning_rate        | 0.001      |
+|    loss                 | -0.0641    |
+|    n_updates            | 600        |
+|    policy_gradient_loss | -0.0181    |
+|    std                  | 1.01       |
+|    value_loss           | 0.00949    |
+----------------------------------------
+
+[Train] Rollout 14 (avg of 16 envs): Trans=196.7897, Bal=0.8438, Score=0.1423, Reward=-0.0101
+GIF created: ppo_model_log_20251202_204424/img/design.gif (14 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (14 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.00284     |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 14          |
+|    time_elapsed         | 530         |
+|    total_timesteps      | 3584        |
+| train/                  |             |
+|    approx_kl            | 0.030813899 |
+|    clip_fraction        | 0.251       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -5.76       |
+|    explained_variance   | 0.0272      |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.082      |
+|    n_updates            | 650         |
+|    policy_gradient_loss | -0.0167     |
+|    std                  | 1.03        |
+|    value_loss           | 0.0093      |
+-----------------------------------------
+Episode 1/1 completed. Reward: 0.0000
+[Eval]  Rollout 15 (deterministic): Trans=263.6982, Bal=0.9721, Score=0.1761, Reward=0.0000
+[Eval]  ★ New best eval score! Saving best model...
+[Eval]  ★ Best model saved to: models/ppo_model_20251202_204424_best.zip
+Simulation results saved to 'ppo_model_log_20251202_204424/img/best_design.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/img/best_distribution.png'
+Simulation results saved to 'ppo_model_log_20251202_204424/design_images/design_rollout_0015.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/distribution_images/distribution_rollout_0015.png'
+GIF created: ppo_model_log_20251202_204424/img/design.gif (15 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (15 frames)
+----------------------------------------
+| rollout/                |            |
+|    ep_len_mean          | 16         |
+|    ep_rew_mean          | -0.00242   |
+| time/                   |            |
+|    fps                  | 6          |
+|    iterations           | 15         |
+|    time_elapsed         | 580        |
+|    total_timesteps      | 3840       |
+| train/                  |            |
+|    approx_kl            | 0.03572609 |
+|    clip_fraction        | 0.225      |
+|    clip_range           | 0.2        |
+|    entropy_loss         | -5.79      |
+|    explained_variance   | -0.115     |
+|    learning_rate        | 0.001      |
+|    loss                 | -0.0567    |
+|    n_updates            | 700        |
+|    policy_gradient_loss | -0.0252    |
+|    std                  | 1.03       |
+|    value_loss           | 0.00948    |
+----------------------------------------
+
+[Train] Rollout 16 (avg of 16 envs): Trans=234.2947, Bal=0.9148, Score=0.1509, Reward=-0.0027
+GIF created: ppo_model_log_20251202_204424/img/design.gif (16 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (16 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | -0.00548    |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 16          |
+|    time_elapsed         | 617         |
+|    total_timesteps      | 4096        |
+| train/                  |             |
+|    approx_kl            | 0.037587546 |
+|    clip_fraction        | 0.3         |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -5.8        |
+|    explained_variance   | -0.0279     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0971     |
+|    n_updates            | 750         |
+|    policy_gradient_loss | -0.0189     |
+|    std                  | 1.04        |
+|    value_loss           | 0.0077      |
+-----------------------------------------
+
+[Train] Rollout 17 (avg of 16 envs): Trans=198.9852, Bal=0.8708, Score=0.1351, Reward=-0.0138
+GIF created: ppo_model_log_20251202_204424/img/design.gif (17 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (17 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | -0.00125    |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 17          |
+|    time_elapsed         | 654         |
+|    total_timesteps      | 4352        |
+| train/                  |             |
+|    approx_kl            | 0.034989014 |
+|    clip_fraction        | 0.263       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -5.79       |
+|    explained_variance   | -0.0842     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0872     |
+|    n_updates            | 800         |
+|    policy_gradient_loss | -0.0195     |
+|    std                  | 1.03        |
+|    value_loss           | 0.00672     |
+-----------------------------------------
+
+[Train] Rollout 18 (avg of 16 envs): Trans=218.1946, Bal=0.9153, Score=0.1727, Reward=0.0063
+GIF created: ppo_model_log_20251202_204424/img/design.gif (18 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (18 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | -0.00351    |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 18          |
+|    time_elapsed         | 692         |
+|    total_timesteps      | 4608        |
+| train/                  |             |
+|    approx_kl            | 0.036915544 |
+|    clip_fraction        | 0.264       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -5.71       |
+|    explained_variance   | -0.0215     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0844     |
+|    n_updates            | 850         |
+|    policy_gradient_loss | -0.0252     |
+|    std                  | 1           |
+|    value_loss           | 0.00516     |
+-----------------------------------------
+
+[Train] Rollout 19 (avg of 16 envs): Trans=249.3749, Bal=0.9045, Score=0.1753, Reward=0.0199
+GIF created: ppo_model_log_20251202_204424/img/design.gif (19 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (19 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | -0.00581    |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 19          |
+|    time_elapsed         | 729         |
+|    total_timesteps      | 4864        |
+| train/                  |             |
+|    approx_kl            | 0.029617928 |
+|    clip_fraction        | 0.25        |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -5.62       |
+|    explained_variance   | 0.0717      |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0604     |
+|    n_updates            | 900         |
+|    policy_gradient_loss | -0.0155     |
+|    std                  | 0.978       |
+|    value_loss           | 0.00741     |
+-----------------------------------------
+Episode 1/1 completed. Reward: -0.0000
+[Eval]  Rollout 20 (deterministic): Trans=263.6812, Bal=0.9720, Score=0.1761, Reward=-0.0000
+[Eval]  (Best eval score: 0.1761 at rollout 15)
+Simulation results saved to 'ppo_model_log_20251202_204424/design_images/design_rollout_0020.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/distribution_images/distribution_rollout_0020.png'
+GIF created: ppo_model_log_20251202_204424/img/design.gif (20 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (20 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | -0.000394   |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 20          |
+|    time_elapsed         | 780         |
+|    total_timesteps      | 5120        |
+| train/                  |             |
+|    approx_kl            | 0.016475517 |
+|    clip_fraction        | 0.173       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -5.58       |
+|    explained_variance   | -0.039      |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0593     |
+|    n_updates            | 950         |
+|    policy_gradient_loss | -0.0177     |
+|    std                  | 0.983       |
+|    value_loss           | 0.00536     |
+-----------------------------------------
+
+[Train] Rollout 21 (avg of 16 envs): Trans=220.4514, Bal=0.8850, Score=0.1853, Reward=0.0320
+GIF created: ppo_model_log_20251202_204424/img/design.gif (21 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (21 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.00475     |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 21          |
+|    time_elapsed         | 818         |
+|    total_timesteps      | 5376        |
+| train/                  |             |
+|    approx_kl            | 0.010015128 |
+|    clip_fraction        | 0.151       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -5.51       |
+|    explained_variance   | -0.0732     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0886     |
+|    n_updates            | 1000        |
+|    policy_gradient_loss | -0.0201     |
+|    std                  | 0.963       |
+|    value_loss           | 0.0071      |
+-----------------------------------------
+
+[Train] Rollout 22 (avg of 16 envs): Trans=323.7136, Bal=0.8928, Score=0.2093, Reward=0.0642
+GIF created: ppo_model_log_20251202_204424/img/design.gif (22 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (22 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0191      |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 22          |
+|    time_elapsed         | 857         |
+|    total_timesteps      | 5632        |
+| train/                  |             |
+|    approx_kl            | 0.016039869 |
+|    clip_fraction        | 0.169       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -5.49       |
+|    explained_variance   | -0.00626    |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0456     |
+|    n_updates            | 1050        |
+|    policy_gradient_loss | -0.0157     |
+|    std                  | 0.959       |
+|    value_loss           | 0.00999     |
+-----------------------------------------
+
+[Train] Rollout 23 (avg of 16 envs): Trans=265.3662, Bal=0.9022, Score=0.2050, Reward=0.0559
+GIF created: ppo_model_log_20251202_204424/img/design.gif (23 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (23 frames)
+----------------------------------------
+| rollout/                |            |
+|    ep_len_mean          | 16         |
+|    ep_rew_mean          | 0.0282     |
+| time/                   |            |
+|    fps                  | 6          |
+|    iterations           | 23         |
+|    time_elapsed         | 895        |
+|    total_timesteps      | 5888       |
+| train/                  |            |
+|    approx_kl            | 0.01935344 |
+|    clip_fraction        | 0.275      |
+|    clip_range           | 0.2        |
+|    entropy_loss         | -5.48      |
+|    explained_variance   | -0.142     |
+|    learning_rate        | 0.001      |
+|    loss                 | -0.109     |
+|    n_updates            | 1100       |
+|    policy_gradient_loss | -0.0367    |
+|    std                  | 0.959      |
+|    value_loss           | 0.00496    |
+----------------------------------------
+
+[Train] Rollout 24 (avg of 16 envs): Trans=267.5314, Bal=0.9289, Score=0.2030, Reward=0.0506
+GIF created: ppo_model_log_20251202_204424/img/design.gif (24 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (24 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.034       |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 24          |
+|    time_elapsed         | 933         |
+|    total_timesteps      | 6144        |
+| train/                  |             |
+|    approx_kl            | 0.023506781 |
+|    clip_fraction        | 0.269       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -5.4        |
+|    explained_variance   | -0.0419     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0434     |
+|    n_updates            | 1150        |
+|    policy_gradient_loss | -0.0274     |
+|    std                  | 0.931       |
+|    value_loss           | 0.0135      |
+-----------------------------------------
+Episode 1/1 completed. Reward: 0.0000
+[Eval]  Rollout 25 (deterministic): Trans=263.6777, Bal=0.9721, Score=0.1761, Reward=0.0000
+[Eval]  (Best eval score: 0.1761 at rollout 15)
+Simulation results saved to 'ppo_model_log_20251202_204424/design_images/design_rollout_0025.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/distribution_images/distribution_rollout_0025.png'
+GIF created: ppo_model_log_20251202_204424/img/design.gif (25 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (25 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0364      |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 25          |
+|    time_elapsed         | 986         |
+|    total_timesteps      | 6400        |
+| train/                  |             |
+|    approx_kl            | 0.014127531 |
+|    clip_fraction        | 0.179       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -5.35       |
+|    explained_variance   | 0.0437      |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.081      |
+|    n_updates            | 1200        |
+|    policy_gradient_loss | -0.0137     |
+|    std                  | 0.93        |
+|    value_loss           | 0.00836     |
+-----------------------------------------
+
+[Train] Rollout 26 (avg of 16 envs): Trans=246.9904, Bal=0.9041, Score=0.1753, Reward=0.0295
+GIF created: ppo_model_log_20251202_204424/img/design.gif (26 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (26 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0422      |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 26          |
+|    time_elapsed         | 1024        |
+|    total_timesteps      | 6656        |
+| train/                  |             |
+|    approx_kl            | 0.018492032 |
+|    clip_fraction        | 0.216       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -5.32       |
+|    explained_variance   | -0.07       |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0391     |
+|    n_updates            | 1250        |
+|    policy_gradient_loss | -0.015      |
+|    std                  | 0.919       |
+|    value_loss           | 0.00628     |
+-----------------------------------------
+
+[Train] Rollout 27 (avg of 16 envs): Trans=317.1932, Bal=0.9211, Score=0.2126, Reward=0.0564
+GIF created: ppo_model_log_20251202_204424/img/design.gif (27 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (27 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0535      |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 27          |
+|    time_elapsed         | 1064        |
+|    total_timesteps      | 6912        |
+| train/                  |             |
+|    approx_kl            | 0.014701493 |
+|    clip_fraction        | 0.195       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -5.27       |
+|    explained_variance   | 0.00559     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0846     |
+|    n_updates            | 1300        |
+|    policy_gradient_loss | -0.0169     |
+|    std                  | 0.911       |
+|    value_loss           | 0.00849     |
+-----------------------------------------
+
+[Train] Rollout 28 (avg of 16 envs): Trans=259.0444, Bal=0.9113, Score=0.2342, Reward=0.0784
+GIF created: ppo_model_log_20251202_204424/img/design.gif (28 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (28 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0525      |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 28          |
+|    time_elapsed         | 1103        |
+|    total_timesteps      | 7168        |
+| train/                  |             |
+|    approx_kl            | 0.024148341 |
+|    clip_fraction        | 0.128       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -5.2        |
+|    explained_variance   | 0.074       |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0823     |
+|    n_updates            | 1350        |
+|    policy_gradient_loss | -0.014      |
+|    std                  | 0.881       |
+|    value_loss           | 0.0121      |
+-----------------------------------------
+
+[Train] Rollout 29 (avg of 16 envs): Trans=227.7896, Bal=0.8647, Score=0.1752, Reward=0.0351
+GIF created: ppo_model_log_20251202_204424/img/design.gif (29 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (29 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0467      |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 29          |
+|    time_elapsed         | 1143        |
+|    total_timesteps      | 7424        |
+| train/                  |             |
+|    approx_kl            | 0.008803838 |
+|    clip_fraction        | 0.134       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -5.1        |
+|    explained_variance   | -0.0824     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.041      |
+|    n_updates            | 1400        |
+|    policy_gradient_loss | -0.0087     |
+|    std                  | 0.868       |
+|    value_loss           | 0.0105      |
+-----------------------------------------
+Episode 1/1 completed. Reward: 0.0000
+[Eval]  Rollout 30 (deterministic): Trans=263.6850, Bal=0.9720, Score=0.1761, Reward=0.0000
+[Eval]  (Best eval score: 0.1761 at rollout 15)
+Simulation results saved to 'ppo_model_log_20251202_204424/design_images/design_rollout_0030.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/distribution_images/distribution_rollout_0030.png'
+GIF created: ppo_model_log_20251202_204424/img/design.gif (30 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (30 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0507      |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 30          |
+|    time_elapsed         | 1196        |
+|    total_timesteps      | 7680        |
+| train/                  |             |
+|    approx_kl            | 0.017757587 |
+|    clip_fraction        | 0.166       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -5.03       |
+|    explained_variance   | 0.0149      |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0778     |
+|    n_updates            | 1450        |
+|    policy_gradient_loss | -0.00974    |
+|    std                  | 0.855       |
+|    value_loss           | 0.00922     |
+-----------------------------------------
+
+[Train] Rollout 31 (avg of 16 envs): Trans=262.6855, Bal=0.9065, Score=0.2062, Reward=0.0584
+GIF created: ppo_model_log_20251202_204424/img/design.gif (31 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (31 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0527      |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 31          |
+|    time_elapsed         | 1236        |
+|    total_timesteps      | 7936        |
+| train/                  |             |
+|    approx_kl            | 0.016451448 |
+|    clip_fraction        | 0.164       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.97       |
+|    explained_variance   | -0.0244     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0629     |
+|    n_updates            | 1500        |
+|    policy_gradient_loss | -0.014      |
+|    std                  | 0.839       |
+|    value_loss           | 0.00939     |
+-----------------------------------------
+
+[Train] Rollout 32 (avg of 16 envs): Trans=304.3183, Bal=0.9171, Score=0.1995, Reward=0.0497
+GIF created: ppo_model_log_20251202_204424/img/design.gif (32 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (32 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0597      |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 32          |
+|    time_elapsed         | 1277        |
+|    total_timesteps      | 8192        |
+| train/                  |             |
+|    approx_kl            | 0.025941018 |
+|    clip_fraction        | 0.299       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.92       |
+|    explained_variance   | 0.0268      |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0974     |
+|    n_updates            | 1550        |
+|    policy_gradient_loss | -0.0142     |
+|    std                  | 0.831       |
+|    value_loss           | 0.00911     |
+-----------------------------------------
+
+[Train] Rollout 33 (avg of 16 envs): Trans=233.6677, Bal=0.8848, Score=0.1744, Reward=0.0344
+GIF created: ppo_model_log_20251202_204424/img/design.gif (33 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (33 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0562      |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 33          |
+|    time_elapsed         | 1318        |
+|    total_timesteps      | 8448        |
+| train/                  |             |
+|    approx_kl            | 0.025807746 |
+|    clip_fraction        | 0.246       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.87       |
+|    explained_variance   | 0.0476      |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0881     |
+|    n_updates            | 1600        |
+|    policy_gradient_loss | -0.0133     |
+|    std                  | 0.821       |
+|    value_loss           | 0.00919     |
+-----------------------------------------
+
+[Train] Rollout 34 (avg of 16 envs): Trans=252.4190, Bal=0.9210, Score=0.1855, Reward=0.0373
+GIF created: ppo_model_log_20251202_204424/img/design.gif (34 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (34 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0493      |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 34          |
+|    time_elapsed         | 1359        |
+|    total_timesteps      | 8704        |
+| train/                  |             |
+|    approx_kl            | 0.033217944 |
+|    clip_fraction        | 0.271       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.83       |
+|    explained_variance   | -0.00505    |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0548     |
+|    n_updates            | 1650        |
+|    policy_gradient_loss | -0.0233     |
+|    std                  | 0.818       |
+|    value_loss           | 0.00833     |
+-----------------------------------------
+Episode 1/1 completed. Reward: -0.0000
+[Eval]  Rollout 35 (deterministic): Trans=263.6822, Bal=0.9720, Score=0.1761, Reward=-0.0000
+[Eval]  (Best eval score: 0.1761 at rollout 15)
+Simulation results saved to 'ppo_model_log_20251202_204424/design_images/design_rollout_0035.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/distribution_images/distribution_rollout_0035.png'
+GIF created: ppo_model_log_20251202_204424/img/design.gif (35 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (35 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0537      |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 35          |
+|    time_elapsed         | 1413        |
+|    total_timesteps      | 8960        |
+| train/                  |             |
+|    approx_kl            | 0.035274267 |
+|    clip_fraction        | 0.281       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.87       |
+|    explained_variance   | 0.0608      |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.065      |
+|    n_updates            | 1700        |
+|    policy_gradient_loss | -0.00341    |
+|    std                  | 0.834       |
+|    value_loss           | 0.00674     |
+-----------------------------------------
+
+[Train] Rollout 36 (avg of 16 envs): Trans=341.2699, Bal=0.9270, Score=0.2161, Reward=0.0705
+GIF created: ppo_model_log_20251202_204424/img/design.gif (36 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (36 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0548      |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 36          |
+|    time_elapsed         | 1454        |
+|    total_timesteps      | 9216        |
+| train/                  |             |
+|    approx_kl            | 0.018864011 |
+|    clip_fraction        | 0.177       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.95       |
+|    explained_variance   | 0.0318      |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0723     |
+|    n_updates            | 1750        |
+|    policy_gradient_loss | -0.018      |
+|    std                  | 0.849       |
+|    value_loss           | 0.00625     |
+-----------------------------------------
+
+[Train] Rollout 37 (avg of 16 envs): Trans=228.4233, Bal=0.9086, Score=0.1905, Reward=0.0358
+GIF created: ppo_model_log_20251202_204424/img/design.gif (37 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (37 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0518      |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 37          |
+|    time_elapsed         | 1496        |
+|    total_timesteps      | 9472        |
+| train/                  |             |
+|    approx_kl            | 0.014767069 |
+|    clip_fraction        | 0.142       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.98       |
+|    explained_variance   | -0.0302     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.077      |
+|    n_updates            | 1800        |
+|    policy_gradient_loss | -0.00836    |
+|    std                  | 0.847       |
+|    value_loss           | 0.00761     |
+-----------------------------------------
+
+[Train] Rollout 38 (avg of 16 envs): Trans=289.7779, Bal=0.9356, Score=0.2274, Reward=0.0768
+GIF created: ppo_model_log_20251202_204424/img/design.gif (38 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (38 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0546      |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 38          |
+|    time_elapsed         | 1538        |
+|    total_timesteps      | 9728        |
+| train/                  |             |
+|    approx_kl            | 0.011564024 |
+|    clip_fraction        | 0.165       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.98       |
+|    explained_variance   | -0.195      |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0688     |
+|    n_updates            | 1850        |
+|    policy_gradient_loss | -0.016      |
+|    std                  | 0.848       |
+|    value_loss           | 0.00751     |
+-----------------------------------------
+
+[Train] Rollout 39 (avg of 16 envs): Trans=275.6187, Bal=0.9171, Score=0.2138, Reward=0.0555
+GIF created: ppo_model_log_20251202_204424/img/design.gif (39 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (39 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0577      |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 39          |
+|    time_elapsed         | 1579        |
+|    total_timesteps      | 9984        |
+| train/                  |             |
+|    approx_kl            | 0.017410561 |
+|    clip_fraction        | 0.214       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -5.05       |
+|    explained_variance   | 0.00381     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0946     |
+|    n_updates            | 1900        |
+|    policy_gradient_loss | -0.0232     |
+|    std                  | 0.868       |
+|    value_loss           | 0.00814     |
+-----------------------------------------
+Episode 1/1 completed. Reward: 0.0000
+[Eval]  Rollout 40 (deterministic): Trans=263.6887, Bal=0.9721, Score=0.1761, Reward=0.0000
+[Eval]  (Best eval score: 0.1761 at rollout 15)
+Simulation results saved to 'ppo_model_log_20251202_204424/design_images/design_rollout_0040.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/distribution_images/distribution_rollout_0040.png'
+GIF created: ppo_model_log_20251202_204424/img/design.gif (40 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (40 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0652      |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 40          |
+|    time_elapsed         | 1635        |
+|    total_timesteps      | 10240       |
+| train/                  |             |
+|    approx_kl            | 0.028493615 |
+|    clip_fraction        | 0.28        |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -5.02       |
+|    explained_variance   | 0.00398     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.064      |
+|    n_updates            | 1950        |
+|    policy_gradient_loss | -0.014      |
+|    std                  | 0.849       |
+|    value_loss           | 0.00679     |
+-----------------------------------------
+
+[Train] Rollout 41 (avg of 16 envs): Trans=262.7740, Bal=0.9425, Score=0.1892, Reward=0.0410
+GIF created: ppo_model_log_20251202_204424/img/design.gif (41 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (41 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0604      |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 41          |
+|    time_elapsed         | 1678        |
+|    total_timesteps      | 10496       |
+| train/                  |             |
+|    approx_kl            | 0.012259813 |
+|    clip_fraction        | 0.15        |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.99       |
+|    explained_variance   | -0.00414    |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0571     |
+|    n_updates            | 2000        |
+|    policy_gradient_loss | -0.012      |
+|    std                  | 0.855       |
+|    value_loss           | 0.00711     |
+-----------------------------------------
+
+[Train] Rollout 42 (avg of 16 envs): Trans=243.8745, Bal=0.9252, Score=0.1817, Reward=0.0365
+GIF created: ppo_model_log_20251202_204424/img/design.gif (42 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (42 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0588      |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 42          |
+|    time_elapsed         | 1721        |
+|    total_timesteps      | 10752       |
+| train/                  |             |
+|    approx_kl            | 0.015093327 |
+|    clip_fraction        | 0.116       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.93       |
+|    explained_variance   | -0.0022     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0587     |
+|    n_updates            | 2050        |
+|    policy_gradient_loss | -0.0119     |
+|    std                  | 0.827       |
+|    value_loss           | 0.00881     |
+-----------------------------------------
+
+[Train] Rollout 43 (avg of 16 envs): Trans=305.9222, Bal=0.9036, Score=0.2292, Reward=0.0776
+GIF created: ppo_model_log_20251202_204424/img/design.gif (43 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (43 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0623      |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 43          |
+|    time_elapsed         | 1763        |
+|    total_timesteps      | 11008       |
+| train/                  |             |
+|    approx_kl            | 0.014793976 |
+|    clip_fraction        | 0.15        |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.88       |
+|    explained_variance   | 0.011       |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0659     |
+|    n_updates            | 2100        |
+|    policy_gradient_loss | -0.0167     |
+|    std                  | 0.83        |
+|    value_loss           | 0.0101      |
+-----------------------------------------
+
+[Train] Rollout 44 (avg of 16 envs): Trans=317.8919, Bal=0.9148, Score=0.2382, Reward=0.0691
+GIF created: ppo_model_log_20251202_204424/img/design.gif (44 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (44 frames)
+----------------------------------------
+| rollout/                |            |
+|    ep_len_mean          | 16         |
+|    ep_rew_mean          | 0.0603     |
+| time/                   |            |
+|    fps                  | 6          |
+|    iterations           | 44         |
+|    time_elapsed         | 1807       |
+|    total_timesteps      | 11264      |
+| train/                  |            |
+|    approx_kl            | 0.01723131 |
+|    clip_fraction        | 0.241      |
+|    clip_range           | 0.2        |
+|    entropy_loss         | -4.84      |
+|    explained_variance   | -0.000517  |
+|    learning_rate        | 0.001      |
+|    loss                 | -0.0811    |
+|    n_updates            | 2150       |
+|    policy_gradient_loss | -0.0207    |
+|    std                  | 0.818      |
+|    value_loss           | 0.00703    |
+----------------------------------------
+Episode 1/1 completed. Reward: 0.0000
+[Eval]  Rollout 45 (deterministic): Trans=263.6910, Bal=0.9720, Score=0.1761, Reward=0.0000
+[Eval]  (Best eval score: 0.1761 at rollout 15)
+Simulation results saved to 'ppo_model_log_20251202_204424/design_images/design_rollout_0045.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/distribution_images/distribution_rollout_0045.png'
+GIF created: ppo_model_log_20251202_204424/img/design.gif (45 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (45 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0626      |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 45          |
+|    time_elapsed         | 1862        |
+|    total_timesteps      | 11520       |
+| train/                  |             |
+|    approx_kl            | 0.020036355 |
+|    clip_fraction        | 0.195       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.86       |
+|    explained_variance   | -0.00807    |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0744     |
+|    n_updates            | 2200        |
+|    policy_gradient_loss | -0.0219     |
+|    std                  | 0.825       |
+|    value_loss           | 0.00649     |
+-----------------------------------------
+
+[Train] Rollout 46 (avg of 16 envs): Trans=288.0396, Bal=0.8899, Score=0.1835, Reward=0.0276
+GIF created: ppo_model_log_20251202_204424/img/design.gif (46 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (46 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.056       |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 46          |
+|    time_elapsed         | 1906        |
+|    total_timesteps      | 11776       |
+| train/                  |             |
+|    approx_kl            | 0.024488004 |
+|    clip_fraction        | 0.195       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -5          |
+|    explained_variance   | -0.0487     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0682     |
+|    n_updates            | 2250        |
+|    policy_gradient_loss | -0.0211     |
+|    std                  | 0.867       |
+|    value_loss           | 0.00753     |
+-----------------------------------------
+
+[Train] Rollout 47 (avg of 16 envs): Trans=264.8492, Bal=0.8852, Score=0.1622, Reward=0.0024
+GIF created: ppo_model_log_20251202_204424/img/design.gif (47 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (47 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0474      |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 47          |
+|    time_elapsed         | 1949        |
+|    total_timesteps      | 12032       |
+| train/                  |             |
+|    approx_kl            | 0.019634075 |
+|    clip_fraction        | 0.292       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -5.14       |
+|    explained_variance   | -0.0258     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.078      |
+|    n_updates            | 2300        |
+|    policy_gradient_loss | -0.027      |
+|    std                  | 0.892       |
+|    value_loss           | 0.00705     |
+-----------------------------------------
+
+[Train] Rollout 48 (avg of 16 envs): Trans=324.8450, Bal=0.9118, Score=0.2199, Reward=0.0714
+GIF created: ppo_model_log_20251202_204424/img/design.gif (48 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (48 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0538      |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 48          |
+|    time_elapsed         | 1993        |
+|    total_timesteps      | 12288       |
+| train/                  |             |
+|    approx_kl            | 0.011984618 |
+|    clip_fraction        | 0.112       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -5.11       |
+|    explained_variance   | -0.0413     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0469     |
+|    n_updates            | 2350        |
+|    policy_gradient_loss | -0.0129     |
+|    std                  | 0.874       |
+|    value_loss           | 0.00863     |
+-----------------------------------------
+
+[Train] Rollout 49 (avg of 16 envs): Trans=320.1786, Bal=0.9252, Score=0.2377, Reward=0.0865
+GIF created: ppo_model_log_20251202_204424/img/design.gif (49 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (49 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.057       |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 49          |
+|    time_elapsed         | 2037        |
+|    total_timesteps      | 12544       |
+| train/                  |             |
+|    approx_kl            | 0.009430703 |
+|    clip_fraction        | 0.16        |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -5          |
+|    explained_variance   | 0.0122      |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0699     |
+|    n_updates            | 2400        |
+|    policy_gradient_loss | -0.0138     |
+|    std                  | 0.844       |
+|    value_loss           | 0.00727     |
+-----------------------------------------
+Episode 1/1 completed. Reward: -0.0000
+[Eval]  Rollout 50 (deterministic): Trans=263.6768, Bal=0.9721, Score=0.1761, Reward=-0.0000
+[Eval]  (Best eval score: 0.1761 at rollout 15)
+Simulation results saved to 'ppo_model_log_20251202_204424/design_images/design_rollout_0050.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/distribution_images/distribution_rollout_0050.png'
+GIF created: ppo_model_log_20251202_204424/img/design.gif (50 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (50 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0489      |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 50          |
+|    time_elapsed         | 2094        |
+|    total_timesteps      | 12800       |
+| train/                  |             |
+|    approx_kl            | 0.010129514 |
+|    clip_fraction        | 0.0988      |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.9        |
+|    explained_variance   | -0.00442    |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0548     |
+|    n_updates            | 2450        |
+|    policy_gradient_loss | -0.00929    |
+|    std                  | 0.83        |
+|    value_loss           | 0.008       |
+-----------------------------------------
+
+[Train] Rollout 51 (avg of 16 envs): Trans=318.6731, Bal=0.9049, Score=0.2353, Reward=0.0888
+GIF created: ppo_model_log_20251202_204424/img/design.gif (51 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (51 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0473      |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 51          |
+|    time_elapsed         | 2138        |
+|    total_timesteps      | 13056       |
+| train/                  |             |
+|    approx_kl            | 0.011486787 |
+|    clip_fraction        | 0.157       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.89       |
+|    explained_variance   | -0.0116     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0746     |
+|    n_updates            | 2500        |
+|    policy_gradient_loss | -0.0109     |
+|    std                  | 0.832       |
+|    value_loss           | 0.00746     |
+-----------------------------------------
+
+[Train] Rollout 52 (avg of 16 envs): Trans=352.8711, Bal=0.9422, Score=0.2552, Reward=0.0991
+GIF created: ppo_model_log_20251202_204424/img/design.gif (52 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (52 frames)
+----------------------------------------
+| rollout/                |            |
+|    ep_len_mean          | 16         |
+|    ep_rew_mean          | 0.0609     |
+| time/                   |            |
+|    fps                  | 6          |
+|    iterations           | 52         |
+|    time_elapsed         | 2184       |
+|    total_timesteps      | 13312      |
+| train/                  |            |
+|    approx_kl            | 0.01106387 |
+|    clip_fraction        | 0.129      |
+|    clip_range           | 0.2        |
+|    entropy_loss         | -4.86      |
+|    explained_variance   | 9.86e-05   |
+|    learning_rate        | 0.001      |
+|    loss                 | -0.0532    |
+|    n_updates            | 2550       |
+|    policy_gradient_loss | -0.00805   |
+|    std                  | 0.821      |
+|    value_loss           | 0.00993    |
+----------------------------------------
+
+[Train] Rollout 53 (avg of 16 envs): Trans=303.7280, Bal=0.9430, Score=0.2276, Reward=0.0707
+GIF created: ppo_model_log_20251202_204424/img/design.gif (53 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (53 frames)
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 16           |
+|    ep_rew_mean          | 0.0702       |
+| time/                   |              |
+|    fps                  | 6            |
+|    iterations           | 53           |
+|    time_elapsed         | 2228         |
+|    total_timesteps      | 13568        |
+| train/                  |              |
+|    approx_kl            | 0.0084350705 |
+|    clip_fraction        | 0.128        |
+|    clip_range           | 0.2          |
+|    entropy_loss         | -4.85        |
+|    explained_variance   | -0.000643    |
+|    learning_rate        | 0.001        |
+|    loss                 | -0.0494      |
+|    n_updates            | 2600         |
+|    policy_gradient_loss | -0.00925     |
+|    std                  | 0.822        |
+|    value_loss           | 0.0126       |
+------------------------------------------
+
+[Train] Rollout 54 (avg of 16 envs): Trans=292.6154, Bal=0.9404, Score=0.2104, Reward=0.0448
+GIF created: ppo_model_log_20251202_204424/img/design.gif (54 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (54 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0691      |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 54          |
+|    time_elapsed         | 2273        |
+|    total_timesteps      | 13824       |
+| train/                  |             |
+|    approx_kl            | 0.018137654 |
+|    clip_fraction        | 0.157       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.71       |
+|    explained_variance   | 0.0125      |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0812     |
+|    n_updates            | 2650        |
+|    policy_gradient_loss | -0.0189     |
+|    std                  | 0.781       |
+|    value_loss           | 0.00759     |
+-----------------------------------------
+Episode 1/1 completed. Reward: 0.0000
+[Eval]  Rollout 55 (deterministic): Trans=263.7013, Bal=0.9720, Score=0.1761, Reward=0.0000
+[Eval]  (Best eval score: 0.1761 at rollout 15)
+Simulation results saved to 'ppo_model_log_20251202_204424/design_images/design_rollout_0055.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/distribution_images/distribution_rollout_0055.png'
+GIF created: ppo_model_log_20251202_204424/img/design.gif (55 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (55 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0625      |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 55          |
+|    time_elapsed         | 2332        |
+|    total_timesteps      | 14080       |
+| train/                  |             |
+|    approx_kl            | 0.015555388 |
+|    clip_fraction        | 0.205       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.59       |
+|    explained_variance   | -0.0172     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0749     |
+|    n_updates            | 2700        |
+|    policy_gradient_loss | -0.0217     |
+|    std                  | 0.763       |
+|    value_loss           | 0.00717     |
+-----------------------------------------
+
+[Train] Rollout 56 (avg of 16 envs): Trans=359.7260, Bal=0.9262, Score=0.2211, Reward=0.0685
+GIF created: ppo_model_log_20251202_204424/img/design.gif (56 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (56 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.072       |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 56          |
+|    time_elapsed         | 2378        |
+|    total_timesteps      | 14336       |
+| train/                  |             |
+|    approx_kl            | 0.013832013 |
+|    clip_fraction        | 0.103       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.53       |
+|    explained_variance   | -0.0337     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0512     |
+|    n_updates            | 2750        |
+|    policy_gradient_loss | -0.00726    |
+|    std                  | 0.76        |
+|    value_loss           | 0.00755     |
+-----------------------------------------
+
+[Train] Rollout 57 (avg of 16 envs): Trans=230.1349, Bal=0.9142, Score=0.1650, Reward=0.0082
+GIF created: ppo_model_log_20251202_204424/img/design.gif (57 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (57 frames)
+----------------------------------------
+| rollout/                |            |
+|    ep_len_mean          | 16         |
+|    ep_rew_mean          | 0.0573     |
+| time/                   |            |
+|    fps                  | 6          |
+|    iterations           | 57         |
+|    time_elapsed         | 2423       |
+|    total_timesteps      | 14592      |
+| train/                  |            |
+|    approx_kl            | 0.01673415 |
+|    clip_fraction        | 0.186      |
+|    clip_range           | 0.2        |
+|    entropy_loss         | -4.4       |
+|    explained_variance   | 0.00765    |
+|    learning_rate        | 0.001      |
+|    loss                 | -0.039     |
+|    n_updates            | 2800       |
+|    policy_gradient_loss | -0.0179    |
+|    std                  | 0.723      |
+|    value_loss           | 0.00684    |
+----------------------------------------
+
+[Train] Rollout 58 (avg of 16 envs): Trans=367.9057, Bal=0.9324, Score=0.2476, Reward=0.0874
+GIF created: ppo_model_log_20251202_204424/img/design.gif (58 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (58 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0542      |
+| time/                   |             |
+|    fps                  | 6           |
+|    iterations           | 58          |
+|    time_elapsed         | 2469        |
+|    total_timesteps      | 14848       |
+| train/                  |             |
+|    approx_kl            | 0.011673681 |
+|    clip_fraction        | 0.119       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.37       |
+|    explained_variance   | 0.0114      |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0568     |
+|    n_updates            | 2850        |
+|    policy_gradient_loss | -0.00849    |
+|    std                  | 0.739       |
+|    value_loss           | 0.0045      |
+-----------------------------------------
+
+[Train] Rollout 59 (avg of 16 envs): Trans=340.7455, Bal=0.9090, Score=0.2159, Reward=0.0676
+GIF created: ppo_model_log_20251202_204424/img/design.gif (59 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (59 frames)
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 16           |
+|    ep_rew_mean          | 0.0507       |
+| time/                   |              |
+|    fps                  | 6            |
+|    iterations           | 59           |
+|    time_elapsed         | 2516         |
+|    total_timesteps      | 15104        |
+| train/                  |              |
+|    approx_kl            | 0.0076983105 |
+|    clip_fraction        | 0.0857       |
+|    clip_range           | 0.2          |
+|    entropy_loss         | -4.45        |
+|    explained_variance   | -0.016       |
+|    learning_rate        | 0.001        |
+|    loss                 | -0.0384      |
+|    n_updates            | 2900         |
+|    policy_gradient_loss | -0.00772     |
+|    std                  | 0.754        |
+|    value_loss           | 0.00753      |
+------------------------------------------
+Episode 1/1 completed. Reward: 0.0000
+[Eval]  Rollout 60 (deterministic): Trans=263.6916, Bal=0.9720, Score=0.1761, Reward=0.0000
+[Eval]  (Best eval score: 0.1761 at rollout 15)
+Simulation results saved to 'ppo_model_log_20251202_204424/design_images/design_rollout_0060.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/distribution_images/distribution_rollout_0060.png'
+GIF created: ppo_model_log_20251202_204424/img/design.gif (60 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (60 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0583      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 60          |
+|    time_elapsed         | 2576        |
+|    total_timesteps      | 15360       |
+| train/                  |             |
+|    approx_kl            | 0.013405886 |
+|    clip_fraction        | 0.206       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.41       |
+|    explained_variance   | 0.00065     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0573     |
+|    n_updates            | 2950        |
+|    policy_gradient_loss | -0.0191     |
+|    std                  | 0.736       |
+|    value_loss           | 0.00737     |
+-----------------------------------------
+
+[Train] Rollout 61 (avg of 16 envs): Trans=373.5630, Bal=0.9386, Score=0.2945, Reward=0.1383
+GIF created: ppo_model_log_20251202_204424/img/design.gif (61 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (61 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0737      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 61          |
+|    time_elapsed         | 2623        |
+|    total_timesteps      | 15616       |
+| train/                  |             |
+|    approx_kl            | 0.012020159 |
+|    clip_fraction        | 0.182       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.3        |
+|    explained_variance   | -0.00479    |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.063      |
+|    n_updates            | 3000        |
+|    policy_gradient_loss | -0.0196     |
+|    std                  | 0.711       |
+|    value_loss           | 0.00773     |
+-----------------------------------------
+
+[Train] Rollout 62 (avg of 16 envs): Trans=298.3474, Bal=0.9267, Score=0.2238, Reward=0.0725
+GIF created: ppo_model_log_20251202_204424/img/design.gif (62 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (62 frames)
+----------------------------------------
+| rollout/                |            |
+|    ep_len_mean          | 16         |
+|    ep_rew_mean          | 0.0751     |
+| time/                   |            |
+|    fps                  | 5          |
+|    iterations           | 62         |
+|    time_elapsed         | 2669       |
+|    total_timesteps      | 15872      |
+| train/                  |            |
+|    approx_kl            | 0.01863407 |
+|    clip_fraction        | 0.16       |
+|    clip_range           | 0.2        |
+|    entropy_loss         | -4.23      |
+|    explained_variance   | -0.00233   |
+|    learning_rate        | 0.001      |
+|    loss                 | -0.0879    |
+|    n_updates            | 3050       |
+|    policy_gradient_loss | -0.0183    |
+|    std                  | 0.711      |
+|    value_loss           | 0.0105     |
+----------------------------------------
+
+[Train] Rollout 63 (avg of 16 envs): Trans=266.4402, Bal=0.9263, Score=0.1881, Reward=0.0342
+GIF created: ppo_model_log_20251202_204424/img/design.gif (63 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (63 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.075       |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 63          |
+|    time_elapsed         | 2718        |
+|    total_timesteps      | 16128       |
+| train/                  |             |
+|    approx_kl            | 0.019852018 |
+|    clip_fraction        | 0.245       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.21       |
+|    explained_variance   | -0.054      |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0673     |
+|    n_updates            | 3100        |
+|    policy_gradient_loss | -0.0234     |
+|    std                  | 0.707       |
+|    value_loss           | 0.00957     |
+-----------------------------------------
+
+[Train] Rollout 64 (avg of 16 envs): Trans=295.5145, Bal=0.9378, Score=0.2047, Reward=0.0538
+GIF created: ppo_model_log_20251202_204424/img/design.gif (64 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (64 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0762      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 64          |
+|    time_elapsed         | 2765        |
+|    total_timesteps      | 16384       |
+| train/                  |             |
+|    approx_kl            | 0.009078795 |
+|    clip_fraction        | 0.113       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.17       |
+|    explained_variance   | -0.0178     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0541     |
+|    n_updates            | 3150        |
+|    policy_gradient_loss | -0.00713    |
+|    std                  | 0.697       |
+|    value_loss           | 0.00831     |
+-----------------------------------------
+Episode 1/1 completed. Reward: 0.0000
+[Eval]  Rollout 65 (deterministic): Trans=263.6983, Bal=0.9721, Score=0.1761, Reward=0.0000
+[Eval]  ★ New best eval score! Saving best model...
+[Eval]  ★ Best model saved to: models/ppo_model_20251202_204424_best.zip
+Simulation results saved to 'ppo_model_log_20251202_204424/img/best_design.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/img/best_distribution.png'
+Simulation results saved to 'ppo_model_log_20251202_204424/design_images/design_rollout_0065.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/distribution_images/distribution_rollout_0065.png'
+GIF created: ppo_model_log_20251202_204424/img/design.gif (65 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (65 frames)
+----------------------------------------
+| rollout/                |            |
+|    ep_len_mean          | 16         |
+|    ep_rew_mean          | 0.0703     |
+| time/                   |            |
+|    fps                  | 5          |
+|    iterations           | 65         |
+|    time_elapsed         | 2828       |
+|    total_timesteps      | 16640      |
+| train/                  |            |
+|    approx_kl            | 0.00966482 |
+|    clip_fraction        | 0.136      |
+|    clip_range           | 0.2        |
+|    entropy_loss         | -4.14      |
+|    explained_variance   | 0          |
+|    learning_rate        | 0.001      |
+|    loss                 | -0.0388    |
+|    n_updates            | 3200       |
+|    policy_gradient_loss | -0.0127    |
+|    std                  | 0.692      |
+|    value_loss           | 0.00588    |
+----------------------------------------
+
+[Train] Rollout 66 (avg of 16 envs): Trans=315.6500, Bal=0.9499, Score=0.2165, Reward=0.0611
+GIF created: ppo_model_log_20251202_204424/img/design.gif (66 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (66 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0734      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 66          |
+|    time_elapsed         | 2875        |
+|    total_timesteps      | 16896       |
+| train/                  |             |
+|    approx_kl            | 0.010753683 |
+|    clip_fraction        | 0.114       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.12       |
+|    explained_variance   | 0.0024      |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0586     |
+|    n_updates            | 3250        |
+|    policy_gradient_loss | -0.0129     |
+|    std                  | 0.682       |
+|    value_loss           | 0.00782     |
+-----------------------------------------
+
+[Train] Rollout 67 (avg of 16 envs): Trans=289.7393, Bal=0.9299, Score=0.1943, Reward=0.0466
+GIF created: ppo_model_log_20251202_204424/img/design.gif (67 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (67 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0621      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 67          |
+|    time_elapsed         | 2924        |
+|    total_timesteps      | 17152       |
+| train/                  |             |
+|    approx_kl            | 0.016157206 |
+|    clip_fraction        | 0.197       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.07       |
+|    explained_variance   | 0.00782     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0731     |
+|    n_updates            | 3300        |
+|    policy_gradient_loss | -0.017      |
+|    std                  | 0.673       |
+|    value_loss           | 0.0102      |
+-----------------------------------------
+
+[Train] Rollout 68 (avg of 16 envs): Trans=260.3391, Bal=0.9312, Score=0.1809, Reward=0.0320
+GIF created: ppo_model_log_20251202_204424/img/design.gif (68 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (68 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0526      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 68          |
+|    time_elapsed         | 2972        |
+|    total_timesteps      | 17408       |
+| train/                  |             |
+|    approx_kl            | 0.015820734 |
+|    clip_fraction        | 0.185       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.05       |
+|    explained_variance   | 0.0158      |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0341     |
+|    n_updates            | 3350        |
+|    policy_gradient_loss | -0.00859    |
+|    std                  | 0.678       |
+|    value_loss           | 0.00792     |
+-----------------------------------------
+
+[Train] Rollout 69 (avg of 16 envs): Trans=367.0705, Bal=0.9098, Score=0.2447, Reward=0.0901
+GIF created: ppo_model_log_20251202_204424/img/design.gif (69 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (69 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0627      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 69          |
+|    time_elapsed         | 3020        |
+|    total_timesteps      | 17664       |
+| train/                  |             |
+|    approx_kl            | 0.025211804 |
+|    clip_fraction        | 0.299       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.01       |
+|    explained_variance   | -0.00426    |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0771     |
+|    n_updates            | 3400        |
+|    policy_gradient_loss | -0.0297     |
+|    std                  | 0.664       |
+|    value_loss           | 0.00471     |
+-----------------------------------------
+Episode 1/1 completed. Reward: 0.0000
+[Eval]  Rollout 70 (deterministic): Trans=263.7000, Bal=0.9720, Score=0.1761, Reward=0.0000
+[Eval]  (Best eval score: 0.1761 at rollout 65)
+Simulation results saved to 'ppo_model_log_20251202_204424/design_images/design_rollout_0070.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/distribution_images/distribution_rollout_0070.png'
+GIF created: ppo_model_log_20251202_204424/img/design.gif (70 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (70 frames)
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 16           |
+|    ep_rew_mean          | 0.0717       |
+| time/                   |              |
+|    fps                  | 5            |
+|    iterations           | 70           |
+|    time_elapsed         | 3081         |
+|    total_timesteps      | 17920        |
+| train/                  |              |
+|    approx_kl            | 0.0104480665 |
+|    clip_fraction        | 0.191        |
+|    clip_range           | 0.2          |
+|    entropy_loss         | -4.01        |
+|    explained_variance   | -0.00355     |
+|    learning_rate        | 0.001        |
+|    loss                 | -0.0686      |
+|    n_updates            | 3450         |
+|    policy_gradient_loss | -0.0174      |
+|    std                  | 0.668        |
+|    value_loss           | 0.0123       |
+------------------------------------------
+
+[Train] Rollout 71 (avg of 16 envs): Trans=281.5335, Bal=0.9301, Score=0.1793, Reward=0.0268
+GIF created: ppo_model_log_20251202_204424/img/design.gif (71 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (71 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.066       |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 71          |
+|    time_elapsed         | 3129        |
+|    total_timesteps      | 18176       |
+| train/                  |             |
+|    approx_kl            | 0.014554901 |
+|    clip_fraction        | 0.145       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -3.93       |
+|    explained_variance   | 0.00186     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0457     |
+|    n_updates            | 3500        |
+|    policy_gradient_loss | -0.0146     |
+|    std                  | 0.648       |
+|    value_loss           | 0.00997     |
+-----------------------------------------
+
+[Train] Rollout 72 (avg of 16 envs): Trans=314.9232, Bal=0.9341, Score=0.2430, Reward=0.0916
+GIF created: ppo_model_log_20251202_204424/img/design.gif (72 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (72 frames)
+----------------------------------------
+| rollout/                |            |
+|    ep_len_mean          | 16         |
+|    ep_rew_mean          | 0.067      |
+| time/                   |            |
+|    fps                  | 5          |
+|    iterations           | 72         |
+|    time_elapsed         | 3176       |
+|    total_timesteps      | 18432      |
+| train/                  |            |
+|    approx_kl            | 0.01441218 |
+|    clip_fraction        | 0.205      |
+|    clip_range           | 0.2        |
+|    entropy_loss         | -3.94      |
+|    explained_variance   | 0.013      |
+|    learning_rate        | 0.001      |
+|    loss                 | -0.0684    |
+|    n_updates            | 3550       |
+|    policy_gradient_loss | -0.00937   |
+|    std                  | 0.659      |
+|    value_loss           | 0.00836    |
+----------------------------------------
+
+[Train] Rollout 73 (avg of 16 envs): Trans=361.9460, Bal=0.9475, Score=0.2595, Reward=0.1126
+GIF created: ppo_model_log_20251202_204424/img/design.gif (73 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (73 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0778      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 73          |
+|    time_elapsed         | 3223        |
+|    total_timesteps      | 18688       |
+| train/                  |             |
+|    approx_kl            | 0.009220042 |
+|    clip_fraction        | 0.142       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -3.99       |
+|    explained_variance   | -0.000144   |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0602     |
+|    n_updates            | 3600        |
+|    policy_gradient_loss | -0.0121     |
+|    std                  | 0.669       |
+|    value_loss           | 0.00754     |
+-----------------------------------------
+
+[Train] Rollout 74 (avg of 16 envs): Trans=378.9543, Bal=0.9307, Score=0.2819, Reward=0.1294
+GIF created: ppo_model_log_20251202_204424/img/design.gif (74 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (74 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0943      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 74          |
+|    time_elapsed         | 3271        |
+|    total_timesteps      | 18944       |
+| train/                  |             |
+|    approx_kl            | 0.013543526 |
+|    clip_fraction        | 0.191       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -3.91       |
+|    explained_variance   | 0.0012      |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0463     |
+|    n_updates            | 3650        |
+|    policy_gradient_loss | -0.0202     |
+|    std                  | 0.643       |
+|    value_loss           | 0.00553     |
+-----------------------------------------
+Episode 1/1 completed. Reward: -0.0000
+[Eval]  Rollout 75 (deterministic): Trans=263.6821, Bal=0.9720, Score=0.1761, Reward=-0.0000
+[Eval]  (Best eval score: 0.1761 at rollout 65)
+Simulation results saved to 'ppo_model_log_20251202_204424/design_images/design_rollout_0075.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/distribution_images/distribution_rollout_0075.png'
+GIF created: ppo_model_log_20251202_204424/img/design.gif (75 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (75 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0951      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 75          |
+|    time_elapsed         | 3334        |
+|    total_timesteps      | 19200       |
+| train/                  |             |
+|    approx_kl            | 0.008815443 |
+|    clip_fraction        | 0.137       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -3.82       |
+|    explained_variance   | 0           |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0351     |
+|    n_updates            | 3700        |
+|    policy_gradient_loss | -0.011      |
+|    std                  | 0.638       |
+|    value_loss           | 0.0108      |
+-----------------------------------------
+
+[Train] Rollout 76 (avg of 16 envs): Trans=286.0419, Bal=0.9307, Score=0.2151, Reward=0.0617
+GIF created: ppo_model_log_20251202_204424/img/design.gif (76 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (76 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.083       |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 76          |
+|    time_elapsed         | 3384        |
+|    total_timesteps      | 19456       |
+| train/                  |             |
+|    approx_kl            | 0.015247622 |
+|    clip_fraction        | 0.186       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -3.84       |
+|    explained_variance   | 0.00295     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0299     |
+|    n_updates            | 3750        |
+|    policy_gradient_loss | -0.0182     |
+|    std                  | 0.648       |
+|    value_loss           | 0.00996     |
+-----------------------------------------
+
+[Train] Rollout 77 (avg of 16 envs): Trans=246.6410, Bal=0.9172, Score=0.1691, Reward=0.0224
+GIF created: ppo_model_log_20251202_204424/img/design.gif (77 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (77 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0811      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 77          |
+|    time_elapsed         | 3434        |
+|    total_timesteps      | 19712       |
+| train/                  |             |
+|    approx_kl            | 0.016716346 |
+|    clip_fraction        | 0.298       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -3.87       |
+|    explained_variance   | -0.000299   |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0765     |
+|    n_updates            | 3800        |
+|    policy_gradient_loss | -0.0353     |
+|    std                  | 0.65        |
+|    value_loss           | 0.006       |
+-----------------------------------------
+
+[Train] Rollout 78 (avg of 16 envs): Trans=270.4991, Bal=0.9230, Score=0.1945, Reward=0.0424
+GIF created: ppo_model_log_20251202_204424/img/design.gif (78 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (78 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0761      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 78          |
+|    time_elapsed         | 3484        |
+|    total_timesteps      | 19968       |
+| train/                  |             |
+|    approx_kl            | 0.013961332 |
+|    clip_fraction        | 0.155       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -3.88       |
+|    explained_variance   | -0.0075     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0398     |
+|    n_updates            | 3850        |
+|    policy_gradient_loss | -0.0124     |
+|    std                  | 0.653       |
+|    value_loss           | 0.00851     |
+-----------------------------------------
+
+[Train] Rollout 79 (avg of 16 envs): Trans=339.5630, Bal=0.9397, Score=0.2433, Reward=0.0875
+GIF created: ppo_model_log_20251202_204424/img/design.gif (79 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (79 frames)
+----------------------------------------
+| rollout/                |            |
+|    ep_len_mean          | 16         |
+|    ep_rew_mean          | 0.0711     |
+| time/                   |            |
+|    fps                  | 5          |
+|    iterations           | 79         |
+|    time_elapsed         | 3535       |
+|    total_timesteps      | 20224      |
+| train/                  |            |
+|    approx_kl            | 0.01889063 |
+|    clip_fraction        | 0.237      |
+|    clip_range           | 0.2        |
+|    entropy_loss         | -3.93      |
+|    explained_variance   | -0.0316    |
+|    learning_rate        | 0.001      |
+|    loss                 | -0.0602    |
+|    n_updates            | 3900       |
+|    policy_gradient_loss | -0.0242    |
+|    std                  | 0.663      |
+|    value_loss           | 0.00664    |
+----------------------------------------
+Episode 1/1 completed. Reward: 0.0000
+[Eval]  Rollout 80 (deterministic): Trans=263.6892, Bal=0.9721, Score=0.1761, Reward=0.0000
+[Eval]  (Best eval score: 0.1761 at rollout 65)
+Simulation results saved to 'ppo_model_log_20251202_204424/design_images/design_rollout_0080.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/distribution_images/distribution_rollout_0080.png'
+GIF created: ppo_model_log_20251202_204424/img/design.gif (80 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (80 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0644      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 80          |
+|    time_elapsed         | 3598        |
+|    total_timesteps      | 20480       |
+| train/                  |             |
+|    approx_kl            | 0.011316249 |
+|    clip_fraction        | 0.138       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -3.98       |
+|    explained_variance   | 0           |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.058      |
+|    n_updates            | 3950        |
+|    policy_gradient_loss | -0.0128     |
+|    std                  | 0.667       |
+|    value_loss           | 0.00628     |
+-----------------------------------------
+
+[Train] Rollout 81 (avg of 16 envs): Trans=318.0416, Bal=0.9041, Score=0.2219, Reward=0.0679
+GIF created: ppo_model_log_20251202_204424/img/design.gif (81 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (81 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0571      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 81          |
+|    time_elapsed         | 3650        |
+|    total_timesteps      | 20736       |
+| train/                  |             |
+|    approx_kl            | 0.023026213 |
+|    clip_fraction        | 0.233       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4          |
+|    explained_variance   | 0           |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0324     |
+|    n_updates            | 4000        |
+|    policy_gradient_loss | -0.02       |
+|    std                  | 0.669       |
+|    value_loss           | 0.0062      |
+-----------------------------------------
+
+[Train] Rollout 82 (avg of 16 envs): Trans=429.5140, Bal=0.9418, Score=0.2979, Reward=0.1421
+GIF created: ppo_model_log_20251202_204424/img/design.gif (82 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (82 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0702      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 82          |
+|    time_elapsed         | 3701        |
+|    total_timesteps      | 20992       |
+| train/                  |             |
+|    approx_kl            | 0.018871967 |
+|    clip_fraction        | 0.269       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.02       |
+|    explained_variance   | 0.00317     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0852     |
+|    n_updates            | 4050        |
+|    policy_gradient_loss | -0.0251     |
+|    std                  | 0.675       |
+|    value_loss           | 0.00477     |
+-----------------------------------------
+
+[Train] Rollout 83 (avg of 16 envs): Trans=348.6411, Bal=0.9101, Score=0.2155, Reward=0.0617
+GIF created: ppo_model_log_20251202_204424/img/design.gif (83 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (83 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0777      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 83          |
+|    time_elapsed         | 3753        |
+|    total_timesteps      | 21248       |
+| train/                  |             |
+|    approx_kl            | 0.010539296 |
+|    clip_fraction        | 0.152       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.06       |
+|    explained_variance   | 1.19e-07    |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0572     |
+|    n_updates            | 4100        |
+|    policy_gradient_loss | -0.0117     |
+|    std                  | 0.685       |
+|    value_loss           | 0.00929     |
+-----------------------------------------
+
+[Train] Rollout 84 (avg of 16 envs): Trans=362.1394, Bal=0.9499, Score=0.2717, Reward=0.1104
+GIF created: ppo_model_log_20251202_204424/img/design.gif (84 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (84 frames)
+----------------------------------------
+| rollout/                |            |
+|    ep_len_mean          | 16         |
+|    ep_rew_mean          | 0.0903     |
+| time/                   |            |
+|    fps                  | 5          |
+|    iterations           | 84         |
+|    time_elapsed         | 3804       |
+|    total_timesteps      | 21504      |
+| train/                  |            |
+|    approx_kl            | 0.02080593 |
+|    clip_fraction        | 0.257      |
+|    clip_range           | 0.2        |
+|    entropy_loss         | -4.04      |
+|    explained_variance   | 0.000997   |
+|    learning_rate        | 0.001      |
+|    loss                 | -0.0671    |
+|    n_updates            | 4150       |
+|    policy_gradient_loss | -0.0299    |
+|    std                  | 0.677      |
+|    value_loss           | 0.00625    |
+----------------------------------------
+Episode 1/1 completed. Reward: -0.0000
+[Eval]  Rollout 85 (deterministic): Trans=263.6901, Bal=0.9720, Score=0.1761, Reward=-0.0000
+[Eval]  (Best eval score: 0.1761 at rollout 65)
+Simulation results saved to 'ppo_model_log_20251202_204424/design_images/design_rollout_0085.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/distribution_images/distribution_rollout_0085.png'
+GIF created: ppo_model_log_20251202_204424/img/design.gif (85 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (85 frames)
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 16           |
+|    ep_rew_mean          | 0.0852       |
+| time/                   |              |
+|    fps                  | 5            |
+|    iterations           | 85           |
+|    time_elapsed         | 3869         |
+|    total_timesteps      | 21760        |
+| train/                  |              |
+|    approx_kl            | 0.0154418815 |
+|    clip_fraction        | 0.154        |
+|    clip_range           | 0.2          |
+|    entropy_loss         | -4.14        |
+|    explained_variance   | -0.00073     |
+|    learning_rate        | 0.001        |
+|    loss                 | -0.0759      |
+|    n_updates            | 4200         |
+|    policy_gradient_loss | -0.017       |
+|    std                  | 0.713        |
+|    value_loss           | 0.0115       |
+------------------------------------------
+
+[Train] Rollout 86 (avg of 16 envs): Trans=314.4280, Bal=0.9168, Score=0.2274, Reward=0.0608
+GIF created: ppo_model_log_20251202_204424/img/design.gif (86 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (86 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.084       |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 86          |
+|    time_elapsed         | 3922        |
+|    total_timesteps      | 22016       |
+| train/                  |             |
+|    approx_kl            | 0.011365639 |
+|    clip_fraction        | 0.132       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.23       |
+|    explained_variance   | -0.001      |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0464     |
+|    n_updates            | 4250        |
+|    policy_gradient_loss | -0.0109     |
+|    std                  | 0.715       |
+|    value_loss           | 0.00782     |
+-----------------------------------------
+
+[Train] Rollout 87 (avg of 16 envs): Trans=290.7090, Bal=0.9502, Score=0.2195, Reward=0.0582
+GIF created: ppo_model_log_20251202_204424/img/design.gif (87 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (87 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0843      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 87          |
+|    time_elapsed         | 3974        |
+|    total_timesteps      | 22272       |
+| train/                  |             |
+|    approx_kl            | 0.010970244 |
+|    clip_fraction        | 0.14        |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.21       |
+|    explained_variance   | 0.00267     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0512     |
+|    n_updates            | 4300        |
+|    policy_gradient_loss | -0.0168     |
+|    std                  | 0.704       |
+|    value_loss           | 0.00467     |
+-----------------------------------------
+
+[Train] Rollout 88 (avg of 16 envs): Trans=416.5035, Bal=0.9282, Score=0.2719, Reward=0.1155
+GIF created: ppo_model_log_20251202_204424/img/design.gif (88 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (88 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0797      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 88          |
+|    time_elapsed         | 4027        |
+|    total_timesteps      | 22528       |
+| train/                  |             |
+|    approx_kl            | 0.014545327 |
+|    clip_fraction        | 0.135       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.17       |
+|    explained_variance   | 0.00052     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0434     |
+|    n_updates            | 4350        |
+|    policy_gradient_loss | -0.0105     |
+|    std                  | 0.698       |
+|    value_loss           | 0.00777     |
+-----------------------------------------
+
+[Train] Rollout 89 (avg of 16 envs): Trans=248.8854, Bal=0.9345, Score=0.1956, Reward=0.0395
+GIF created: ppo_model_log_20251202_204424/img/design.gif (89 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (89 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0746      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 89          |
+|    time_elapsed         | 4080        |
+|    total_timesteps      | 22784       |
+| train/                  |             |
+|    approx_kl            | 0.012041027 |
+|    clip_fraction        | 0.192       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.1        |
+|    explained_variance   | 0.000255    |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0642     |
+|    n_updates            | 4400        |
+|    policy_gradient_loss | -0.014      |
+|    std                  | 0.683       |
+|    value_loss           | 0.0088      |
+-----------------------------------------
+Episode 1/1 completed. Reward: -0.0000
+[Eval]  Rollout 90 (deterministic): Trans=263.7013, Bal=0.9720, Score=0.1761, Reward=-0.0000
+[Eval]  (Best eval score: 0.1761 at rollout 65)
+Simulation results saved to 'ppo_model_log_20251202_204424/design_images/design_rollout_0090.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/distribution_images/distribution_rollout_0090.png'
+GIF created: ppo_model_log_20251202_204424/img/design.gif (90 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (90 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0629      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 90          |
+|    time_elapsed         | 4148        |
+|    total_timesteps      | 23040       |
+| train/                  |             |
+|    approx_kl            | 0.015886184 |
+|    clip_fraction        | 0.118       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.18       |
+|    explained_variance   | -0.00688    |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0425     |
+|    n_updates            | 4450        |
+|    policy_gradient_loss | -0.00971    |
+|    std                  | 0.721       |
+|    value_loss           | 0.00579     |
+-----------------------------------------
+
+[Train] Rollout 91 (avg of 16 envs): Trans=310.9554, Bal=0.9487, Score=0.2077, Reward=0.0513
+GIF created: ppo_model_log_20251202_204424/img/design.gif (91 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (91 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0671      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 91          |
+|    time_elapsed         | 4201        |
+|    total_timesteps      | 23296       |
+| train/                  |             |
+|    approx_kl            | 0.010091998 |
+|    clip_fraction        | 0.131       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.24       |
+|    explained_variance   | -0.00166    |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0479     |
+|    n_updates            | 4500        |
+|    policy_gradient_loss | -0.0098     |
+|    std                  | 0.71        |
+|    value_loss           | 0.00949     |
+-----------------------------------------
+
+[Train] Rollout 92 (avg of 16 envs): Trans=362.2816, Bal=0.9207, Score=0.2201, Reward=0.0645
+GIF created: ppo_model_log_20251202_204424/img/design.gif (92 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (92 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0643      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 92          |
+|    time_elapsed         | 4254        |
+|    total_timesteps      | 23552       |
+| train/                  |             |
+|    approx_kl            | 0.016368872 |
+|    clip_fraction        | 0.213       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.15       |
+|    explained_variance   | 3.19e-05    |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0489     |
+|    n_updates            | 4550        |
+|    policy_gradient_loss | -0.0228     |
+|    std                  | 0.695       |
+|    value_loss           | 0.00834     |
+-----------------------------------------
+
+[Train] Rollout 93 (avg of 16 envs): Trans=369.0012, Bal=0.9461, Score=0.2665, Reward=0.1094
+GIF created: ppo_model_log_20251202_204424/img/design.gif (93 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (93 frames)
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 16           |
+|    ep_rew_mean          | 0.0702       |
+| time/                   |              |
+|    fps                  | 5            |
+|    iterations           | 93           |
+|    time_elapsed         | 4307         |
+|    total_timesteps      | 23808        |
+| train/                  |              |
+|    approx_kl            | 0.0076293824 |
+|    clip_fraction        | 0.125        |
+|    clip_range           | 0.2          |
+|    entropy_loss         | -4.16        |
+|    explained_variance   | -0.000193    |
+|    learning_rate        | 0.001        |
+|    loss                 | -0.047       |
+|    n_updates            | 4600         |
+|    policy_gradient_loss | -0.00806     |
+|    std                  | 0.698        |
+|    value_loss           | 0.00839      |
+------------------------------------------
+
+[Train] Rollout 94 (avg of 16 envs): Trans=365.9648, Bal=0.9389, Score=0.2706, Reward=0.1089
+GIF created: ppo_model_log_20251202_204424/img/design.gif (94 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (94 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0734      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 94          |
+|    time_elapsed         | 4361        |
+|    total_timesteps      | 24064       |
+| train/                  |             |
+|    approx_kl            | 0.016525378 |
+|    clip_fraction        | 0.196       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.16       |
+|    explained_variance   | 0           |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0855     |
+|    n_updates            | 4650        |
+|    policy_gradient_loss | -0.0197     |
+|    std                  | 0.696       |
+|    value_loss           | 0.00938     |
+-----------------------------------------
+Episode 1/1 completed. Reward: 0.0000
+[Eval]  Rollout 95 (deterministic): Trans=263.6892, Bal=0.9721, Score=0.1761, Reward=0.0000
+[Eval]  (Best eval score: 0.1761 at rollout 65)
+Simulation results saved to 'ppo_model_log_20251202_204424/design_images/design_rollout_0095.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/distribution_images/distribution_rollout_0095.png'
+GIF created: ppo_model_log_20251202_204424/img/design.gif (95 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (95 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0748      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 95          |
+|    time_elapsed         | 4428        |
+|    total_timesteps      | 24320       |
+| train/                  |             |
+|    approx_kl            | 0.014474507 |
+|    clip_fraction        | 0.149       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.12       |
+|    explained_variance   | -0.00113    |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0208     |
+|    n_updates            | 4700        |
+|    policy_gradient_loss | -0.015      |
+|    std                  | 0.686       |
+|    value_loss           | 0.00868     |
+-----------------------------------------
+
+[Train] Rollout 96 (avg of 16 envs): Trans=346.2601, Bal=0.9373, Score=0.2338, Reward=0.0801
+GIF created: ppo_model_log_20251202_204424/img/design.gif (96 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (96 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0827      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 96          |
+|    time_elapsed         | 4482        |
+|    total_timesteps      | 24576       |
+| train/                  |             |
+|    approx_kl            | 0.009750576 |
+|    clip_fraction        | 0.136       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.17       |
+|    explained_variance   | 0.00138     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0519     |
+|    n_updates            | 4750        |
+|    policy_gradient_loss | -0.0126     |
+|    std                  | 0.705       |
+|    value_loss           | 0.00563     |
+-----------------------------------------
+
+[Train] Rollout 97 (avg of 16 envs): Trans=351.6904, Bal=0.9422, Score=0.2487, Reward=0.0888
+GIF created: ppo_model_log_20251202_204424/img/design.gif (97 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (97 frames)
+----------------------------------------
+| rollout/                |            |
+|    ep_len_mean          | 16         |
+|    ep_rew_mean          | 0.0878     |
+| time/                   |            |
+|    fps                  | 5          |
+|    iterations           | 97         |
+|    time_elapsed         | 4537       |
+|    total_timesteps      | 24832      |
+| train/                  |            |
+|    approx_kl            | 0.01007936 |
+|    clip_fraction        | 0.139      |
+|    clip_range           | 0.2        |
+|    entropy_loss         | -4.24      |
+|    explained_variance   | 0.00154    |
+|    learning_rate        | 0.001      |
+|    loss                 | -0.0453    |
+|    n_updates            | 4800       |
+|    policy_gradient_loss | -0.00925   |
+|    std                  | 0.71       |
+|    value_loss           | 0.00801    |
+----------------------------------------
+
+[Train] Rollout 98 (avg of 16 envs): Trans=318.2874, Bal=0.9296, Score=0.2310, Reward=0.0684
+GIF created: ppo_model_log_20251202_204424/img/design.gif (98 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (98 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0894      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 98          |
+|    time_elapsed         | 4591        |
+|    total_timesteps      | 25088       |
+| train/                  |             |
+|    approx_kl            | 0.011555339 |
+|    clip_fraction        | 0.217       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.21       |
+|    explained_variance   | -2.91e-05   |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0496     |
+|    n_updates            | 4850        |
+|    policy_gradient_loss | -0.0244     |
+|    std                  | 0.701       |
+|    value_loss           | 0.00525     |
+-----------------------------------------
+
+[Train] Rollout 99 (avg of 16 envs): Trans=391.0261, Bal=0.9383, Score=0.2926, Reward=0.1331
+GIF created: ppo_model_log_20251202_204424/img/design.gif (99 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (99 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0971      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 99          |
+|    time_elapsed         | 4643        |
+|    total_timesteps      | 25344       |
+| train/                  |             |
+|    approx_kl            | 0.011455212 |
+|    clip_fraction        | 0.187       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.11       |
+|    explained_variance   | 0           |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0612     |
+|    n_updates            | 4900        |
+|    policy_gradient_loss | -0.0192     |
+|    std                  | 0.681       |
+|    value_loss           | 0.00671     |
+-----------------------------------------
+Episode 1/1 completed. Reward: 0.0000
+[Eval]  Rollout 100 (deterministic): Trans=263.6892, Bal=0.9721, Score=0.1761, Reward=0.0000
+[Eval]  (Best eval score: 0.1761 at rollout 65)
+Simulation results saved to 'ppo_model_log_20251202_204424/design_images/design_rollout_0100.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/distribution_images/distribution_rollout_0100.png'
+GIF created: ppo_model_log_20251202_204424/img/design.gif (100 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (100 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0925      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 100         |
+|    time_elapsed         | 4708        |
+|    total_timesteps      | 25600       |
+| train/                  |             |
+|    approx_kl            | 0.018996619 |
+|    clip_fraction        | 0.198       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -3.98       |
+|    explained_variance   | -0.000312   |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0667     |
+|    n_updates            | 4950        |
+|    policy_gradient_loss | -0.0226     |
+|    std                  | 0.651       |
+|    value_loss           | 0.0064      |
+-----------------------------------------
+
+[Train] Rollout 101 (avg of 16 envs): Trans=327.8254, Bal=0.9324, Score=0.2181, Reward=0.0633
+GIF created: ppo_model_log_20251202_204424/img/design.gif (101 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (101 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0879      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 101         |
+|    time_elapsed         | 4759        |
+|    total_timesteps      | 25856       |
+| train/                  |             |
+|    approx_kl            | 0.020072468 |
+|    clip_fraction        | 0.239       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -3.96       |
+|    explained_variance   | 0.00313     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0517     |
+|    n_updates            | 5000        |
+|    policy_gradient_loss | -0.0283     |
+|    std                  | 0.66        |
+|    value_loss           | 0.00964     |
+-----------------------------------------
+
+[Train] Rollout 102 (avg of 16 envs): Trans=307.8552, Bal=0.9282, Score=0.1949, Reward=0.0411
+GIF created: ppo_model_log_20251202_204424/img/design.gif (102 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (102 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0863      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 102         |
+|    time_elapsed         | 4808        |
+|    total_timesteps      | 26112       |
+| train/                  |             |
+|    approx_kl            | 0.017452281 |
+|    clip_fraction        | 0.206       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -3.99       |
+|    explained_variance   | -0.00327    |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0695     |
+|    n_updates            | 5050        |
+|    policy_gradient_loss | -0.0211     |
+|    std                  | 0.666       |
+|    value_loss           | 0.00988     |
+-----------------------------------------
+
+[Train] Rollout 103 (avg of 16 envs): Trans=330.5986, Bal=0.9430, Score=0.2155, Reward=0.0559
+GIF created: ppo_model_log_20251202_204424/img/design.gif (103 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (103 frames)
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 16           |
+|    ep_rew_mean          | 0.0791       |
+| time/                   |              |
+|    fps                  | 5            |
+|    iterations           | 103          |
+|    time_elapsed         | 4858         |
+|    total_timesteps      | 26368        |
+| train/                  |              |
+|    approx_kl            | 0.0112947915 |
+|    clip_fraction        | 0.105        |
+|    clip_range           | 0.2          |
+|    entropy_loss         | -4.07        |
+|    explained_variance   | -0.002       |
+|    learning_rate        | 0.001        |
+|    loss                 | -0.0334      |
+|    n_updates            | 5100         |
+|    policy_gradient_loss | -0.00712     |
+|    std                  | 0.678        |
+|    value_loss           | 0.00793      |
+------------------------------------------
+
+[Train] Rollout 104 (avg of 16 envs): Trans=359.9210, Bal=0.9270, Score=0.2583, Reward=0.1006
+GIF created: ppo_model_log_20251202_204424/img/design.gif (104 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (104 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0808      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 104         |
+|    time_elapsed         | 4913        |
+|    total_timesteps      | 26624       |
+| train/                  |             |
+|    approx_kl            | 0.011001169 |
+|    clip_fraction        | 0.0945      |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.13       |
+|    explained_variance   | -0.000305   |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0414     |
+|    n_updates            | 5150        |
+|    policy_gradient_loss | -0.00485    |
+|    std                  | 0.691       |
+|    value_loss           | 0.00628     |
+-----------------------------------------
+Episode 1/1 completed. Reward: 0.0000
+[Eval]  Rollout 105 (deterministic): Trans=263.6615, Bal=0.9722, Score=0.1761, Reward=0.0000
+[Eval]  (Best eval score: 0.1761 at rollout 65)
+Simulation results saved to 'ppo_model_log_20251202_204424/design_images/design_rollout_0105.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/distribution_images/distribution_rollout_0105.png'
+GIF created: ppo_model_log_20251202_204424/img/design.gif (105 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (105 frames)
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 16           |
+|    ep_rew_mean          | 0.0776       |
+| time/                   |              |
+|    fps                  | 5            |
+|    iterations           | 105          |
+|    time_elapsed         | 4982         |
+|    total_timesteps      | 26880        |
+| train/                  |              |
+|    approx_kl            | 0.0145300925 |
+|    clip_fraction        | 0.164        |
+|    clip_range           | 0.2          |
+|    entropy_loss         | -4.18        |
+|    explained_variance   | 0            |
+|    learning_rate        | 0.001        |
+|    loss                 | -0.0711      |
+|    n_updates            | 5200         |
+|    policy_gradient_loss | -0.0151      |
+|    std                  | 0.7          |
+|    value_loss           | 0.00925      |
+------------------------------------------
+
+[Train] Rollout 106 (avg of 16 envs): Trans=344.1115, Bal=0.9409, Score=0.2393, Reward=0.0814
+GIF created: ppo_model_log_20251202_204424/img/design.gif (106 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (106 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0798      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 106         |
+|    time_elapsed         | 5037        |
+|    total_timesteps      | 27136       |
+| train/                  |             |
+|    approx_kl            | 0.015606851 |
+|    clip_fraction        | 0.115       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.26       |
+|    explained_variance   | 0           |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0464     |
+|    n_updates            | 5250        |
+|    policy_gradient_loss | -0.0146     |
+|    std                  | 0.716       |
+|    value_loss           | 0.00624     |
+-----------------------------------------
+
+[Train] Rollout 107 (avg of 16 envs): Trans=258.9110, Bal=0.9229, Score=0.2119, Reward=0.0471
+GIF created: ppo_model_log_20251202_204424/img/design.gif (107 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (107 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0752      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 107         |
+|    time_elapsed         | 5093        |
+|    total_timesteps      | 27392       |
+| train/                  |             |
+|    approx_kl            | 0.010717759 |
+|    clip_fraction        | 0.15        |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.31       |
+|    explained_variance   | 0           |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0693     |
+|    n_updates            | 5300        |
+|    policy_gradient_loss | -0.0116     |
+|    std                  | 0.722       |
+|    value_loss           | 0.00866     |
+-----------------------------------------
+
+[Train] Rollout 108 (avg of 16 envs): Trans=388.4264, Bal=0.9152, Score=0.2473, Reward=0.0936
+GIF created: ppo_model_log_20251202_204424/img/design.gif (108 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (108 frames)
+----------------------------------------
+| rollout/                |            |
+|    ep_len_mean          | 16         |
+|    ep_rew_mean          | 0.0768     |
+| time/                   |            |
+|    fps                  | 5          |
+|    iterations           | 108        |
+|    time_elapsed         | 5149       |
+|    total_timesteps      | 27648      |
+| train/                  |            |
+|    approx_kl            | 0.00900234 |
+|    clip_fraction        | 0.159      |
+|    clip_range           | 0.2        |
+|    entropy_loss         | -4.29      |
+|    explained_variance   | 0.000164   |
+|    learning_rate        | 0.001      |
+|    loss                 | -0.079     |
+|    n_updates            | 5350       |
+|    policy_gradient_loss | -0.0121    |
+|    std                  | 0.716      |
+|    value_loss           | 0.00631    |
+----------------------------------------
+
+[Train] Rollout 109 (avg of 16 envs): Trans=389.4548, Bal=0.9390, Score=0.2851, Reward=0.1210
+GIF created: ppo_model_log_20251202_204424/img/design.gif (109 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (109 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0871      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 109         |
+|    time_elapsed         | 5206        |
+|    total_timesteps      | 27904       |
+| train/                  |             |
+|    approx_kl            | 0.014478444 |
+|    clip_fraction        | 0.13        |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.26       |
+|    explained_variance   | 0           |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0515     |
+|    n_updates            | 5400        |
+|    policy_gradient_loss | -0.0122     |
+|    std                  | 0.71        |
+|    value_loss           | 0.00963     |
+-----------------------------------------
+Episode 1/1 completed. Reward: 0.0000
+[Eval]  Rollout 110 (deterministic): Trans=263.6904, Bal=0.9721, Score=0.1761, Reward=0.0000
+[Eval]  (Best eval score: 0.1761 at rollout 65)
+Simulation results saved to 'ppo_model_log_20251202_204424/design_images/design_rollout_0110.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/distribution_images/distribution_rollout_0110.png'
+GIF created: ppo_model_log_20251202_204424/img/design.gif (110 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (110 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0826      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 110         |
+|    time_elapsed         | 5275        |
+|    total_timesteps      | 28160       |
+| train/                  |             |
+|    approx_kl            | 0.013136512 |
+|    clip_fraction        | 0.161       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.23       |
+|    explained_variance   | 3.58e-05    |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0504     |
+|    n_updates            | 5450        |
+|    policy_gradient_loss | -0.0143     |
+|    std                  | 0.705       |
+|    value_loss           | 0.00676     |
+-----------------------------------------
+
+[Train] Rollout 111 (avg of 16 envs): Trans=315.0506, Bal=0.9189, Score=0.2137, Reward=0.0476
+GIF created: ppo_model_log_20251202_204424/img/design.gif (111 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (111 frames)
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 16           |
+|    ep_rew_mean          | 0.0732       |
+| time/                   |              |
+|    fps                  | 5            |
+|    iterations           | 111          |
+|    time_elapsed         | 5332         |
+|    total_timesteps      | 28416        |
+| train/                  |              |
+|    approx_kl            | 0.0110619515 |
+|    clip_fraction        | 0.12         |
+|    clip_range           | 0.2          |
+|    entropy_loss         | -4.24        |
+|    explained_variance   | -0.0064      |
+|    learning_rate        | 0.001        |
+|    loss                 | -0.0494      |
+|    n_updates            | 5500         |
+|    policy_gradient_loss | -0.0105      |
+|    std                  | 0.709        |
+|    value_loss           | 0.00983      |
+------------------------------------------
+
+[Train] Rollout 112 (avg of 16 envs): Trans=335.2356, Bal=0.9281, Score=0.2328, Reward=0.0775
+GIF created: ppo_model_log_20251202_204424/img/design.gif (112 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (112 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0729      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 112         |
+|    time_elapsed         | 5390        |
+|    total_timesteps      | 28672       |
+| train/                  |             |
+|    approx_kl            | 0.006548074 |
+|    clip_fraction        | 0.0717      |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.27       |
+|    explained_variance   | -0.012      |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0504     |
+|    n_updates            | 5550        |
+|    policy_gradient_loss | -0.00669    |
+|    std                  | 0.717       |
+|    value_loss           | 0.00736     |
+-----------------------------------------
+
+[Train] Rollout 113 (avg of 16 envs): Trans=326.7616, Bal=0.9293, Score=0.2509, Reward=0.0901
+GIF created: ppo_model_log_20251202_204424/img/design.gif (113 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (113 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0757      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 113         |
+|    time_elapsed         | 5448        |
+|    total_timesteps      | 28928       |
+| train/                  |             |
+|    approx_kl            | 0.016697537 |
+|    clip_fraction        | 0.201       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.3        |
+|    explained_variance   | -0.00586    |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0753     |
+|    n_updates            | 5600        |
+|    policy_gradient_loss | -0.0216     |
+|    std                  | 0.722       |
+|    value_loss           | 0.00704     |
+-----------------------------------------
+
+[Train] Rollout 114 (avg of 16 envs): Trans=254.6071, Bal=0.9180, Score=0.1705, Reward=0.0168
+GIF created: ppo_model_log_20251202_204424/img/design.gif (114 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (114 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0656      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 114         |
+|    time_elapsed         | 5506        |
+|    total_timesteps      | 29184       |
+| train/                  |             |
+|    approx_kl            | 0.018807353 |
+|    clip_fraction        | 0.204       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.32       |
+|    explained_variance   | 0.00772     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0455     |
+|    n_updates            | 5650        |
+|    policy_gradient_loss | -0.0203     |
+|    std                  | 0.726       |
+|    value_loss           | 0.0103      |
+-----------------------------------------
+Episode 1/1 completed. Reward: 0.0000
+[Eval]  Rollout 115 (deterministic): Trans=263.6900, Bal=0.9721, Score=0.1761, Reward=0.0000
+[Eval]  (Best eval score: 0.1761 at rollout 65)
+Simulation results saved to 'ppo_model_log_20251202_204424/design_images/design_rollout_0115.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/distribution_images/distribution_rollout_0115.png'
+GIF created: ppo_model_log_20251202_204424/img/design.gif (115 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (115 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0706      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 115         |
+|    time_elapsed         | 5576        |
+|    total_timesteps      | 29440       |
+| train/                  |             |
+|    approx_kl            | 0.014338834 |
+|    clip_fraction        | 0.147       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.44       |
+|    explained_variance   | 0.0134      |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0705     |
+|    n_updates            | 5700        |
+|    policy_gradient_loss | -0.0118     |
+|    std                  | 0.76        |
+|    value_loss           | 0.00611     |
+-----------------------------------------
+
+[Train] Rollout 116 (avg of 16 envs): Trans=293.9117, Bal=0.9385, Score=0.2165, Reward=0.0588
+GIF created: ppo_model_log_20251202_204424/img/design.gif (116 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (116 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0658      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 116         |
+|    time_elapsed         | 5634        |
+|    total_timesteps      | 29696       |
+| train/                  |             |
+|    approx_kl            | 0.011212115 |
+|    clip_fraction        | 0.144       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.53       |
+|    explained_variance   | 0.00169     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0541     |
+|    n_updates            | 5750        |
+|    policy_gradient_loss | -0.0117     |
+|    std                  | 0.761       |
+|    value_loss           | 0.014       |
+-----------------------------------------
+
+[Train] Rollout 117 (avg of 16 envs): Trans=275.1489, Bal=0.9069, Score=0.2304, Reward=0.0679
+GIF created: ppo_model_log_20251202_204424/img/design.gif (117 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (117 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0711      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 117         |
+|    time_elapsed         | 5692        |
+|    total_timesteps      | 29952       |
+| train/                  |             |
+|    approx_kl            | 0.010450069 |
+|    clip_fraction        | 0.183       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.58       |
+|    explained_variance   | 0.0226      |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0526     |
+|    n_updates            | 5800        |
+|    policy_gradient_loss | -0.0142     |
+|    std                  | 0.777       |
+|    value_loss           | 0.00636     |
+-----------------------------------------
+
+[Train] Rollout 118 (avg of 16 envs): Trans=334.8095, Bal=0.9474, Score=0.2548, Reward=0.0841
+GIF created: ppo_model_log_20251202_204424/img/design.gif (118 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (118 frames)
+----------------------------------------
+| rollout/                |            |
+|    ep_len_mean          | 16         |
+|    ep_rew_mean          | 0.0735     |
+| time/                   |            |
+|    fps                  | 5          |
+|    iterations           | 118        |
+|    time_elapsed         | 5751       |
+|    total_timesteps      | 30208      |
+| train/                  |            |
+|    approx_kl            | 0.01091064 |
+|    clip_fraction        | 0.115      |
+|    clip_range           | 0.2        |
+|    entropy_loss         | -4.6       |
+|    explained_variance   | -0.000221  |
+|    learning_rate        | 0.001      |
+|    loss                 | -0.0257    |
+|    n_updates            | 5850       |
+|    policy_gradient_loss | -0.006     |
+|    std                  | 0.771      |
+|    value_loss           | 0.0108     |
+----------------------------------------
+
+[Train] Rollout 119 (avg of 16 envs): Trans=272.1947, Bal=0.9260, Score=0.1904, Reward=0.0302
+GIF created: ppo_model_log_20251202_204424/img/design.gif (119 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (119 frames)
+----------------------------------------
+| rollout/                |            |
+|    ep_len_mean          | 16         |
+|    ep_rew_mean          | 0.0656     |
+| time/                   |            |
+|    fps                  | 5          |
+|    iterations           | 119        |
+|    time_elapsed         | 5809       |
+|    total_timesteps      | 30464      |
+| train/                  |            |
+|    approx_kl            | 0.01814091 |
+|    clip_fraction        | 0.207      |
+|    clip_range           | 0.2        |
+|    entropy_loss         | -4.55      |
+|    explained_variance   | -2.38e-07  |
+|    learning_rate        | 0.001      |
+|    loss                 | -0.0323    |
+|    n_updates            | 5900       |
+|    policy_gradient_loss | -0.0164    |
+|    std                  | 0.759      |
+|    value_loss           | 0.00913    |
+----------------------------------------
+Episode 1/1 completed. Reward: 0.0000
+[Eval]  Rollout 120 (deterministic): Trans=263.6893, Bal=0.9721, Score=0.1761, Reward=0.0000
+[Eval]  (Best eval score: 0.1761 at rollout 65)
+Simulation results saved to 'ppo_model_log_20251202_204424/design_images/design_rollout_0120.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/distribution_images/distribution_rollout_0120.png'
+GIF created: ppo_model_log_20251202_204424/img/design.gif (120 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (120 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0656      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 120         |
+|    time_elapsed         | 5880        |
+|    total_timesteps      | 30720       |
+| train/                  |             |
+|    approx_kl            | 0.013767611 |
+|    clip_fraction        | 0.14        |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.49       |
+|    explained_variance   | 0           |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.05       |
+|    n_updates            | 5950        |
+|    policy_gradient_loss | -0.0112     |
+|    std                  | 0.749       |
+|    value_loss           | 0.0104      |
+-----------------------------------------
+
+[Train] Rollout 121 (avg of 16 envs): Trans=288.2741, Bal=0.9101, Score=0.2115, Reward=0.0477
+GIF created: ppo_model_log_20251202_204424/img/design.gif (121 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (121 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0556      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 121         |
+|    time_elapsed         | 5938        |
+|    total_timesteps      | 30976       |
+| train/                  |             |
+|    approx_kl            | 0.027914409 |
+|    clip_fraction        | 0.191       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.56       |
+|    explained_variance   | -0.00669    |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0766     |
+|    n_updates            | 6000        |
+|    policy_gradient_loss | -0.0184     |
+|    std                  | 0.773       |
+|    value_loss           | 0.00901     |
+-----------------------------------------
+
+[Train] Rollout 122 (avg of 16 envs): Trans=276.1453, Bal=0.9507, Score=0.2208, Reward=0.0598
+GIF created: ppo_model_log_20251202_204424/img/design.gif (122 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (122 frames)
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 16           |
+|    ep_rew_mean          | 0.0525       |
+| time/                   |              |
+|    fps                  | 5            |
+|    iterations           | 122          |
+|    time_elapsed         | 5997         |
+|    total_timesteps      | 31232        |
+| train/                  |              |
+|    approx_kl            | 0.0068460386 |
+|    clip_fraction        | 0.0765       |
+|    clip_range           | 0.2          |
+|    entropy_loss         | -4.62        |
+|    explained_variance   | 0.000517     |
+|    learning_rate        | 0.001        |
+|    loss                 | -0.0424      |
+|    n_updates            | 6050         |
+|    policy_gradient_loss | -0.00449     |
+|    std                  | 0.774        |
+|    value_loss           | 0.00804      |
+------------------------------------------
+
+[Train] Rollout 123 (avg of 16 envs): Trans=350.9902, Bal=0.9262, Score=0.2257, Reward=0.0723
+GIF created: ppo_model_log_20251202_204424/img/design.gif (123 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (123 frames)
+----------------------------------------
+| rollout/                |            |
+|    ep_len_mean          | 16         |
+|    ep_rew_mean          | 0.0571     |
+| time/                   |            |
+|    fps                  | 5          |
+|    iterations           | 123        |
+|    time_elapsed         | 6055       |
+|    total_timesteps      | 31488      |
+| train/                  |            |
+|    approx_kl            | 0.01716356 |
+|    clip_fraction        | 0.248      |
+|    clip_range           | 0.2        |
+|    entropy_loss         | -4.63      |
+|    explained_variance   | -0.000134  |
+|    learning_rate        | 0.001      |
+|    loss                 | -0.0753    |
+|    n_updates            | 6100       |
+|    policy_gradient_loss | -0.0235    |
+|    std                  | 0.777      |
+|    value_loss           | 0.00776    |
+----------------------------------------
+
+[Train] Rollout 124 (avg of 16 envs): Trans=326.8888, Bal=0.9346, Score=0.2297, Reward=0.0670
+GIF created: ppo_model_log_20251202_204424/img/design.gif (124 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (124 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0502      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 124         |
+|    time_elapsed         | 6115        |
+|    total_timesteps      | 31744       |
+| train/                  |             |
+|    approx_kl            | 0.019514821 |
+|    clip_fraction        | 0.22        |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.56       |
+|    explained_variance   | -1.19e-07   |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0247     |
+|    n_updates            | 6150        |
+|    policy_gradient_loss | -0.0165     |
+|    std                  | 0.761       |
+|    value_loss           | 0.00763     |
+-----------------------------------------
+Episode 1/1 completed. Reward: 0.0000
+[Eval]  Rollout 125 (deterministic): Trans=263.6620, Bal=0.9722, Score=0.1761, Reward=0.0000
+[Eval]  (Best eval score: 0.1761 at rollout 65)
+Simulation results saved to 'ppo_model_log_20251202_204424/design_images/design_rollout_0125.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/distribution_images/distribution_rollout_0125.png'
+GIF created: ppo_model_log_20251202_204424/img/design.gif (125 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (125 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0598      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 125         |
+|    time_elapsed         | 6187        |
+|    total_timesteps      | 32000       |
+| train/                  |             |
+|    approx_kl            | 0.014306724 |
+|    clip_fraction        | 0.212       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.51       |
+|    explained_variance   | -3.21e-05   |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0247     |
+|    n_updates            | 6200        |
+|    policy_gradient_loss | -0.0213     |
+|    std                  | 0.752       |
+|    value_loss           | 0.00805     |
+-----------------------------------------
+
+[Train] Rollout 126 (avg of 16 envs): Trans=344.2318, Bal=0.9559, Score=0.2593, Reward=0.1013
+GIF created: ppo_model_log_20251202_204424/img/design.gif (126 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (126 frames)
+----------------------------------------
+| rollout/                |            |
+|    ep_len_mean          | 16         |
+|    ep_rew_mean          | 0.0705     |
+| time/                   |            |
+|    fps                  | 5          |
+|    iterations           | 126        |
+|    time_elapsed         | 6247       |
+|    total_timesteps      | 32256      |
+| train/                  |            |
+|    approx_kl            | 0.01430047 |
+|    clip_fraction        | 0.181      |
+|    clip_range           | 0.2        |
+|    entropy_loss         | -4.43      |
+|    explained_variance   | 5.96e-08   |
+|    learning_rate        | 0.001      |
+|    loss                 | -0.0552    |
+|    n_updates            | 6250       |
+|    policy_gradient_loss | -0.0157    |
+|    std                  | 0.732      |
+|    value_loss           | 0.00604    |
+----------------------------------------
+
+[Train] Rollout 127 (avg of 16 envs): Trans=353.4974, Bal=0.9446, Score=0.2583, Reward=0.0960
+GIF created: ppo_model_log_20251202_204424/img/design.gif (127 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (127 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0813      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 127         |
+|    time_elapsed         | 6307        |
+|    total_timesteps      | 32512       |
+| train/                  |             |
+|    approx_kl            | 0.020373842 |
+|    clip_fraction        | 0.247       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.37       |
+|    explained_variance   | 0           |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0713     |
+|    n_updates            | 6300        |
+|    policy_gradient_loss | -0.0244     |
+|    std                  | 0.726       |
+|    value_loss           | 0.00836     |
+-----------------------------------------
+
+[Train] Rollout 128 (avg of 16 envs): Trans=325.2699, Bal=0.9496, Score=0.2334, Reward=0.0776
+GIF created: ppo_model_log_20251202_204424/img/design.gif (128 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (128 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0825      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 128         |
+|    time_elapsed         | 6368        |
+|    total_timesteps      | 32768       |
+| train/                  |             |
+|    approx_kl            | 0.012396143 |
+|    clip_fraction        | 0.134       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.29       |
+|    explained_variance   | 0           |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0513     |
+|    n_updates            | 6350        |
+|    policy_gradient_loss | -0.0135     |
+|    std                  | 0.714       |
+|    value_loss           | 0.00867     |
+-----------------------------------------
+
+[Train] Rollout 129 (avg of 16 envs): Trans=341.8594, Bal=0.9327, Score=0.2572, Reward=0.1012
+GIF created: ppo_model_log_20251202_204424/img/design.gif (129 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (129 frames)
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 16           |
+|    ep_rew_mean          | 0.0915       |
+| time/                   |              |
+|    fps                  | 5            |
+|    iterations           | 129          |
+|    time_elapsed         | 6428         |
+|    total_timesteps      | 33024        |
+| train/                  |              |
+|    approx_kl            | 0.0100720795 |
+|    clip_fraction        | 0.132        |
+|    clip_range           | 0.2          |
+|    entropy_loss         | -4.31        |
+|    explained_variance   | -1.96e-05    |
+|    learning_rate        | 0.001        |
+|    loss                 | -0.0759      |
+|    n_updates            | 6400         |
+|    policy_gradient_loss | -0.0123      |
+|    std                  | 0.731        |
+|    value_loss           | 0.00766      |
+------------------------------------------
+Episode 1/1 completed. Reward: 0.0000
+[Eval]  Rollout 130 (deterministic): Trans=263.6895, Bal=0.9721, Score=0.1761, Reward=0.0000
+[Eval]  (Best eval score: 0.1761 at rollout 65)
+Simulation results saved to 'ppo_model_log_20251202_204424/design_images/design_rollout_0130.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/distribution_images/distribution_rollout_0130.png'
+GIF created: ppo_model_log_20251202_204424/img/design.gif (130 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (130 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.1         |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 130         |
+|    time_elapsed         | 6502        |
+|    total_timesteps      | 33280       |
+| train/                  |             |
+|    approx_kl            | 0.012567729 |
+|    clip_fraction        | 0.208       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.28       |
+|    explained_variance   | 0           |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0679     |
+|    n_updates            | 6450        |
+|    policy_gradient_loss | -0.022      |
+|    std                  | 0.714       |
+|    value_loss           | 0.00653     |
+-----------------------------------------
+
+[Train] Rollout 131 (avg of 16 envs): Trans=283.6020, Bal=0.9071, Score=0.2049, Reward=0.0464
+GIF created: ppo_model_log_20251202_204424/img/design.gif (131 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (131 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0923      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 131         |
+|    time_elapsed         | 6562        |
+|    total_timesteps      | 33536       |
+| train/                  |             |
+|    approx_kl            | 0.010067379 |
+|    clip_fraction        | 0.131       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.21       |
+|    explained_variance   | 0.00284     |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0439     |
+|    n_updates            | 6500        |
+|    policy_gradient_loss | -0.013      |
+|    std                  | 0.713       |
+|    value_loss           | 0.0119      |
+-----------------------------------------
+
+[Train] Rollout 132 (avg of 16 envs): Trans=411.4842, Bal=0.9400, Score=0.2721, Reward=0.1071
+GIF created: ppo_model_log_20251202_204424/img/design.gif (132 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (132 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0932      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 132         |
+|    time_elapsed         | 6624        |
+|    total_timesteps      | 33792       |
+| train/                  |             |
+|    approx_kl            | 0.012224218 |
+|    clip_fraction        | 0.186       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.19       |
+|    explained_variance   | -5.96e-07   |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0649     |
+|    n_updates            | 6550        |
+|    policy_gradient_loss | -0.0142     |
+|    std                  | 0.706       |
+|    value_loss           | 0.00834     |
+-----------------------------------------
+
+[Train] Rollout 133 (avg of 16 envs): Trans=348.6296, Bal=0.9443, Score=0.2235, Reward=0.0627
+GIF created: ppo_model_log_20251202_204424/img/design.gif (133 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (133 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.084       |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 133         |
+|    time_elapsed         | 6685        |
+|    total_timesteps      | 34048       |
+| train/                  |             |
+|    approx_kl            | 0.014178226 |
+|    clip_fraction        | 0.109       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.12       |
+|    explained_variance   | 0           |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0797     |
+|    n_updates            | 6600        |
+|    policy_gradient_loss | -0.0107     |
+|    std                  | 0.695       |
+|    value_loss           | 0.00794     |
+-----------------------------------------
+
+[Train] Rollout 134 (avg of 16 envs): Trans=371.4024, Bal=0.9253, Score=0.2578, Reward=0.0913
+GIF created: ppo_model_log_20251202_204424/img/design.gif (134 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (134 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0855      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 134         |
+|    time_elapsed         | 6748        |
+|    total_timesteps      | 34304       |
+| train/                  |             |
+|    approx_kl            | 0.011543089 |
+|    clip_fraction        | 0.148       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.1        |
+|    explained_variance   | 7.03e-06    |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0673     |
+|    n_updates            | 6650        |
+|    policy_gradient_loss | -0.0119     |
+|    std                  | 0.701       |
+|    value_loss           | 0.00486     |
+-----------------------------------------
+Episode 1/1 completed. Reward: 0.1859
+[Eval]  Rollout 135 (deterministic): Trans=474.8898, Bal=0.9279, Score=0.3644, Reward=0.1859
+[Eval]  ★ New best eval score! Saving best model...
+[Eval]  ★ Best model saved to: models/ppo_model_20251202_204424_best.zip
+Simulation results saved to 'ppo_model_log_20251202_204424/img/best_design.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/img/best_distribution.png'
+Simulation results saved to 'ppo_model_log_20251202_204424/design_images/design_rollout_0135.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/distribution_images/distribution_rollout_0135.png'
+GIF created: ppo_model_log_20251202_204424/img/design.gif (135 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (135 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0808      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 135         |
+|    time_elapsed         | 6824        |
+|    total_timesteps      | 34560       |
+| train/                  |             |
+|    approx_kl            | 0.015345215 |
+|    clip_fraction        | 0.204       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.22       |
+|    explained_variance   | 0           |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0591     |
+|    n_updates            | 6700        |
+|    policy_gradient_loss | -0.0209     |
+|    std                  | 0.73        |
+|    value_loss           | 0.00483     |
+-----------------------------------------
+
+[Train] Rollout 136 (avg of 16 envs): Trans=338.3586, Bal=0.9434, Score=0.2542, Reward=0.0904
+GIF created: ppo_model_log_20251202_204424/img/design.gif (136 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (136 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0737      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 136         |
+|    time_elapsed         | 6887        |
+|    total_timesteps      | 34816       |
+| train/                  |             |
+|    approx_kl            | 0.013471588 |
+|    clip_fraction        | 0.122       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.3        |
+|    explained_variance   | 0.000341    |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0584     |
+|    n_updates            | 6750        |
+|    policy_gradient_loss | -0.00951    |
+|    std                  | 0.734       |
+|    value_loss           | 0.00512     |
+-----------------------------------------
+
+[Train] Rollout 137 (avg of 16 envs): Trans=401.4352, Bal=0.9373, Score=0.3079, Reward=0.1385
+GIF created: ppo_model_log_20251202_204424/img/design.gif (137 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (137 frames)
+----------------------------------------
+| rollout/                |            |
+|    ep_len_mean          | 16         |
+|    ep_rew_mean          | 0.0853     |
+| time/                   |            |
+|    fps                  | 5          |
+|    iterations           | 137        |
+|    time_elapsed         | 6950       |
+|    total_timesteps      | 35072      |
+| train/                  |            |
+|    approx_kl            | 0.01267804 |
+|    clip_fraction        | 0.163      |
+|    clip_range           | 0.2        |
+|    entropy_loss         | -4.42      |
+|    explained_variance   | 0          |
+|    learning_rate        | 0.001      |
+|    loss                 | -0.0634    |
+|    n_updates            | 6800       |
+|    policy_gradient_loss | -0.0126    |
+|    std                  | 0.768      |
+|    value_loss           | 0.00713    |
+----------------------------------------
+
+[Train] Rollout 138 (avg of 16 envs): Trans=326.3905, Bal=0.9308, Score=0.2194, Reward=0.0623
+GIF created: ppo_model_log_20251202_204424/img/design.gif (138 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (138 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0811      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 138         |
+|    time_elapsed         | 7013        |
+|    total_timesteps      | 35328       |
+| train/                  |             |
+|    approx_kl            | 0.008402299 |
+|    clip_fraction        | 0.133       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.48       |
+|    explained_variance   | 0           |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0751     |
+|    n_updates            | 6850        |
+|    policy_gradient_loss | -0.0105     |
+|    std                  | 0.77        |
+|    value_loss           | 0.00719     |
+-----------------------------------------
+
+[Train] Rollout 139 (avg of 16 envs): Trans=322.3232, Bal=0.9189, Score=0.2148, Reward=0.0543
+GIF created: ppo_model_log_20251202_204424/img/design.gif (139 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (139 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0769      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 139         |
+|    time_elapsed         | 7076        |
+|    total_timesteps      | 35584       |
+| train/                  |             |
+|    approx_kl            | 0.015065394 |
+|    clip_fraction        | 0.198       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.42       |
+|    explained_variance   | 7.44e-05    |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0531     |
+|    n_updates            | 6900        |
+|    policy_gradient_loss | -0.0164     |
+|    std                  | 0.746       |
+|    value_loss           | 0.00707     |
+-----------------------------------------
+Episode 1/1 completed. Reward: 0.1859
+[Eval]  Rollout 140 (deterministic): Trans=474.8790, Bal=0.9279, Score=0.3644, Reward=0.1859
+[Eval]  (Best eval score: 0.3644 at rollout 135)
+Simulation results saved to 'ppo_model_log_20251202_204424/design_images/design_rollout_0140.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/distribution_images/distribution_rollout_0140.png'
+GIF created: ppo_model_log_20251202_204424/img/design.gif (140 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (140 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0753      |
+| time/                   |             |
+|    fps                  | 5           |
+|    iterations           | 140         |
+|    time_elapsed         | 7152        |
+|    total_timesteps      | 35840       |
+| train/                  |             |
+|    approx_kl            | 0.011688647 |
+|    clip_fraction        | 0.12        |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.38       |
+|    explained_variance   | 0           |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0283     |
+|    n_updates            | 6950        |
+|    policy_gradient_loss | -0.00659    |
+|    std                  | 0.749       |
+|    value_loss           | 0.00833     |
+-----------------------------------------
+
+[Train] Rollout 141 (avg of 16 envs): Trans=348.2491, Bal=0.9343, Score=0.2472, Reward=0.0859
+GIF created: ppo_model_log_20251202_204424/img/design.gif (141 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (141 frames)
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 16           |
+|    ep_rew_mean          | 0.0799       |
+| time/                   |              |
+|    fps                  | 5            |
+|    iterations           | 141          |
+|    time_elapsed         | 7216         |
+|    total_timesteps      | 36096        |
+| train/                  |              |
+|    approx_kl            | 0.0139560895 |
+|    clip_fraction        | 0.182        |
+|    clip_range           | 0.2          |
+|    entropy_loss         | -4.42        |
+|    explained_variance   | 0            |
+|    learning_rate        | 0.001        |
+|    loss                 | -0.0683      |
+|    n_updates            | 7000         |
+|    policy_gradient_loss | -0.0225      |
+|    std                  | 0.758        |
+|    value_loss           | 0.00972      |
+------------------------------------------
+
+[Train] Rollout 142 (avg of 16 envs): Trans=405.3315, Bal=0.9379, Score=0.2731, Reward=0.1169
+GIF created: ppo_model_log_20251202_204424/img/design.gif (142 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (142 frames)
+------------------------------------------
+| rollout/                |              |
+|    ep_len_mean          | 16           |
+|    ep_rew_mean          | 0.0866       |
+| time/                   |              |
+|    fps                  | 4            |
+|    iterations           | 142          |
+|    time_elapsed         | 7281         |
+|    total_timesteps      | 36352        |
+| train/                  |              |
+|    approx_kl            | 0.0078256065 |
+|    clip_fraction        | 0.138        |
+|    clip_range           | 0.2          |
+|    entropy_loss         | -4.45        |
+|    explained_variance   | -2.31e-05    |
+|    learning_rate        | 0.001        |
+|    loss                 | -0.0548      |
+|    n_updates            | 7050         |
+|    policy_gradient_loss | -0.0132      |
+|    std                  | 0.764        |
+|    value_loss           | 0.00606      |
+------------------------------------------
+
+[Train] Rollout 143 (avg of 16 envs): Trans=327.4673, Bal=0.9467, Score=0.2402, Reward=0.0832
+GIF created: ppo_model_log_20251202_204424/img/design.gif (143 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (143 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0803      |
+| time/                   |             |
+|    fps                  | 4           |
+|    iterations           | 143         |
+|    time_elapsed         | 7345        |
+|    total_timesteps      | 36608       |
+| train/                  |             |
+|    approx_kl            | 0.015970822 |
+|    clip_fraction        | 0.182       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.43       |
+|    explained_variance   | 0           |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0967     |
+|    n_updates            | 7100        |
+|    policy_gradient_loss | -0.0169     |
+|    std                  | 0.753       |
+|    value_loss           | 0.00526     |
+-----------------------------------------
+
+[Train] Rollout 144 (avg of 16 envs): Trans=393.6121, Bal=0.9307, Score=0.2665, Reward=0.1059
+GIF created: ppo_model_log_20251202_204424/img/design.gif (144 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (144 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.0841      |
+| time/                   |             |
+|    fps                  | 4           |
+|    iterations           | 144         |
+|    time_elapsed         | 7409        |
+|    total_timesteps      | 36864       |
+| train/                  |             |
+|    approx_kl            | 0.007807853 |
+|    clip_fraction        | 0.115       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.38       |
+|    explained_variance   | 0.000473    |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0415     |
+|    n_updates            | 7150        |
+|    policy_gradient_loss | -0.00942    |
+|    std                  | 0.744       |
+|    value_loss           | 0.0127      |
+-----------------------------------------
+Episode 1/1 completed. Reward: 0.1859
+[Eval]  Rollout 145 (deterministic): Trans=474.8794, Bal=0.9279, Score=0.3644, Reward=0.1859
+[Eval]  (Best eval score: 0.3644 at rollout 135)
+Simulation results saved to 'ppo_model_log_20251202_204424/design_images/design_rollout_0145.png'
+Waveguide: 0.4um wide, 3.45 index
+EigenModeSource: Continuous wave at 1.55um, from left
+Magnetic field distribution plot saved to 'ppo_model_log_20251202_204424/distribution_images/distribution_rollout_0145.png'
+GIF created: ppo_model_log_20251202_204424/img/design.gif (145 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (145 frames)
+----------------------------------------
+| rollout/                |            |
+|    ep_len_mean          | 16         |
+|    ep_rew_mean          | 0.0863     |
+| time/                   |            |
+|    fps                  | 4          |
+|    iterations           | 145        |
+|    time_elapsed         | 7486       |
+|    total_timesteps      | 37120      |
+| train/                  |            |
+|    approx_kl            | 0.01775422 |
+|    clip_fraction        | 0.115      |
+|    clip_range           | 0.2        |
+|    entropy_loss         | -4.25      |
+|    explained_variance   | 0          |
+|    learning_rate        | 0.001      |
+|    loss                 | -0.0592    |
+|    n_updates            | 7200       |
+|    policy_gradient_loss | -0.0115    |
+|    std                  | 0.721      |
+|    value_loss           | 0.011      |
+----------------------------------------
+
+[Train] Rollout 146 (avg of 16 envs): Trans=441.9444, Bal=0.9460, Score=0.2871, Reward=0.1233
+GIF created: ppo_model_log_20251202_204424/img/design.gif (146 frames)
+GIF created: ppo_model_log_20251202_204424/img/flux.gif (146 frames)
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 16          |
+|    ep_rew_mean          | 0.102       |
+| time/                   |             |
+|    fps                  | 4           |
+|    iterations           | 146         |
+|    time_elapsed         | 7551        |
+|    total_timesteps      | 37376       |
+| train/                  |             |
+|    approx_kl            | 0.015312605 |
+|    clip_fraction        | 0.203       |
+|    clip_range           | 0.2         |
+|    entropy_loss         | -4.14       |
+|    explained_variance   | 0           |
+|    learning_rate        | 0.001       |
+|    loss                 | -0.0832     |
+|    n_updates            | 7250        |
+|    policy_gradient_loss | -0.024      |
+|    std                  | 0.703       |
+|    value_loss           | 0.00518     |
+-----------------------------------------
+[2025-12-02T22:50:59.135] error: *** JOB 6421 ON A09-22 CANCELLED AT 2025-12-02T22:50:59 DUE to SIGNAL Terminated ***

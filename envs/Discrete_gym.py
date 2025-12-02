@@ -24,7 +24,7 @@ class WalshTransform:
         self.step = step
         self.W = self.generate_walsh_matrix(n)
         # Select basis functions at indices 0, step, 2*step, ... (multiples of step)
-        self.basis_indices = list(range(0, n, step))[:self.k]
+        self.basis_indices = [1, 2, 3, 4]  # list(range(0, n, step))[:self.k]
         self.W_selected = self.W[self.basis_indices, :]  # shape: (k, n)
     
     def generate_walsh_matrix(self, n):
@@ -49,6 +49,7 @@ class WalshTransform:
             n-dimensional spatial representation
         """
         # W_selected: (k, n), action: (k, 1) -> W_selected.T @ action: (n, k) @ (k, 1) = (n, 1)
+        print(self.W_selected.T)
         return (self.W_selected.T @ action).flatten()
 class MinimalEnv(gym.Env):
 
