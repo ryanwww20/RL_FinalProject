@@ -7,6 +7,49 @@ from gymnasium import spaces
 import numpy as np
 from envs.meep_simulation import WaveguideSimulation
 from config import config
+from scipy.linalg import hadamard
+
+class WalshTransform:
+    def __init__(self, n, k=None, step=4):
+        """
+        Initialize Walsh transform.
+        
+        Args:
+            n: Output dimension (must be power of 2)
+            k: Number of basis functions to use (action dimension)
+            step: Step size for selecting basis indices (default 4 means indices 0, 4, 8, 12...)
+        """
+        self.n = n
+        self.k = k if k is not None else n // step
+        self.step = step
+        self.W = self.generate_walsh_matrix(n)
+        # Select basis functions at indices 0, step, 2*step, ... (multiples of step)
+        self.basis_indices = list(range(0, n, step))[:self.k]
+        self.W_selected = self.W[self.basis_indices, :]  # shape: (k, n)
+    
+    def generate_walsh_matrix(self, n):
+        """Generate Walsh matrix of size n x n (n must be power of 2)."""
+        H = hadamard(n)
+        sequency = [self.count_sign_changes(H[i]) for i in range(n)]
+        sorted_indices = np.argsort(sequency)
+        walsh = H[sorted_indices]
+        return walsh / np.sqrt(n)
+    
+    def count_sign_changes(self, row):
+        return np.sum(np.abs(np.diff(row)) > 0)
+    
+    def transform(self, action):
+        """
+        Transform k-dimensional coefficients to n-dimensional spatial representation.
+        
+        Args:
+            action: k-dimensional array of Walsh coefficients, shape (k,) or (k, 1)
+            
+        Returns:
+            n-dimensional spatial representation
+        """
+        # W_selected: (k, n), action: (k, 1) -> W_selected.T @ action: (n, k) @ (k, 1) = (n, 1)
+        return (self.W_selected.T @ action).flatten()
 class MinimalEnv(gym.Env):
 
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
@@ -21,7 +64,7 @@ class MinimalEnv(gym.Env):
         super().__init__()
 
         self.obs_size = config.environment.obs_size
-        self.action_size = config.environment.action_size
+        self.action_size = 4 # 4 basis coefficients
         # Define observation and action spaces
         # State is an array of 100
         self.observation_space = spaces.Box(
@@ -31,10 +74,16 @@ class MinimalEnv(gym.Env):
             dtype=np.float32
         )
 
-        # Action space: binary array of length 50 (0/1 values)
-        self.action_space = spaces.MultiBinary(self.action_size)
+        self.action_space = spaces.Box(
+            low=-1,
+            high=1,
+            shape=(self.action_size,),
+            dtype=np.float32
+        )
 
         # Initialize state
+        # n=16 (output size), k=4 (action size), step=4 (select basis 0, 4, 8, 12)
+        self.walsh = WalshTransform(n=16, k=self.action_size, step=4)
         self.state = None
         self.render_mode = render_mode
         self.material_matrix = np.zeros(
@@ -93,11 +142,11 @@ class MinimalEnv(gym.Env):
             truncated: Whether episode was truncated (time limit)
             info: Additional information dictionary
         """
-        # Validate action
-        assert self.action_space.contains(action), f"Invalid action: {action}"
-
+        
         # Action is a binary array of length 50
-        self.material_matrix[self.material_matrix_idx] = action
+        action = action.reshape(-1, 1)
+        self.material_matrix[self.material_matrix_idx] = self.walsh.transform(action)
+        print(self.material_matrix[self.material_matrix_idx])
         self.material_matrix_idx += 1
 
         # calculate_flux returns: input_mode_flux, output_mode_flux_1, output_mode_flux_2, hzfield_state, hz_data, input_mode, output_mode_1, output_mode_2

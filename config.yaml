@@ -22,11 +22,11 @@ simulation:
   state_output_x: 1.0
   design_region_x: 2.0
   design_region_y: 2.0
-  pixel_size: 0.1
+  pixel_size: 0.125
   silicon_index: 3.45
   silica_index: 1.45
-  pixel_num_x: 20
-  pixel_num_y: 20
+  pixel_num_x: 16
+  pixel_num_y: 16
   src_pos_shift_coeff: 0.95
   input_coupler_length: 1.5
   output_coupler_length: 1.5
@@ -40,7 +40,7 @@ training:
     total_timesteps: 640
     n_envs: 2
     learning_rate: 0.001
-    n_steps: 20
+    n_steps: 16
     batch_size: 64
     n_epochs: 50
     gamma: 0.99
