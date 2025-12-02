@@ -58,8 +58,8 @@ class WaveguideSimulation:
         # Design region remains 2um x 2um centered at (0,0)
         self.design_region_x_min = -1.0
         self.design_region_x_max = 1.0
-        self.design_region_y_min = -1.0
-        self.design_region_y_max = 1.0
+        self.design_region_y_min = config.simulation.design_region_y_min
+        self.design_region_y_max = config.simulation.design_region_y_max
 
         # Initialize simulation components
         self.geometry = None
@@ -68,8 +68,9 @@ class WaveguideSimulation:
         self.hz_data = None
         
         # Magnetic field monitor for state
-        self.hzfield_monitor = None  # Magnetic field monitor for state (along y-axis)
-        self.hzfield_region_y_positions = []  # Y-coordinates of state hzfield monitor
+        self.hzfield_monitor = None  # Magnetic field monitor for state (backward compatibility)
+        self.hzfield_monitors = []  # List of magnetic field monitors (10 monitors)
+        self.hzfield_region_y_positions = []  # Y-coordinates of state hzfield monitors
         self.input_flux_region = None  # Input mode flux monitor
         self.output_flux_region_1 = None  # Output mode flux monitor 1
         self.output_flux_region_2 = None  # Output mode flux monitor 2
@@ -78,6 +79,7 @@ class WaveguideSimulation:
         self.design_region_flux_region_left = None
         self.design_region_flux_region_right = None
         self.num_flux_regions = config.simulation.num_flux_regions
+        self.monitor_length = config.simulation.monitor_length
         self.simulation_time = config.simulation.simulation_time
         self.state_output_x = config.simulation.state_output_x
         self.design_region_x = config.simulation.design_region_x
@@ -390,11 +392,12 @@ class WaveguideSimulation:
 
     def add_hzfield_monitor_state(self):
         """
-        Add magnetic field monitor along y-axis at a specific x position for state observation.
+        Add magnetic field monitors along y-axis at x=1 for state observation.
+        Uses 10 monitors, each 0.2 um long, positioned from y=-1 to y=1.
         Uses DFT (Discrete Fourier Transform) to monitor the magnetic field.
 
         Returns:
-            DFT magnetic field monitor object
+            List of DFT magnetic field monitor objects
         """
         if self.sim is None:
             raise ValueError(
@@ -403,36 +406,43 @@ class WaveguideSimulation:
         # Calculate frequency from wavelength
         frequency = 1.0 / self.wavelength
 
-        # Calculate y positions for sampling
-        # y spans from -cell_size.y/2 to +cell_size.y/2
-        y_min = -self.cell_size.y / 2
-        y_max = self.cell_size.y / 2
+        # Get monitor parameters from config
+        num_monitors = self.num_flux_regions
+        monitor_length = self.monitor_length
+        y_min = self.design_region_y_min
+        y_max = self.design_region_y_max
         
-        # Create a vertical line at state_output_x spanning the full y range
-        # We'll sample at num_flux_regions points along y
-        y_positions = np.linspace(y_min, y_max, self.num_flux_regions)
+        # Calculate center positions for each monitor
+        # Monitors are evenly spaced from y_min to y_max
+        y_centers = np.linspace(y_min + monitor_length/2, y_max - monitor_length/2, num_monitors)
         
         # Store y positions for plotting
-        self.hzfield_region_y_positions = y_positions.copy()
+        self.hzfield_region_y_positions = y_centers.copy()
+        
+        # Store monitor objects
+        self.hzfield_monitors = []
 
-        # Create DFT field monitor for magnetic field (Hz component for 2D TE mode)
-        # The monitor is a vertical line at x = state_output_x
-        field_region = mp.Volume(
-            center=mp.Vector3(self.state_output_x, 0, 0),
-            size=mp.Vector3(0, self.cell_size.y, 0)  # Vertical line spanning full height
-        )
+        # Create DFT field monitors for magnetic field (Hz component for 2D TE mode)
+        # Each monitor is a vertical line segment at x = state_output_x
+        for y_center in y_centers:
+            field_region = mp.Volume(
+                center=mp.Vector3(self.state_output_x, y_center, 0),
+                size=mp.Vector3(0, monitor_length, 0)  # Vertical line segment of length 0.2 um
+            )
+            
+            # Add DFT fields monitor for Hz component (TE mode)
+            monitor = self.sim.add_dft_fields(
+                [mp.Hz],  # Monitor Hz component (for 2D TE mode)
+                frequency, 0.0, 1,  # fcen, df, nfreq (single frequency: center freq, zero width, 1 frequency)
+                center=field_region.center,
+                size=field_region.size
+            )
+            self.hzfield_monitors.append(monitor)
         
-        # Add DFT fields monitor for Hz component (TE mode)
-        # For single frequency, use fcen, df, nfreq format (3 numbers)
-        # fcen = center frequency, df = frequency width, nfreq = number of frequencies
-        self.hzfield_monitor = self.sim.add_dft_fields(
-            [mp.Hz],  # Monitor Hz component (for 2D TE mode)
-            frequency, 0.0, 1,  # fcen, df, nfreq (single frequency: center freq, zero width, 1 frequency)
-            center=field_region.center,
-            size=field_region.size
-        )
+        # Keep backward compatibility with single monitor attribute
+        self.hzfield_monitor = self.hzfield_monitors[0] if self.hzfield_monitors else None
         
-        return self.hzfield_monitor
+        return self.hzfield_monitors
 
     def add_flux_monitor_input_mode(self):
         """
@@ -516,51 +526,35 @@ class WaveguideSimulation:
 
     def get_hzfield_state(self):
         """
-        Get magnetic field values for state monitor (along y-axis).
+        Get magnetic field values for state monitors (10 monitors along y-axis).
         Returns the magnitude squared of the magnetic field (|Hz|^2) for TE mode.
+        Each monitor is averaged over its 0.2 um length.
 
         Returns:
-            hz_field_state: array of |Hz|^2 values at each y position
+            hz_field_state: array of |Hz|^2 values, one per monitor (length 10)
         """
-        if self.hzfield_monitor is None:
+        if not hasattr(self, 'hzfield_monitors') or not self.hzfield_monitors:
             raise ValueError(
-                "No hz field monitor. Call add_hzfield_monitor_state() first.")
+                "No hz field monitors. Call add_hzfield_monitor_state() first.")
 
-        # Get electric field data from DFT monitor
-        # get_dft_array returns the field data as a numpy array
-        # For a vertical line monitor, this should be a 1D array along y
-        hzfield_data = self.sim.get_dft_array(self.hzfield_monitor, mp.Hz, 0)
+        hzfield_values = []
         
-        # Extract values along the y-axis
-        # For a vertical line monitor, Meep typically returns a 1D array
-        if hzfield_data.ndim == 1:
-            # Direct 1D array along y-axis
-            hzfield_values = np.abs(hzfield_data) ** 2
-        elif hzfield_data.ndim == 2:
-            # If 2D, extract the column (for vertical line, should be single column)
-            # Take the middle column or first column depending on shape
-            if hzfield_data.shape[1] == 1:
-                hzfield_values = np.abs(hzfield_data[:, 0]) ** 2
+        # Get field data from each monitor and average over the monitor region
+        for monitor in self.hzfield_monitors:
+            hzfield_data = self.sim.get_dft_array(monitor, mp.Hz, 0)
+            
+            # Average the field over the monitor region
+            if hzfield_data.ndim == 1:
+                # 1D array - take mean
+                monitor_value = np.mean(np.abs(hzfield_data) ** 2)
+            elif hzfield_data.ndim == 2:
+                # 2D array - average over all points
+                monitor_value = np.mean(np.abs(hzfield_data) ** 2)
             else:
-                # Multiple columns - take middle column
-                mid_x = hzfield_data.shape[1] // 2
-                hzfield_values = np.abs(hzfield_data[:, mid_x]) ** 2
-        else:
-            # Fallback: flatten and take first num_flux_regions elements
-            hzfield_values = np.abs(hzfield_data.flatten()[:self.num_flux_regions]) ** 2
-        
-        # Ensure we have the right number of values
-        if len(hzfield_values) != self.num_flux_regions:
-            # Resample to match num_flux_regions
-            if len(hzfield_values) > self.num_flux_regions:
-                # Downsample by taking evenly spaced indices
-                indices = np.linspace(0, len(hzfield_values) - 1, self.num_flux_regions, dtype=int)
-                hzfield_values = hzfield_values[indices]
-            else:
-                # Upsample by linear interpolation using numpy
-                old_indices = np.linspace(0, 1, len(hzfield_values))
-                new_indices = np.linspace(0, 1, self.num_flux_regions)
-                hzfield_values = np.interp(new_indices, old_indices, hzfield_values)
+                # Flatten and average
+                monitor_value = np.mean(np.abs(hzfield_data.flatten()) ** 2)
+            
+            hzfield_values.append(monitor_value)
 
         return np.array(hzfield_values)
 

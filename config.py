@@ -16,9 +16,12 @@ class SimulationConfig:
     output_y_separation: float
     simulation_time: float
     num_flux_regions: int
+    monitor_length: float
     state_output_x: float
     design_region_x: float
     design_region_y: float
+    design_region_y_min: float
+    design_region_y_max: float
     pixel_size: float
     silicon_index: float
     silica_index: float
@@ -34,6 +37,7 @@ class EnvironmentConfig:
     obs_size: int
     action_size: int
     max_steps: int
+    num_previous_layers: int
 
 # @dataclass 
 # class TrainingConfig:

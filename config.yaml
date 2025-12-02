@@ -1,10 +1,14 @@
-state_dim: &state_dim 81
-state_dim_minus_1: &state_dim_minus_1 80
+# New state space: 10 monitors + 1 matrix index + averaged previous 3 layers (each layer = 20 pixels in +y direction)
+# Total: 10 + 1 + 20 = 31
+state_dim: &state_dim 31
+num_monitors: &num_monitors 10
+num_previous_layers: &num_previous_layers 3
 
 environment:
   obs_size: *state_dim
   action_size: 20
   max_steps: 20
+  num_previous_layers: *num_previous_layers
 
 
 simulation:
@@ -18,10 +22,13 @@ simulation:
   waveguide_length: 1.8
   output_y_separation: 0.6
   simulation_time: 150
-  num_flux_regions: *state_dim_minus_1
+  num_flux_regions: *num_monitors  # Now 10 monitors instead of 80
+  monitor_length: 0.2  # Length of each monitor in um
   state_output_x: 1.0
   design_region_x: 2.0
   design_region_y: 2.0
+  design_region_y_min: -1.0  # Minimum y position for monitor placement
+  design_region_y_max: 1.0   # Maximum y position for monitor placement
   pixel_size: 0.1
   silicon_index: 3.45
   silica_index: 1.45

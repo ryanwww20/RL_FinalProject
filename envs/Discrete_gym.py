@@ -37,6 +37,7 @@ class MinimalEnv(gym.Env):
         # Initialize state
         self.state = None
         self.render_mode = render_mode
+        # Material matrix is 2D: (pixel_num_x, pixel_num_y) representing the current design
         self.material_matrix = np.zeros(
             (config.simulation.pixel_num_x, config.simulation.pixel_num_y))
         self.material_matrix_idx = 0
@@ -46,6 +47,85 @@ class MinimalEnv(gym.Env):
         
         # Store the last completed episode's final metrics (for callback logging)
         self.last_episode_metrics = None
+        
+        # Store previous layers for state space (history of layer matrices)
+        self.num_previous_layers = config.environment.num_previous_layers
+        self.layer_history = []  # List to store previous layer matrices
+        self.pixel_num_x = config.simulation.pixel_num_x
+        self.pixel_num_y = config.simulation.pixel_num_y
+        self.waveguide_width = config.simulation.waveguide_width
+        self.design_region_y_min = config.simulation.design_region_y_min
+        self.design_region_y_max = config.simulation.design_region_y_max
+        self.pixel_size = config.simulation.pixel_size
+
+    def _get_default_waveguide_layer(self):
+        """
+        Create a default layer pattern: silica on sides, silicon in center (like input waveguide).
+        A layer is one row (20 pixels in +y direction).
+        This is used when there are fewer than 3 previous layers.
+        
+        Returns:
+            1D array of length pixel_num_y (20 values) with 1=silicon, 0=silica
+        """
+        layer = np.zeros(self.pixel_num_y, dtype=np.float32)
+        
+        # Calculate which pixels are in the waveguide (centered at y=0)
+        # Waveguide width is 0.4 um, centered at y=0
+        # Design region spans from y=-1 to y=1 (2 um total)
+        waveguide_y_min = -self.waveguide_width / 2
+        waveguide_y_max = self.waveguide_width / 2
+        
+        # Convert y positions to pixel indices (for one row/layer)
+        for j in range(self.pixel_num_y):
+            # Calculate y center of this pixel
+            y_center = self.design_region_y_min + (j + 0.5) * self.pixel_size
+            
+            # If pixel is within waveguide width, set to silicon (1)
+            if waveguide_y_min <= y_center <= waveguide_y_max:
+                layer[j] = 1.0
+        
+        return layer
+
+    def _get_previous_layers_state(self):
+        """
+        Get the average of the previous 3 layers.
+        A layer is one row (20 pixels in +y direction).
+        If fewer than 3 layers exist, pad with default waveguide pattern.
+        
+        Returns:
+            1D array of length pixel_num_y (20 values: averaged across 3 layers)
+        """
+        previous_layers = []
+        
+        # Get previous layers from layer_history
+        # layer_history stores individual layers (rows), with newest at the end (after append)
+        history_len = len(self.layer_history)
+        
+        for i in range(self.num_previous_layers):
+            # We want the 3 most recent layers
+            # i=0: oldest of the 3 most recent (or default if not enough history)
+            # i=1: middle of the 3 most recent (or default if not enough history)
+            # i=2: newest of the 3 most recent (or default if not enough history)
+            layer_idx = history_len - self.num_previous_layers + i
+            
+            if layer_idx >= 0 and layer_idx < history_len:
+                # Use actual layer from history (1D array of length pixel_num_y)
+                # layer_history[0] is oldest, layer_history[-1] is newest
+                layer = self.layer_history[layer_idx].copy()
+            else:
+                # Use default waveguide pattern (not enough history yet)
+                layer = self._get_default_waveguide_layer()
+            
+            # Append layer (already 1D, length pixel_num_y)
+            previous_layers.append(layer)
+        
+        # Stack layers and compute average across the 3 layers
+        # previous_layers is a list of 3 arrays, each of length pixel_num_y
+        # Stack them into a 2D array (3 x pixel_num_y), then average along axis 0
+        layers_array = np.stack(previous_layers, axis=0)  # Shape: (3, pixel_num_y)
+        averaged_layers = np.mean(layers_array, axis=0)  # Shape: (pixel_num_y,) = (20,)
+        
+        return averaged_layers.astype(np.float32)
 
     def reset(self, seed=None, options=None):
         """
@@ -65,14 +145,28 @@ class MinimalEnv(gym.Env):
         self.material_matrix = np.zeros(
             (config.simulation.pixel_num_x, config.simulation.pixel_num_y))
         self.material_matrix_idx = 0
+        self.layer_history = []  # Reset layer history
         self.last_score = None
 
         # Use calculate_flux to get initial hzfield_state for empty matrix
         # This returns: input_mode_flux, output_mode_flux_1, output_mode_flux_2, hzfield_state, hz_data, input_mode, output_mode_1, output_mode_2
-        _, _, _, hzfield_state, _, _, _, _ = self.simulation.calculate_flux(self.material_matrix)
-        observation = hzfield_state.copy().astype(np.float32)
-        # Append material_matrix_idx to match observation space shape (same as in step function)
-        observation = np.append(observation, self.material_matrix_idx)
+        # For initial state, use empty matrix (all zeros)
+        empty_matrix = np.zeros((config.simulation.pixel_num_x, config.simulation.pixel_num_y))
+        _, _, _, hzfield_state, _, _, _, _ = self.simulation.calculate_flux(empty_matrix)
+        
+        # Normalize hzfield_state by dividing by maximum (bounded between 0 and 1)
+        hzfield_max = np.max(hzfield_state)
+        if hzfield_max > 0:
+            hzfield_state_normalized = hzfield_state / hzfield_max
+        else:
+            hzfield_state_normalized = hzfield_state  # If all zeros, keep as is
+        
+        # Build observation: 10 monitors + matrix index + averaged previous 3 layers
+        observation = hzfield_state_normalized.copy().astype(np.float32)  # 10 monitor values (normalized)
+        observation = np.append(observation, float(self.material_matrix_idx))  # 1 matrix index
+        previous_layers_avg = self._get_previous_layers_state()  # 20 values (averaged across 3 layers)
+        observation = np.append(observation, previous_layers_avg)
+        
         info = {}
 
         return observation, info
@@ -96,8 +190,16 @@ class MinimalEnv(gym.Env):
         # Validate action
         assert self.action_space.contains(action), f"Invalid action: {action}"
 
-        # Action is a binary array of length 50
+        # Action is a binary array representing one layer (row) of the design
+        # Update the material matrix: set the row at material_matrix_idx
         self.material_matrix[self.material_matrix_idx] = action
+        
+        # Store this layer (row) in history (keep only last num_previous_layers)
+        # A layer is one row (20 pixels in +y direction)
+        self.layer_history.append(action.copy())
+        if len(self.layer_history) > self.num_previous_layers:
+            self.layer_history.pop(0)  # Remove oldest layer
+        
         self.material_matrix_idx += 1
 
         # calculate_flux returns: input_mode_flux, output_mode_flux_1, output_mode_flux_2, hzfield_state, hz_data, input_mode, output_mode_1, output_mode_2
@@ -125,16 +227,24 @@ class MinimalEnv(gym.Env):
         # Get observation - return the current hzfield_state as observation
         # This gives the agent feedback about the current state
         if self.material_matrix_idx > 0:
-            # Use hzfield_state directly as observation
-            observation = hzfield_state.copy().astype(np.float32)
-
+            # Normalize hzfield_state by dividing by maximum (bounded between 0 and 1)
+            hzfield_max = np.max(hzfield_state)
+            if hzfield_max > 0:
+                hzfield_state_normalized = hzfield_state / hzfield_max
+            else:
+                hzfield_state_normalized = hzfield_state  # If all zeros, keep as is
+            
+            # Build observation: 10 monitors + matrix index + averaged previous 3 layers
+            observation = hzfield_state_normalized.copy().astype(np.float32)  # 10 monitor values (normalized)
+            observation = np.append(observation, float(self.material_matrix_idx))  # 1 matrix index
+            previous_layers_avg = self._get_previous_layers_state()  # 20 values (averaged across 3 layers)
+            observation = np.append(observation, previous_layers_avg)
         else:
-            # Initial state: return zeros
+            # Initial state: return zeros (shouldn't happen after reset, but just in case)
             observation = np.zeros(self.obs_size, dtype=np.float32)
 
         # Info dictionary with custom metrics
         info = self._step_metrics if hasattr(self, '_step_metrics') else {}
-        observation = np.append(observation, self.material_matrix_idx)
 
         return observation, reward, terminated, truncated, info
 
