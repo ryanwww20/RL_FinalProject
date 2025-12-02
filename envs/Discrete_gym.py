@@ -143,10 +143,13 @@ class MinimalEnv(gym.Env):
             info: Additional information dictionary
         """
         
-        # Action is a binary array of length 50
+        # Transform action coefficients to spatial representation, then threshold to binary
         action = action.reshape(-1, 1)
-        self.material_matrix[self.material_matrix_idx] = self.walsh.transform(action)
-        print(self.material_matrix[self.material_matrix_idx])
+        continuous_output = self.walsh.transform(action)
+        # Threshold at 0: positive -> 1 (silicon), negative/zero -> 0 (silica)
+        binary_output = (continuous_output > 0).astype(np.float32)
+        self.material_matrix[self.material_matrix_idx] = binary_output
+        # print(self.material_matrix[self.material_matrix_idx])
         self.material_matrix_idx += 1
 
         # calculate_flux returns: input_mode_flux, output_mode_flux_1, output_mode_flux_2, hzfield_state, hz_data, input_mode, output_mode_1, output_mode_2
@@ -156,7 +159,9 @@ class MinimalEnv(gym.Env):
         # Use MODE coefficients for reward calculation (instead of raw flux)
         current_score, reward = self.get_reward()
        
-        terminated = self.material_matrix_idx >= self.max_steps  # Goal reached
+        # Terminate when we've filled all rows OR reached max_steps
+        max_rows = self.material_matrix.shape[0]
+        terminated = self.material_matrix_idx >= min(self.max_steps, max_rows)
         truncated = False   # Time limit exceeded
         
         # Save final metrics when episode ends (before reset happens)

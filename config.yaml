@@ -3,8 +3,8 @@ state_dim_minus_1: &state_dim_minus_1 80
 
 environment:
   obs_size: *state_dim
-  action_size: 20
-  max_steps: 20
+  action_size: 4
+  max_steps: 16  # Must match pixel_num_x
 
 
 simulation:
