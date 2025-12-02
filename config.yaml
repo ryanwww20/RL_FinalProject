@@ -43,13 +43,13 @@ simulation:
 
 training:
   ppo:
-    total_timesteps: 96000
+    total_timesteps: 192000
     # total_timesteps: 640
     n_envs: 16
     learning_rate: 0.001
-    n_steps: 40
+    n_steps: 80
     batch_size: 64
-    n_epochs: 50
+    n_epochs: 40
     gamma: 0.99
     gae_lambda: 0.95
     clip_range: 0.2
