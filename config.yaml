@@ -63,14 +63,13 @@ training:
     n_envs: 1
     learning_rate: 0.0003 # 0.0001 0.0003 0.001
     buffer_size: 256
-    learning_starts: 1000
-    batch_size: 256
+    learning_starts: 100
     tau: 0.005
     gamma: 0.99
-    train_freq: 1
-    gradient_steps: 1
+    train_freq: 20
+    gradient_steps: 2
     ent_coef: auto
-    target_update_interval: 1
+    target_update_interval: 2
     target_entropy: auto
     use_sde: false
     tensorboard_log: ./sac_tensorboard/
