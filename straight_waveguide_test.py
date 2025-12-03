@@ -75,8 +75,8 @@ def sample_output_fields(sim: TestWaveguideSimulation, band: int, output_dir: st
 
     print(f"--- Field samples for eig_band = {band} ---")
     for center in [centers[0], centers[1]]:
+        print(f"Sampling at center {center.x}, {center.y}")
         for comp, name in components:
-            print(f"Sampling {name} at center {center}")
             sys.stdout.flush()
             try:
                 arr = sim.sim.get_array(center=center, size=size, component=comp)
