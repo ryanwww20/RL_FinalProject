@@ -8,6 +8,7 @@ simul_time_dis/
 wandb/
 
 ppo_model*/
+sac_model*/
 ppo_tensorboard*/
 sac_tensorboard*/
 sac_model_logs*/
