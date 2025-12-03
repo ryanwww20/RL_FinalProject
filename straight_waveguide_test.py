@@ -76,10 +76,12 @@ def sample_output_fields(sim: TestWaveguideSimulation, band: int, output_dir: st
     print(f"--- Field samples for eig_band = {band} ---")
     for center in [centers[0], centers[1]]:
         for comp, name in components:
+            print(f"Sampling {name} at center {center}")
+            sys.stdout.flush()
             try:
                 arr = sim.sim.get_array(center=center, size=size, component=comp)
                 data = np.array(arr)
-                np.save(os.path.join(output_dir, f"band{band}_{name}.npy"), data)
+                np.save(os.path.join(output_dir, f"band{band}_{name}_{center.x}_{center.y}.npy"), data)
                 amp = np.max(np.abs(data))
                 print(f"{name}: max |{name}| = {amp:.3e}, shape = {data.shape}")
                 sys.stdout.flush()  # Force immediate output
