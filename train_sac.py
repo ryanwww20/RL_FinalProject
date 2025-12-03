@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 from stable_baselines3 import SAC, PPO
 from stable_baselines3.common.env_util import make_vec_env, DummyVecEnv, SubprocVecEnv
 from stable_baselines3.common.callbacks import BaseCallback
-from envs.Discrete_gym import MinimalEnv
+from envs.Continuous_gym import MinimalEnv
 from PIL import Image
 from eval import ModelEvaluator
 
