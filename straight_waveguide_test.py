@@ -61,7 +61,7 @@ def sample_output_fields(sim: TestWaveguideSimulation, band: int, output_dir: st
     """
     os.makedirs(output_dir, exist_ok=True)
 
-    center = mp.Vector3(sim.output_flux_monitor_x, sim.output_y_separation, 0)
+    centers = [mp.Vector3(sim.output_flux_monitor_x, sim.output_y_separation, 0), mp.Vector3(sim.output_flux_monitor_x, -sim.output_y_separation, 0)]
     size = mp.Vector3(0, sim.waveguide_width, 0)
 
     components = [
@@ -74,17 +74,18 @@ def sample_output_fields(sim: TestWaveguideSimulation, band: int, output_dir: st
     ]
 
     print(f"--- Field samples for eig_band = {band} ---")
-    for comp, name in components:
-        try:
-            arr = sim.sim.get_array(center=center, size=size, component=comp)
-            data = np.array(arr)
-            np.save(os.path.join(output_dir, f"band{band}_{name}.npy"), data)
-            amp = np.max(np.abs(data))
-            print(f"{name}: max |{name}| = {amp:.3e}, shape = {data.shape}")
-            sys.stdout.flush()  # Force immediate output
-        except Exception as e:
-            print(f"{name}: error while sampling field -> {e}")
-            sys.stdout.flush()
+    for center in [centers[0], centers[1]]:
+        for comp, name in components:
+            try:
+                arr = sim.sim.get_array(center=center, size=size, component=comp)
+                data = np.array(arr)
+                np.save(os.path.join(output_dir, f"band{band}_{name}.npy"), data)
+                amp = np.max(np.abs(data))
+                print(f"{name}: max |{name}| = {amp:.3e}, shape = {data.shape}")
+                sys.stdout.flush()  # Force immediate output
+            except Exception as e:
+                print(f"{name}: error while sampling field -> {e}")
+                sys.stdout.flush()
 
 
 def run_straight_waveguide_test(output_dir: str):
