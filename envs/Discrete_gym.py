@@ -302,12 +302,12 @@ class MinimalEnv(gym.Env):
             similarity = 0.0
             similarity_score = 0.0
 
-        # Calculate current_score: explicitly normalize transmission by input_mode in the formula
-        # transmission_score is already (total_transmission/input_mode) normalized to [0,1]
-        current_score = (total_transmission / input_mode) / 100 + balance_score * 10
+        # Calculate current_score: use transmission_score which is already normalized to [0,1]
+        # transmission_score = (total_transmission/input_mode) normalized to [0,1] with min/max clamping
+        current_score = transmission_score * 10 + balance_score * 10
         reward = current_score - self.last_score if self.last_score is not None else 0
         # Add similarity_score directly to reward (not to current_score)
-        reward += similarity_score/8
+        reward += similarity_score/10
 
         self.last_score = current_score
 
@@ -350,10 +350,12 @@ class MinimalEnv(gym.Env):
             diff_ratio = 1.0
         balance_score = max(1 - diff_ratio, 0)
         
-        # Keep transmission_score as-is (without dividing by input_mode)
+        # Keep transmission_score as-is (without dividing by input_mode) for logging
         transmission_score = min(max(total_transmission, 0), 1)
-        # Use same formula as get_reward() for consistency (explicitly divide by input_mode here)
-        current_score = (total_transmission / input_mode) / 100 + balance_score * 10
+        # Use same formula as get_reward() for consistency
+        # Calculate normalized transmission score for current_score (matching get_reward)
+        normalized_transmission = min(max(total_transmission / input_mode, 0), 1)
+        current_score = normalized_transmission * 10 + balance_score * 10
         
         return {
             'material_matrix': self.material_matrix.copy(),
