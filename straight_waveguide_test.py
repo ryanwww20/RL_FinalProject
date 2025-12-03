@@ -1,5 +1,6 @@
 import argparse
 import os
+import sys
 
 import meep as mp
 import numpy as np
@@ -80,8 +81,10 @@ def sample_output_fields(sim: TestWaveguideSimulation, band: int, output_dir: st
             np.save(os.path.join(output_dir, f"band{band}_{name}.npy"), data)
             amp = np.max(np.abs(data))
             print(f"{name}: max |{name}| = {amp:.3e}, shape = {data.shape}")
+            sys.stdout.flush()  # Force immediate output
         except Exception as e:
             print(f"{name}: error while sampling field -> {e}")
+            sys.stdout.flush()
 
 
 def run_straight_waveguide_test(output_dir: str):
@@ -109,6 +112,10 @@ def run_straight_waveguide_test(output_dir: str):
 
         # Sample output fields
         sample_output_fields(sim, band=band, output_dir=output_dir)
+        
+        # Force flush output to ensure field samples are printed before mode integral calculation
+        sys.stdout.flush()
+        sys.stderr.flush()
         
         # Calculate mode integral power metrics
         print(f"\n--- Mode Integral Power Metrics for eig_band = {band} ---")
