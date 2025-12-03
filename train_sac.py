@@ -114,15 +114,40 @@ class TrainingCallback(BaseCallback):
             train_score = sum(m['current_score'] for m in all_metrics) / n_envs
             train_similarity = sum(m.get('similarity_score', 0.0) for m in all_metrics) / n_envs
             
-            # Get episode reward from logger (SAC uses replay_buffer, not rollout_buffer)
+            # Get episode reward for SAC
+            # Method 1: Try to get from environment's last_episode_metrics (most accurate)
             train_reward = 0.0
-            if hasattr(self.model, 'logger') and self.model.logger is not None:
-                # Try to get episode reward from logger
-                try:
-                    if hasattr(self.model.logger, 'name_to_value'):
-                        train_reward = self.model.logger.name_to_value.get('rollout/ep_rew_mean', 0.0)
-                except:
-                    pass
+            try:
+                # Check if environment stores total_reward in metrics
+                for m in all_metrics:
+                    if 'total_reward' in m:
+                        train_reward = m['total_reward']
+                        break
+                
+                # Method 2: Fallback to replay_buffer if environment doesn't have it
+                if train_reward == 0.0 and hasattr(self.model, 'replay_buffer') and self.model.replay_buffer is not None:
+                    replay_buffer = self.model.replay_buffer
+                    # Get recent rewards from buffer as approximation
+                    if hasattr(replay_buffer, 'rewards') and len(replay_buffer.rewards) > 0:
+                        recent_size = min(100, len(replay_buffer.rewards))
+                        recent_rewards = replay_buffer.rewards[-recent_size:]
+                        if len(recent_rewards) > 0:
+                            train_reward = float(np.mean(recent_rewards))
+                
+                # Method 3: Fallback to logger if above methods don't work
+                if train_reward == 0.0 and hasattr(self.model, 'logger') and self.model.logger is not None:
+                    try:
+                        if hasattr(self.model.logger, 'name_to_value'):
+                            train_reward = (
+                                self.model.logger.name_to_value.get('rollout/ep_rew_mean', 0.0) or
+                                self.model.logger.name_to_value.get('train/episode_reward', 0.0)
+                            )
+                    except Exception:
+                        pass
+                            
+            except Exception:
+                # If all methods fail, keep reward as 0.0
+                pass
         except Exception as e:
             print(f"Warning: Could not get training env metrics: {e}")
             train_transmission = 0.0

@@ -52,6 +52,9 @@ class MinimalEnv(gym.Env):
         # Store the last completed episode's final metrics (for callback logging)
         self.last_episode_metrics = None
         
+        # Track episode reward for SAC callback
+        self.episode_reward = 0.0
+        
         # Store previous layers for state space (history of layer matrices)
         self.num_previous_layers = config.environment.num_previous_layers
         self.layer_history = []  # List to store previous layer matrices
@@ -164,6 +167,7 @@ class MinimalEnv(gym.Env):
         self.material_matrix_idx = 0
         self.layer_history = []  # Reset layer history
         self.last_score = None
+        self.episode_reward = 0.0  # Reset episode reward
 
         # Use calculate_flux to get initial hzfield_state for empty matrix
         # This returns: input_mode_flux, output_mode_flux_1, output_mode_flux_2, hzfield_state, hz_data, input_mode, output_mode_1, output_mode_2
@@ -234,6 +238,9 @@ class MinimalEnv(gym.Env):
         # Use MODE coefficients for reward calculation (instead of raw flux)
         # Pass current layer and previous layer for similarity calculation
         current_score, reward = self.get_reward(current_layer=action, previous_layer=previous_layer)
+        
+        # Accumulate episode reward
+        self.episode_reward += reward
        
         terminated = self.material_matrix_idx >= self.max_steps  # Goal reached
         truncated = False   # Time limit exceeded
@@ -249,6 +256,7 @@ class MinimalEnv(gym.Env):
                 'balance_score': self._step_metrics['balance_score'],
                 'current_score': self._step_metrics['current_score'],
                 'similarity_score': self._step_metrics.get('similarity_score', 0.0),
+                'total_reward': self.episode_reward,  # Add total episode reward
             }
 
         # Get observation - return the current hzfield_state as observation
