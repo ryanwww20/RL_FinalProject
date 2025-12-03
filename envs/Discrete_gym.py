@@ -132,6 +132,38 @@ class MinimalEnv(gym.Env):
         
         return averaged_layers.astype(np.float32)
 
+    def _get_previous_layer(self):
+        """
+        Get the previous layer (the layer before the current one).
+        For the first layer (material_matrix_idx == 0), returns the input waveguide pattern.
+        
+        Returns:
+            1D array of length pixel_num_y (20 values) with 1=silicon, 0=silica
+        """
+        if self.material_matrix_idx == 0:
+            # First layer: use input waveguide pattern as previous layer
+            return self._get_default_waveguide_layer()
+        else:
+            # Get the previous layer from material_matrix
+            # material_matrix_idx has been incremented, so previous is at idx - 1
+            return self.material_matrix[self.material_matrix_idx - 1].copy()
+
+    def _calculate_similarity(self, current_layer, previous_layer):
+        """
+        Calculate similarity between current and previous layer.
+        Similarity is the number of identical pixels (both 0 or both 1).
+        
+        Args:
+            current_layer: 1D array of current layer (length pixel_num_y)
+            previous_layer: 1D array of previous layer (length pixel_num_y)
+        
+        Returns:
+            similarity: Number of identical pixels (0 to pixel_num_y)
+        """
+        # Count pixels where current_layer == previous_layer
+        similarity = np.sum(current_layer == previous_layer)
+        return float(similarity)
+
     def reset(self, seed=None, options=None):
         """
         Reset the environment to initial state.
@@ -196,6 +228,9 @@ class MinimalEnv(gym.Env):
         assert self.action_space.contains(action), f"Invalid action: {action}"
 
         # Action is a binary array representing one layer (row) of the design
+        # Get previous layer before updating (for similarity calculation)
+        previous_layer = self._get_previous_layer()
+        
         # Update the material matrix: set the row at material_matrix_idx
         self.material_matrix[self.material_matrix_idx] = action
         
@@ -212,7 +247,8 @@ class MinimalEnv(gym.Env):
             self.material_matrix)
 
         # Use MODE coefficients for reward calculation (instead of raw flux)
-        current_score, reward = self.get_reward()
+        # Pass current layer and previous layer for similarity calculation
+        current_score, reward = self.get_reward(current_layer=action, previous_layer=previous_layer)
        
         terminated = self.material_matrix_idx >= self.max_steps  # Goal reached
         truncated = False   # Time limit exceeded
@@ -253,10 +289,14 @@ class MinimalEnv(gym.Env):
 
         return observation, reward, terminated, truncated, info
 
-    def get_reward(self):
+    def get_reward(self, current_layer=None, previous_layer=None):
         """
         Calculate reward using transmission from meep_simulation.
         Uses get_output_transmission() method directly.
+        
+        Args:
+            current_layer: Current layer (1D array) for similarity calculation
+            previous_layer: Previous layer (1D array) for similarity calculation
         """
         # Get transmission using the method from meep_simulation
         _, input_mode = self.simulation.get_flux_input_mode(band_num=1)
@@ -271,10 +311,22 @@ class MinimalEnv(gym.Env):
             diff_ratio = 1.0  # If no transmission, balance is worst
         balance_score = max(1 - diff_ratio, 0)
 
+        # Calculate similarity: number of identical pixels between current and previous layer
+        if current_layer is not None and previous_layer is not None:
+            similarity = self._calculate_similarity(current_layer, previous_layer)
+            # Normalize similarity to [0, 1] by dividing by pixel_num_y
+            similarity_score = similarity / self.pixel_num_y
+        else:
+            similarity = 0.0
+            similarity_score = 0.0
+
         # Calculate current_score: explicitly normalize transmission by input_mode in the formula
         # transmission_score is already (total_transmission/input_mode) normalized to [0,1]
         current_score = (total_transmission / input_mode) / 100 + balance_score * 10
         reward = current_score - self.last_score if self.last_score is not None else 0
+        # Add similarity_score directly to reward (not to current_score)
+        reward += similarity_score/8
+
         self.last_score = current_score
 
         # Store metrics for info dict
@@ -285,6 +337,8 @@ class MinimalEnv(gym.Env):
             "transmission_2": transmission_2,
             "transmission_score": transmission_score,
             "balance_score": balance_score,
+            "similarity": similarity,
+            "similarity_score": similarity_score,
             "current_score": current_score,
         }
 
