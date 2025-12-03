@@ -90,6 +90,7 @@ def run_straight_waveguide_test(output_dir: str):
     - Fill design region with 1 (silicon).
     - Run two simulations with eig_band = 1 and 2.
     - For each, sample Ex, Ey, Ez, Hx, Hy, Hz at one output waveguide cross-section.
+    - Calculate and print mode integral power loss metrics.
     """
     for band in [1, 2]:
         print("=" * 70)
@@ -99,9 +100,53 @@ def run_straight_waveguide_test(output_dir: str):
         matrix = np.ones((sim.pixel_num_x, sim.pixel_num_y), dtype=int)
         sim.create_geometry(matrix=matrix)
         sim.create_simulation()
+        
+        # Add flux monitors for mode power calculation
+        sim.add_flux_monitor_input_mode()
+        sim.add_flux_monitor_output_mode()
+        
         sim.run()
 
+        # Sample output fields
         sample_output_fields(sim, band=band, output_dir=output_dir)
+        
+        # Calculate mode integral power metrics
+        print(f"\n--- Mode Integral Power Metrics for eig_band = {band} ---")
+        try:
+            input_mode_flux, input_mode = sim.get_flux_input_mode(band_num=band)
+            output_mode_flux_1, output_mode_flux_2, output_mode_1, output_mode_2, _ = sim.get_flux_output_mode(band_num=band)
+            
+            print("============= Mode Integrals =============")
+            print(f"Input Mode Power: {input_mode:.6f}")
+            print(f"Output Mode 1 Power: {output_mode_1:.6f}")
+            print(f"Output Mode 2 Power: {output_mode_2:.6f}")
+            
+            if input_mode != 0:
+                print(f"Output Mode 1 / Input Mode: {output_mode_1 / input_mode * 100:.2f}%")
+                print(f"Output Mode 2 / Input Mode: {output_mode_2 / input_mode * 100:.2f}%")
+                total_output = output_mode_1 + output_mode_2
+                print(f"Total Output / Input Mode: {total_output / input_mode * 100:.2f}%")
+                mode_loss = (input_mode - total_output) / input_mode * 100
+                print(f"Mode Loss: {mode_loss:.2f}%")
+            else:
+                print("Input Mode Power is 0, cannot calculate percentages.")
+            print("==========================================")
+            
+            # Also print raw flux for comparison
+            print("\n--- Raw Flux Values (for reference) ---")
+            print(f"Input Flux: {input_mode_flux:.6f}")
+            print(f"Output Flux 1: {output_mode_flux_1:.6f}")
+            print(f"Output Flux 2: {output_mode_flux_2:.6f}")
+            if input_mode_flux != 0:
+                total_flux = output_mode_flux_1 + output_mode_flux_2
+                flux_loss = (input_mode_flux - total_flux) / input_mode_flux * 100
+                print(f"Flux Loss: {flux_loss:.2f}%")
+            print()
+            
+        except Exception as e:
+            print(f"Error calculating mode integrals: {e}")
+            import traceback
+            traceback.print_exc()
 
     print("=" * 70)
     print(f"Field samples saved under directory: {output_dir}")
