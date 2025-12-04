@@ -14,6 +14,7 @@ sac_tensorboard*/
 sac_model_logs*/
 simul_time_dis/
 playground/
+img/
 
 models/
 playground/

@@ -490,12 +490,20 @@ def train_sac(
     # Create models directory if it doesn't exist
     os.makedirs("models", exist_ok=True)
 
+    policy_kwargs={
+        "net_arch": dict(
+            pi=[512, 512],
+            qf=[512, 512]
+        )
+    }
+
     # Create SAC model
     print("Creating SAC model...")
     model = SAC(
         "MlpPolicy",
         env,
         learning_rate=learning_rate,
+        policy_kwargs=policy_kwargs,
         buffer_size=buffer_size,
         learning_starts=learning_starts,
         batch_size=batch_size,
