@@ -455,11 +455,19 @@ def train_ppo(
     # Create models directory if it doesn't exist
     os.makedirs("models", exist_ok=True)
 
+    policy_kwargs={
+        "net_arch": dict(
+            pi=[64, 128],
+            vf=[64, 128]
+        )
+    }
+
     # Create PPO model
     print("Creating PPO model...")
     model = PPO(
         "MlpPolicy",
         env,
+        policy_kwargs=policy_kwargs,
         learning_rate=learning_rate,
         n_steps=n_steps,
         batch_size=batch_size,
