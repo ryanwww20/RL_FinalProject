@@ -307,7 +307,7 @@ class MinimalEnv(gym.Env):
         current_score = transmission_score * 10 + balance_score * 10
         reward = current_score - self.last_score if self.last_score is not None else 0
         # Add similarity_score directly to reward (not to current_score)
-        reward += similarity_score/10
+        reward += similarity_score/2
 
         self.last_score = current_score
 

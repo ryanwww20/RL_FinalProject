@@ -927,6 +927,7 @@ class WaveguideSimulation:
             plt.plot(x_data, hzfield_state, 'b-', linewidth=2, label='Magnetic Field |Hz|²')
         plt.xlabel(x_label)
         plt.ylabel('|Hz|²')
+        plt.ylim(0, 30000)  # Fix maximum y-axis at 30000
         
         # Build title
         base_title = 'Magnetic Field Distribution at Output Plane'
