@@ -33,8 +33,8 @@ class MinimalEnv(gym.Env):
 
         index_diff = config.simulation.silicon_index - config.simulation.silica_index
         self.action_space = spaces.Box(
-            low=config.simulation.silica_index - index_diff/2,
-            high=config.simulation.silicon_index + index_diff/2,
+            low=0,
+            high=1,
             shape=(self.action_size,),
             dtype=np.float32
         )
@@ -217,7 +217,7 @@ class MinimalEnv(gym.Env):
         
         # Update the material matrix: set the row at material_matrix_idx
         for i in range(self.action_size):
-            if action[i] > (config.simulation.silicon_index + config.simulation.silica_index) / 2:
+            if action[i] > 0.5:
                 self.material_matrix[self.material_matrix_idx, i] = 1
             else:
                 self.material_matrix[self.material_matrix_idx, i] = 0
