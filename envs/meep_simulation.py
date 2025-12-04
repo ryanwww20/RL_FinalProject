@@ -737,8 +737,7 @@ class WaveguideSimulation:
             show_plot: Whether to display the plot
             title_suffix: Optional suffix to add to the title (e.g., "Rollout 5")
         """
-        if self.hz_data is None:
-            self.get_hzfield_data()
+        self.get_hzfield_data()
 
         if save_path is None:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
