@@ -221,7 +221,6 @@ class MinimalEnv(gym.Env):
                 self.material_matrix[self.material_matrix_idx, i] = 1
             else:
                 self.material_matrix[self.material_matrix_idx, i] = 0
-        self.material_matrix_idx += 1
         
         # Store this layer (row) in history (keep only last num_previous_layers)
         # A layer is one row (20 pixels in +y direction)
