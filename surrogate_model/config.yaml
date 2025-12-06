@@ -1,0 +1,8 @@
+
+dataset:
+  num_samples: 10
+  train_ratio: 0.8
+  val_ratio: 0.1
+  seed: 42
+  output_dir: "surrogate_model/data"
+  
