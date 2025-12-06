@@ -406,7 +406,7 @@ class MinimalEnv(gym.Env):
         if self.last_episode_metrics is not None:
             hzfield_state = self.last_episode_metrics['hzfield_state']
         else:
-            _, _, _, hzfield_state, _, _, _, _ = self.simulation.calculate_flux(self.material_matrix)
+            hzfield_state, _= self.simulation.calculate_flux(self.material_matrix)
         self.simulation.plot_distribution(
             hzfield_state=hzfield_state,
             save_path=save_path,

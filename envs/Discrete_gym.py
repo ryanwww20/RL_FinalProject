@@ -170,9 +170,9 @@ class MinimalEnv(gym.Env):
 
         # Use calculate_flux to get initial hzfield_state for initial matrix
         # This returns: input_mode_flux, output_mode_flux_1, output_mode_flux_2, hzfield_state, hz_data, input_mode, output_mode_1, output_mode_2
-        # For initial state, use matrix with all 1's (silicon)
-        initial_matrix = np.ones((config.simulation.pixel_num_x, config.simulation.pixel_num_y))
-        _, _, _, hzfield_state, _, _, _, _ = self.simulation.calculate_flux(initial_matrix)
+        # For initial state, use empty matrix (all zeros)
+        empty_matrix = np.zeros((config.simulation.pixel_num_x, config.simulation.pixel_num_y))
+        hzfield_state, _ = self.simulation.calculate_flux(empty_matrix)
         
         # Normalize hzfield_state by dividing by maximum (bounded between 0 and 1)
         hzfield_max = np.max(hzfield_state)
@@ -342,7 +342,7 @@ class MinimalEnv(gym.Env):
         
         # Fallback: return current state (for first rollout before any episode completes)
         _, input_mode = self.simulation.get_flux_input_mode(band_num=1)
-        _, _, _, hzfield_state, _, _, _, _ = self.simulation.calculate_flux(self.material_matrix)
+        hzfield_state, _ = self.simulation.calculate_flux(self.material_matrix)
         
         transmission_1, transmission_2, total_transmission, diff_transmission = \
             self.simulation.get_output_transmission(band_num=1)
@@ -382,7 +382,7 @@ class MinimalEnv(gym.Env):
             print("self.last_episode_metrics is not None")
         else:
             matrix = self.material_matrix
-            _, _, _, _, hz_data, _, _, _ = self.simulation.calculate_flux(self.material_matrix)
+            _, hz_data = self.simulation.calculate_flux(self.material_matrix)
             print("self.last_episode_metrics is None")
         self.simulation.plot_design(
             matrix=matrix,
@@ -398,7 +398,7 @@ class MinimalEnv(gym.Env):
         if self.last_episode_metrics is not None:
             hzfield_state = self.last_episode_metrics['hzfield_state']
         else:
-            _, _, _, hzfield_state, _, _, _, _ = self.simulation.calculate_flux(self.material_matrix)
+            hzfield_state, _ = self.simulation.calculate_flux(self.material_matrix)
         self.simulation.plot_distribution(
             hzfield_state=hzfield_state,
             save_path=save_path,
