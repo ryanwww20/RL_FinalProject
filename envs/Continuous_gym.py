@@ -231,7 +231,7 @@ class MinimalEnv(gym.Env):
         self.material_matrix_idx += 1
 
         # calculate_flux returns: input_mode_flux, output_mode_flux_1, output_mode_flux_2, hzfield_state, hz_data, input_mode, output_mode_1, output_mode_2
-        _, _, _, hzfield_state, _, _, _, _ = self.simulation.calculate_flux(
+        _, _, _, hzfield_state, hz_data, _, _, _ = self.simulation.calculate_flux(
             self.material_matrix)
 
         # Use MODE coefficients for reward calculation (instead of raw flux)
@@ -248,6 +248,7 @@ class MinimalEnv(gym.Env):
         if terminated:
             self.last_episode_metrics = {
                 'material_matrix': self.material_matrix.copy(),
+                'hz_data': hz_data.copy(),
                 'hzfield_state': hzfield_state.copy(),
                 'total_transmission': self._step_metrics['total_transmission'],
                 'transmission_1': self._step_metrics['transmission_1'],
@@ -386,10 +387,13 @@ class MinimalEnv(gym.Env):
         Uses last completed episode's design if available."""
         if self.last_episode_metrics is not None:
             matrix = self.last_episode_metrics['material_matrix']
+            hz_data = self.last_episode_metrics['hz_data']
         else:
             matrix = self.material_matrix
+            _, _, _, hz_data, _, _, _, _ = self.simulation.calculate_flux(self.material_matrix)
         self.simulation.plot_design(
             matrix=matrix,
+            hz_data=hz_data,
             save_path=save_path,
             show_plot=False,
             title_suffix=title_suffix
