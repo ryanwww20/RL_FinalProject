@@ -37,24 +37,6 @@ PIXEL_SHAPE = (20, 20)
 
 def _ensure_dir(path: str) -> None:
     os.makedirs(path, exist_ok=True)
-
-
-def _resample_to_target(hz_data: np.ndarray, target_hw: Tuple[int, int]) -> np.ndarray:
-    """
-    Resample |Hz| magnitude to target_hw using torch bilinear interpolate.
-
-    Args:
-        hz_data: complex or real array shaped (H, W)
-        target_hw: (target_h, target_w)
-    """
-    hz_mag = np.abs(hz_data)
-    tensor = torch.from_numpy(hz_mag).float().unsqueeze(0).unsqueeze(0)  # [1,1,H,W]
-    resized = torch.nn.functional.interpolate(
-        tensor, size=target_hw, mode="bilinear", align_corners=False
-    )
-    return resized.squeeze(0).squeeze(0).cpu().numpy()
-
-
 class SurrogateDatasetBuilder:
     """Generate supervised data by running Meep sweeps."""
 
@@ -69,23 +51,19 @@ class SurrogateDatasetBuilder:
         sim = WaveguideSimulation()
         matrix = self._sample_matrix(PIXEL_SHAPE)
 
-        hzfield_state_1d, hz_data = sim.calculate_flux(matrix)
+        hzfield_state, _ = sim.calculate_flux(matrix)
         # Get flux-based quantities
         _, input_mode = sim.get_flux_input_mode(band_num=1)
         _, _, mode_transmission_1, mode_transmission_2, _ = sim.get_flux_output_mode(
             band_num=1
         )
 
-        hzfield_state_map = _resample_to_target(
-            hz_data, target_hw=PIXEL_SHAPE
-        )
-
         return {
             "material_matrix": matrix.astype(np.float32),
-            "hzfield_state": hzfield_state_map.astype(np.float32),
-            "mode_transmission_1": float(np.real(mode_transmission_1)),
-            "mode_transmission_2": float(np.real(mode_transmission_2)),
-            "input_mode": float(np.real(input_mode)),
+            "hzfield_state": hzfield_state.astype(np.float32),
+            "mode_transmission_1": mode_transmission_1,
+            "mode_transmission_2": mode_transmission_2,
+            "input_mode": input_mode,
         }
 
     def _split_indices(self, n: int) -> Tuple[List[int], List[int], List[int]]:

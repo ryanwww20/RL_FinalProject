@@ -1,0 +1,13 @@
+{
+  "num_samples": 10,
+  "train_ratio": 0.8,
+  "val_ratio": 0.1,
+  "seed": 42,
+  "splits": {
+    "train": 8,
+    "val": 1,
+    "test": 1
+  },
+  "pixel_num_x": 20,
+  "pixel_num_y": 20
+}

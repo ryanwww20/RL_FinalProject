@@ -1012,8 +1012,14 @@ if __name__ == "__main__":
     
     # 3. Run simulation and get results
     results = sim.calculate_flux(matrix)
-    input_mode_flux, output_mode_flux_1, output_mode_flux_2, hzfield_state, hz_data, input_mode, output_mode_1, output_mode_2 = results
-    
+    hzfield_state, hz_data = results
+    input_mode_flux, input_mode = sim.get_flux_input_mode(band_num=1)
+    output_mode_flux_1, output_mode_flux_2, output_mode_1, output_mode_2, diff_transmission = sim.get_flux_output_mode(band_num=1)
+    print(hzfield_state.shape)
+    print(hzfield_state)
+    print(output_mode_1)
+    print(output_mode_2)
+
     # 4. Display results
     trans_1, trans_2, total_trans, diff_trans = sim.get_output_transmission(band_num=1)
     print(f"Transmission: Output1={trans_1*100:.1f}%, Output2={trans_2*100:.1f}%, Total={total_trans*100:.1f}%, Diff={diff_trans:.6f}")
