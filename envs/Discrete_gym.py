@@ -226,7 +226,7 @@ class MinimalEnv(gym.Env):
         self.material_matrix_idx += 1
 
         # calculate_flux returns: input_mode_flux, output_mode_flux_1, output_mode_flux_2, hzfield_state, hz_data, input_mode, output_mode_1, output_mode_2
-        _, _, _, hzfield_state, hz_data, _, _, _ = self.simulation.calculate_flux(
+        hzfield_state, hz_data= self.simulation.calculate_flux(
             self.material_matrix)
 
         # Use MODE coefficients for reward calculation (instead of raw flux)

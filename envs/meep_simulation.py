@@ -985,13 +985,13 @@ class WaveguideSimulation:
         hzfield_state = self.get_hzfield_state()  # Returns |Hz|^2 values
         
         # Get input and output flux values and mode coefficients (using existing functions)
-        input_mode_flux, input_mode = self.get_flux_input_mode(band_num=1)
-        output_mode_flux_1, output_mode_flux_2, output_mode_1, output_mode_2, _ = self.get_flux_output_mode(band_num=1)
+        # input_mode_flux, input_mode = self.get_flux_input_mode(band_num=1)
+        # output_mode_flux_1, output_mode_flux_2, output_mode_1, output_mode_2, _ = self.get_flux_output_mode(band_num=1)
 
         # Get field data
         hz_data = self.get_hzfield_data()
 
-        return input_mode_flux, output_mode_flux_1, output_mode_flux_2, hzfield_state, hz_data, input_mode, output_mode_1, output_mode_2
+        return hzfield_state, hz_data
 
 
 if __name__ == "__main__":
