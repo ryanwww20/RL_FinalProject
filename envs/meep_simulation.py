@@ -725,7 +725,7 @@ class WaveguideSimulation:
         
         return transmission_1, transmission_2, total_transmission, diff_transmission
 
-    def plot_design(self, matrix=None, save_path=None, show_plot=True, title_suffix=None):
+    def plot_design(self, matrix=None, hz_data=None, save_path=None, show_plot=True, title_suffix=None):
         """
         Plot and visualize the simulation results (Ez field + geometry overlays).
         This version includes input/output waveguides and the output measurement plane.
@@ -733,12 +733,13 @@ class WaveguideSimulation:
         Args:
             material_matrix: 2D array (pixel_num_x x pixel_num_y) where 1=silicon, 0=silica.
                            If provided, will overlay material distribution as grey boxes.
+            hz_data: 2D array of electric field data (x, y)
             save_path: Path to save the plot
             show_plot: Whether to display the plot
             title_suffix: Optional suffix to add to the title (e.g., "Rollout 5")
         """
-        if self.hz_data is None:
-            self.get_hzfield_data()
+        if hz_data is None:
+            hz_data = self.get_hzfield_data()
 
         if save_path is None:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -754,7 +755,7 @@ class WaveguideSimulation:
         # Plot electric field
         # Transpose ez_data because imshow expects (rows, cols) where rows=y, cols=x
         # Meep's get_array gives (x, y), so transpose for correct orientation
-        field_magnitude = np.abs(self.hz_data)
+        field_magnitude = np.abs(hz_data)
         plt.imshow(field_magnitude, interpolation='spline36', cmap='viridis',
                    aspect='auto', extent=extent, origin='lower')
         plt.colorbar(label='Hz (electric field)')
