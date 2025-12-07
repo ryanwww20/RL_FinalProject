@@ -79,10 +79,12 @@ class MinimalEnv(gym.Env):
         super().__init__()
 
         self.action_size = config.environment.action_size
+        self.pixel_num_x = config.simulation.pixel_num_x
+        self.pixel_num_y = config.simulation.pixel_num_y
         
         # Validate that max_steps doesn't exceed material matrix size
-        assert config.environment.max_steps <= config.simulation.pixel_num_x, \
-            f"max_steps ({config.environment.max_steps}) must be <= pixel_num_x ({config.simulation.pixel_num_x})"
+        assert config.environment.max_steps <= self.pixel_num_x, \
+            f"max_steps ({config.environment.max_steps}) must be <= pixel_num_x ({self.pixel_num_x})"
         
         # Initialize CNN feature extractor (optional feature) - must be before obs_size calculation
         # Extract features from the entire material_matrix instead of just the previous layer
@@ -143,8 +145,7 @@ class MinimalEnv(gym.Env):
         # Store previous layers for state space (history of layer matrices)
         self.num_previous_layers = config.environment.num_previous_layers
         self.layer_history = []  # List to store previous layer matrices
-        self.pixel_num_x = config.simulation.pixel_num_x
-        self.pixel_num_y = config.simulation.pixel_num_y
+        # pixel_num_x and pixel_num_y are already defined at the beginning of __init__
         self.waveguide_width = config.simulation.waveguide_width
         self.design_region_y_min = config.simulation.design_region_y_min
         self.design_region_y_max = config.simulation.design_region_y_max
