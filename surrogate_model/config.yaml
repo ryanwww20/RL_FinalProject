@@ -1,6 +1,6 @@
 
 dataset:
-  num_samples: 10
+  num_samples: 10000
   train_ratio: 0.8
   val_ratio: 0.1
   seed: 42
@@ -9,5 +9,18 @@ dataset:
 model:
   input_channels: 1
   base_channels: 32
-  pixel_hw: (20, 20)
+  pixel_hw: [20, 20]
   dropout: 0.05
+
+training:
+  batch_size: 64
+  epochs: 50
+  lr: 0.001
+  weight_decay: 0.0001
+  device: "cuda"
+  log_dir: "surrogate_model/runs"
+  ckpt_dir: "surrogate_model/checkpoints"
+  num_workers: 2
+  hz_weight: 1.0
+  mode_weight: 1.0
+  input_weight: 1.0

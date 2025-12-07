@@ -14,8 +14,7 @@ Shapes and defaults are driven by config.simulation.pixel_num_{x,y}.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Dict, Tuple
+from typing import Dict
 
 import torch
 import torch.nn as nn
@@ -38,7 +37,7 @@ class SurrogateCNN(nn.Module):
         super().__init__()
         self.config = surrogate_config.model
         c = self.config.base_channels
-        hzfield_state_dim = main_config.num_monitors
+        hzfield_state_dim = main_config.simulation.num_flux_regions
         # Backbone keeps spatial dims (stride=1)
         self.backbone = nn.Sequential(
             _conv_block(self.config.input_channels, c),

@@ -1,7 +1,7 @@
 import dataclasses
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Union, Tuple
 
 import yaml
 
@@ -22,9 +22,24 @@ class ModelConfig:
     dropout: float
 
 @dataclass
+class TrainingConfig:
+    batch_size: int
+    epochs: int
+    lr: float
+    weight_decay: float
+    device: str
+    log_dir: str
+    ckpt_dir: str
+    num_workers: int
+    hz_weight: float
+    mode_weight: float
+    input_weight: float
+
+@dataclass
 class Config:
     dataset: DatasetConfig
     model: ModelConfig
+    training: TrainingConfig
 
 def load_config(path: Optional[Union[str, Path]] = None) -> Config:
     """Load dataset config; defaults to surrogate_model/config.yaml."""
@@ -38,7 +53,9 @@ def load_config(path: Optional[Union[str, Path]] = None) -> Config:
     dataset = DatasetConfig(**dataset_raw)
     model_raw = raw["model"]
     model = ModelConfig(**model_raw)
-    return Config(dataset=dataset, model=model)
+    training_raw = raw["training"]
+    training = TrainingConfig(**training_raw)
+    return Config(dataset=dataset, model=model, training=training)
 
 
 # ★ 這個變數叫 config
