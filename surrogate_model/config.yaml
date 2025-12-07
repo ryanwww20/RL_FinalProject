@@ -6,3 +6,8 @@ dataset:
   seed: 42
   output_dir: "surrogate_model/data"
   
+model:
+  input_channels: 1
+  base_channels: 32
+  pixel_hw: (20, 20)
+  dropout: 0.05

@@ -15,9 +15,16 @@ class DatasetConfig:
     output_dir: str
 
 @dataclass
+class ModelConfig:
+    input_channels: int
+    base_channels: int
+    pixel_hw: Tuple[int, int]
+    dropout: float
+
+@dataclass
 class Config:
     dataset: DatasetConfig
-
+    model: ModelConfig
 
 def load_config(path: Optional[Union[str, Path]] = None) -> Config:
     """Load dataset config; defaults to surrogate_model/config.yaml."""
@@ -29,8 +36,9 @@ def load_config(path: Optional[Union[str, Path]] = None) -> Config:
 
     dataset_raw = raw["dataset"]
     dataset = DatasetConfig(**dataset_raw)
-
-    return Config(dataset=dataset)
+    model_raw = raw["model"]
+    model = ModelConfig(**model_raw)
+    return Config(dataset=dataset, model=model)
 
 
 # ★ 這個變數叫 config
