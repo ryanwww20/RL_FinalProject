@@ -348,22 +348,22 @@ class MinimalEnv(gym.Env):
         else:
             hzfield_state_normalized = hzfield_state  # If all zeros, keep as is
         
-            # Build observation: 10 monitors + matrix index + (previous layer or CNN features)
-            observation = hzfield_state_normalized.copy().astype(np.float32)  # 10 monitor values (normalized)
-            observation = np.append(observation, float(self.material_matrix_idx))  # 1 matrix index
+        # Build observation: 10 monitors + matrix index + (previous layer or CNN features)
+        observation = hzfield_state_normalized.copy().astype(np.float32)  # 10 monitor values (normalized)
+        observation = np.append(observation, float(self.material_matrix_idx))  # 1 matrix index
+        
+        # Add CNN features and/or previous layer based on configuration
+        if hasattr(self, 'use_cnn_features') and self.use_cnn_features:
+            cnn_features = self._get_previous_layer(use_cnn=True)  # CNN features
+            observation = np.append(observation, cnn_features)
             
-            # Add CNN features and/or previous layer based on configuration
-            if hasattr(self, 'use_cnn_features') and self.use_cnn_features:
-                cnn_features = self._get_previous_layer(use_cnn=True)  # CNN features
-                observation = np.append(observation, cnn_features)
-                
-                # If hybrid mode, also add previous layer
-                if hasattr(self, 'use_hybrid_features') and self.use_hybrid_features:
-                    previous_layer = self._get_previous_layer(use_cnn=False)  # Original layer
-                    observation = np.append(observation, previous_layer)
-            else:
-                previous_layer = self._get_previous_layers_state()  # 20 values (previous layer)
+            # If hybrid mode, also add previous layer
+            if hasattr(self, 'use_hybrid_features') and self.use_hybrid_features:
+                previous_layer = self._get_previous_layer(use_cnn=False)  # Original layer
                 observation = np.append(observation, previous_layer)
+        else:
+            previous_layer = self._get_previous_layers_state()  # 20 values (previous layer)
+            observation = np.append(observation, previous_layer)
         
         info = {}
 
