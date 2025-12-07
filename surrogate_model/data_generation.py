@@ -21,6 +21,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Tuple
+import random
 
 import numpy as np
 import torch
@@ -34,6 +35,8 @@ from surrogate_model.config import config as surrogate_config
 from config import config as main_config
 
 PIXEL_SHAPE = (20, 20)
+PIXEL_NUM_X = 20
+PIXEL_NUM_Y = 20
 
 def _ensure_dir(path: str) -> None:
     os.makedirs(path, exist_ok=True)
@@ -44,12 +47,21 @@ class SurrogateDatasetBuilder:
         self.config = surrogate_config.dataset
         self.rng = np.random.default_rng(self.config.seed)
 
-    def _sample_matrix(self, shape: Tuple[int, int]) -> np.ndarray:
-        return self.rng.integers(0, 2, size=shape, dtype=np.int8)
+    def _sample_matrix(self) -> np.ndarray:
+
+        all_zero_matrix_prob = self.rng.random()
+        if all_zero_matrix_prob < 0.01:
+            return np.zeros((20, 20))
+
+        layer = self.rng.integers(0, 21)
+        built_matrix = self.rng.integers(0, 2, size=(layer, 20), dtype=np.int8)
+        nubuilt_matrix = np.zeros((20-layer, 20))
+        full_matrix = np.vstack((built_matrix, nubuilt_matrix))
+        return full_matrix
 
     def _run_single(self, sample_idx: int) -> Dict[str, np.ndarray]:
         sim = WaveguideSimulation()
-        matrix = self._sample_matrix(PIXEL_SHAPE)
+        matrix = self._sample_matrix()
 
         hzfield_state, _ = sim.calculate_flux(matrix)
         # Get flux-based quantities

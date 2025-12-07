@@ -168,7 +168,7 @@ class MinimalEnv(gym.Env):
 
         # Use calculate_flux to get initial hzfield_state for empty matrix
         # This returns: input_mode_flux, output_mode_flux_1, output_mode_flux_2, hzfield_state, hz_data, input_mode, output_mode_1, output_mode_2
-        # For initial state, use empty matrix (all zeros)
+        # For initial state, use empty matrix (all zeros), All silica
         empty_matrix = np.zeros((config.simulation.pixel_num_x, config.simulation.pixel_num_y))
         hzfield_state, _ = self.simulation.calculate_flux(empty_matrix)
         
