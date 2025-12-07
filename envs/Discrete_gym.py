@@ -149,6 +149,13 @@ class MinimalEnv(gym.Env):
         self.design_region_y_max = config.simulation.design_region_y_max
         self.pixel_size = config.simulation.pixel_size
 
+        # Timing statistics
+        self.step_count = 0
+        self.log_interval = 100  # Print timing every 100 steps
+        self.total_step_time = 0.0
+        self.total_sim_time = 0.0
+        self.total_other_time = 0.0
+
     def _get_default_waveguide_layer(self):
         """
         Create a default layer pattern: silica on sides, silicon in center (like input waveguide).
@@ -471,12 +478,30 @@ class MinimalEnv(gym.Env):
 
         # Timing analysis
         t_final = time.time()
-        total_time = t_final - t0
-        sim_time = t_sim_end - t_sim_start
-        other_time = total_time - sim_time
-        sim_ratio = sim_time / total_time if total_time > 0 else 0
         
-        print(f"Step Time: {total_time:.4f}s | Sim: {sim_time:.4f}s ({sim_ratio*100:.1f}%) | Other: {other_time:.4f}s")
+        # Accumulate times
+        step_time = t_final - t0
+        sim_time = t_sim_end - t_sim_start
+        other_time = step_time - sim_time
+        
+        self.total_step_time += step_time
+        self.total_sim_time += sim_time
+        self.total_other_time += other_time
+        self.step_count += 1
+        
+        # Print stats every log_interval steps
+        if self.step_count % self.log_interval == 0:
+            avg_step = self.total_step_time / self.log_interval
+            avg_sim = self.total_sim_time / self.log_interval
+            avg_other = self.total_other_time / self.log_interval
+            sim_ratio = avg_sim / avg_step if avg_step > 0 else 0
+            
+            print(f"[Stats {self.step_count} steps] Avg Step: {avg_step:.4f}s | Sim: {avg_sim:.4f}s ({sim_ratio*100:.1f}%) | Other: {avg_other:.4f}s")
+            
+            # Reset counters
+            self.total_step_time = 0.0
+            self.total_sim_time = 0.0
+            self.total_other_time = 0.0
 
         return observation, reward, terminated, truncated, info
 
