@@ -117,8 +117,9 @@ class TrainingCallback(BaseCallback):
             
             # Calculate average across all environments
             n_envs = len(all_metrics)
-            train_transmission_score = sum(m['transmission_score'] for m in all_metrics) / n_envs
-            train_balance_score = sum(m['balance_score'] for m in all_metrics) / n_envs
+            # Use transmission_score (normalized efficiency) instead of raw total_transmission
+            train_transmission = sum(m['transmission_score'] for m in all_metrics) / n_envs
+            train_balance = sum(m['balance_score'] for m in all_metrics) / n_envs
             train_score = sum(m['current_score'] for m in all_metrics) / n_envs
             train_similarity = sum(m.get('similarity_score', 0.0) for m in all_metrics) / n_envs
             
@@ -159,8 +160,11 @@ class TrainingCallback(BaseCallback):
             
             if len(results_df) > 0:
                 metrics = results_df.iloc[0]
-                eval_transmission_score = metrics.get('transmission_score', 0.0)
-                eval_balance_score = metrics.get('balance_score', 0.0)
+                # Use transmission_score if available, fall back to normalized calculation
+                eval_transmission = metrics.get('transmission_score', 
+                                              metrics.get('total_mode_transmission', 0.0) / metrics.get('input_mode_flux', 1.0) 
+                                              if metrics.get('input_mode_flux', 0) > 0 else 0.0)
+                eval_balance = metrics.get('balance_score', 0.0)
                 eval_score = metrics.get('current_score', 0.0)
                 eval_reward = metrics.get('reward', 0.0)
                 eval_similarity_score = metrics.get('similarity_score', 0.0)
