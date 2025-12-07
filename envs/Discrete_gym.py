@@ -68,12 +68,13 @@ class MinimalEnv(gym.Env):
 
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
 
-    def __init__(self, render_mode=None):
+    def __init__(self, render_mode=None, use_cnn=False):
         """
         Initialize the environment.
 
         Args:
             render_mode: "human" for GUI, "rgb_array" for image, None for no rendering
+            use_cnn: Whether to use CNN feature extraction
         """
         super().__init__()
 
@@ -86,7 +87,7 @@ class MinimalEnv(gym.Env):
         # Initialize CNN feature extractor (optional feature) - must be before obs_size calculation
         # Extract features from the entire material_matrix instead of just the previous layer
         # Note: Enabling this feature will change the observation space size (from pixel_num_y to cnn_feature_dim)
-        self.use_cnn_features = False  # Set to True to enable CNN feature extraction
+        self.use_cnn_features = use_cnn  # Set from argument
         self.cnn_feature_dim = 64  # Dimension of CNN-extracted features
         self.device = torch.device("cpu")  # Can be changed to "cuda" if GPU is available
         if self.use_cnn_features:

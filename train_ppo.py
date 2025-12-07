@@ -434,12 +434,19 @@ def train_ppo(
     # Using DummyVecEnv instead of SubprocVecEnv because Meep simulation objects
     # contain lambda functions that can't be pickled for multiprocessing
     print("Creating environment...")
+    
+    # Define environment kwargs including CNN usage
+    env_kwargs = {
+        "render_mode": None,
+        "use_cnn": True  # Enable CNN features
+    }
+    
     env = make_vec_env(MinimalEnv, n_envs=n_envs,
-                       env_kwargs={"render_mode": None},
+                       env_kwargs=env_kwargs,
                        vec_env_cls=SubprocVecEnv)
 
     # Create evaluation environment
-    eval_env = MinimalEnv(render_mode=None)
+    eval_env = MinimalEnv(render_mode=None, use_cnn=True)
     
     # Define model save path
     save_path_with_timestamp = f"models/ppo_model_{start_timestamp}.zip"
