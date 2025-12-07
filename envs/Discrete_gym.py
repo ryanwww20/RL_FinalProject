@@ -402,7 +402,8 @@ class MinimalEnv(gym.Env):
 
         # Action is a binary array representing one layer (row) of the design
         # Get previous layer before updating (for similarity calculation)
-        previous_layer = self._get_previous_layer()
+        # FORCE use_cnn=False here because we need the physical layer for similarity calculation
+        previous_layer = self._get_previous_layer(use_cnn=False)
         
         # Update the material matrix: set the row at material_matrix_idx
         self.material_matrix[self.material_matrix_idx] = action
@@ -466,9 +467,11 @@ class MinimalEnv(gym.Env):
                 
                 # If hybrid mode, also add previous layer
                 if hasattr(self, 'use_hybrid_features') and self.use_hybrid_features:
-                    previous_layer = self._get_previous_layer(use_cnn=False)  # Original layer
-                    observation = np.append(observation, previous_layer)
+                    # Explicitly get physical layer for observation
+                    prev_phys_layer = self._get_previous_layer(use_cnn=False)  # Original layer
+                    observation = np.append(observation, prev_phys_layer)
             else:
+                # No CNN, use standard previous layer method
                 previous_layer = self._get_previous_layers_state()  # 20 values (previous layer)
                 observation = np.append(observation, previous_layer)
         else:
