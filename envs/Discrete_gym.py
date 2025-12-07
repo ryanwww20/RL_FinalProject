@@ -3,6 +3,7 @@ Minimal OpenAI Gymnasium Environment Template
 """
 
 import gymnasium as gym
+import time
 from gymnasium import spaces
 import numpy as np
 import torch
@@ -385,6 +386,8 @@ class MinimalEnv(gym.Env):
             truncated: Whether episode was truncated (time limit)
             info: Additional information dictionary
         """
+        t0 = time.time()
+
         # Validate action
         assert self.action_space.contains(action), f"Invalid action: {action}"
 
@@ -403,10 +406,14 @@ class MinimalEnv(gym.Env):
         
         self.material_matrix_idx += 1
 
+        t_sim_start = time.time()
+        
         # calculate_flux returns: input_mode_flux, output_mode_flux_1, output_mode_flux_2, hzfield_state, hz_data, input_mode, output_mode_1, output_mode_2
         hzfield_state, hz_data= self.simulation.calculate_flux(
             self.material_matrix)
 
+        t_sim_end = time.time()
+        
         # Use MODE coefficients for reward calculation (instead of raw flux)
         # Pass current layer and previous layer for similarity calculation
         current_score, reward = self.get_reward(current_layer=action, previous_layer=previous_layer)
@@ -461,6 +468,15 @@ class MinimalEnv(gym.Env):
 
         # Info dictionary with custom metrics
         info = self._step_metrics if hasattr(self, '_step_metrics') else {}
+
+        # Timing analysis
+        t_final = time.time()
+        total_time = t_final - t0
+        sim_time = t_sim_end - t_sim_start
+        other_time = total_time - sim_time
+        sim_ratio = sim_time / total_time if total_time > 0 else 0
+        
+        print(f"Step Time: {total_time:.4f}s | Sim: {sim_time:.4f}s ({sim_ratio*100:.1f}%) | Other: {other_time:.4f}s")
 
         return observation, reward, terminated, truncated, info
 

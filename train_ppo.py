@@ -6,8 +6,8 @@ Uses Stable-Baselines3 for PPO implementation
 import numpy as np
 import os
 from pathlib import Path
+import time
 from datetime import datetime
-
 import yaml
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -86,6 +86,9 @@ class TrainingCallback(BaseCallback):
         # Store image paths for GIF creation
         self.design_image_paths = []
         self.distribution_image_paths = []
+
+        # Time tracking
+        self.rollout_start_time = time.time()
     
     def _on_step(self) -> bool:
         """Called at each environment step."""
@@ -94,6 +97,10 @@ class TrainingCallback(BaseCallback):
     def _on_rollout_end(self) -> None:
         """Called when rollout collection ends."""
         self.rollout_count += 1
+        current_time = time.time()
+        rollout_duration = current_time - self.rollout_start_time
+        self.rollout_start_time = current_time  # Reset for next rollout
+
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
         # ============================================================
@@ -138,6 +145,7 @@ class TrainingCallback(BaseCallback):
         print(f"\n[Train] Rollout {self.rollout_count} (avg of {n_envs} envs): "
               f"Trans={train_transmission_score:.4f}, Bal={train_balance_score:.4f}, "
               f"Score={train_score:.4f}, Reward={train_reward:.4f}")
+        print(f"        Rollout Duration: {rollout_duration:.2f}s")
         
         # ============================================================
         # 2. EVALUATION: Run full eval every eval_freq rollouts
