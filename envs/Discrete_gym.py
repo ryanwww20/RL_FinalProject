@@ -125,7 +125,7 @@ class MinimalEnv(gym.Env):
             dtype=np.float32
         )
 
-        # Action space: binary array of length 50 (0/1 values)
+        # Action space: binary array of length 20 (0/1 values)
         self.action_space = spaces.MultiBinary(self.action_size)
 
         # Initialize state
@@ -211,50 +211,6 @@ class MinimalEnv(gym.Env):
         
         return previous_layer.astype(np.float32)
 
-    def enable_cnn_features(self, enable=True, feature_dim=64, device="cpu"):
-        """
-        Enable or disable CNN feature extraction.
-        
-        Note: Enabling CNN will change the observation space size, requiring redefinition of observation_space.
-        It's recommended to set use_cnn_features during initialization rather than switching at runtime.
-        
-        Args:
-            enable: Whether to enable CNN feature extraction
-            feature_dim: Dimension of CNN-extracted features (default: 64)
-            device: Device to use ("cpu" or "cuda")
-        """
-        self.use_cnn_features = enable
-        self.cnn_feature_dim = feature_dim
-        self.device = torch.device(device)
-        
-        if enable:
-            self.cnn_model = MaterialMatrixCNN(
-                input_height=self.pixel_num_x,
-                input_width=self.pixel_num_y,
-                feature_dim=self.cnn_feature_dim
-            )
-            self.cnn_model.eval()
-            self.cnn_model.to(self.device)
-            # Update observation space size
-            num_monitors = config.simulation.num_flux_regions
-            self.obs_size = num_monitors + 1 + self.cnn_feature_dim
-            self.observation_space = spaces.Box(
-                low=-np.inf,
-                high=np.inf,
-                shape=(self.obs_size,),
-                dtype=np.float32
-            )
-        else:
-            self.cnn_model = None
-            # Restore original observation space size
-            self.obs_size = config.environment.obs_size
-            self.observation_space = spaces.Box(
-                low=-np.inf,
-                high=np.inf,
-                shape=(self.obs_size,),
-                dtype=np.float32
-            )
-    
     def _get_previous_layer(self, use_cnn=None):
         """
         Get the previous layer (the layer before the current one).
@@ -605,7 +561,7 @@ class MinimalEnv(gym.Env):
             'material_matrix': self.material_matrix.copy(),
             'hzfield_state': hzfield_state,
             'total_transmission': total_transmission,
-            'transmission_score': transmission_score,
+            'transmission_score': normalized_transmission,  # Use normalized score for consistency
             'diff_transmission': diff_transmission,
             'transmission_1': transmission_1,
             'transmission_2': transmission_2,
