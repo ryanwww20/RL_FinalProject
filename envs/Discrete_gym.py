@@ -399,7 +399,7 @@ class MinimalEnv(gym.Env):
                 'hz_data': hz_data.copy(),
                 'hzfield_state': hzfield_state.copy(),
                 'total_transmission': self._step_metrics['total_transmission'],
-                'transmission_score': self._step_metrics['transmission_score'],
+                'transmission_score': self._step_metrics.get('transmission_score', 0.0),  # Ensure this is included
                 'transmission_1': self._step_metrics['transmission_1'],
                 'transmission_2': self._step_metrics['transmission_2'],
                 'balance_score': self._step_metrics['balance_score'],
