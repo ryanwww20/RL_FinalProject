@@ -255,21 +255,26 @@ class MinimalEnv(gym.Env):
                 dtype=np.float32
             )
     
-    def _get_previous_layer(self, use_cnn=False):
+    def _get_previous_layer(self, use_cnn=None):
         """
         Get the previous layer (the layer before the current one).
         For the first layer (material_matrix_idx == 0), returns the input waveguide pattern.
         
         Args:
-            use_cnn: If True, extract CNN features from entire material_matrix instead of 
-                    returning just the previous layer. Default: False (uses self.use_cnn_features)
+            use_cnn: If True, extract CNN features. If False, return physical layer.
+                    If None (default), use self.use_cnn_features setting.
         
         Returns:
-            If use_cnn=False: 1D array of length pixel_num_y (20 values) with 1=silicon, 0=silica
-            If use_cnn=True: 1D array of CNN-extracted features (length = cnn_feature_dim)
+            If using CNN: 1D array of CNN-extracted features (length = cnn_feature_dim)
+            If not using CNN: 1D array of length pixel_num_y (20 values) with 1=silicon, 0=silica
         """
+        # Determine whether to use CNN based on argument priority
+        # If use_cnn is explicitly provided (True/False), use it.
+        # Otherwise, fall back to the environment configuration.
+        should_use_cnn = self.use_cnn_features if use_cnn is None else use_cnn
+
         # Use CNN feature extraction if enabled
-        if use_cnn or (hasattr(self, 'use_cnn_features') and self.use_cnn_features):
+        if should_use_cnn:
             if not hasattr(self, 'cnn_model') or self.cnn_model is None:
                 # Fallback to regular method if CNN not initialized
                 if self.material_matrix_idx == 0:
