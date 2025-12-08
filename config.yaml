@@ -45,11 +45,11 @@ training:
   ppo:
     total_timesteps: 512000
     # total_timesteps: 640
-    n_envs: 1
-    learning_rate: 0.001
-    n_steps: 160
-    batch_size: 64
-    n_epochs: 40
+    n_envs: 16
+    learning_rate: 3e-4
+    n_steps: 240       # multiple of 20; rollout_len = n_envs * n_steps = 3840
+    batch_size: 256    # larger batch to smooth updates
+    n_epochs: 20       # reduce epochs to avoid overfitting each batch
     gamma: 0.99
     gae_lambda: 0.95
     clip_range: 0.2
