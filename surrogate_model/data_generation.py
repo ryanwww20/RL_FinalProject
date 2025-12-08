@@ -163,6 +163,92 @@ class SurrogateDatasetBuilder:
             json.dump(meta, f, indent=2)
         print(f"Metadata saved to {os.path.join(self.config.output_dir, 'meta.json')}")
 
+class RLDataCollector(SurrogateDatasetBuilder):
+    def __init__(self):
+        super().__init__()
+        self.new_samples: List[Dict[str, np.ndarray]] = []
+
+    def _run_single(self, matrix, hzfield_state, mode_transmission_1, mode_transmission_2, input_mode):
+        sample = {
+            "material_matrix": matrix.astype(np.float32),
+            "hzfield_state": hzfield_state.astype(np.float32),
+            "mode_transmission_1": mode_transmission_1,
+            "mode_transmission_2": mode_transmission_2,
+            "input_mode": input_mode,
+        }
+        self.new_samples.append(sample)
+        return sample
+
+    def build(
+        self,
+        base_dir: str | Path | None = None,
+        train_ratio: float = 0.9,
+    ) -> None:
+        """
+        Merge collected samples with existing base_train/base_val and save merged splits.
+
+        Creates/updates:
+          - merged_train.npz, merged_val.npz (base + new with 9:1 split on new data)
+          - base_train.npz, base_val.npz     (appended with the same new splits)
+        """
+        if not self.new_samples:
+            print("RLDataCollector: no new samples to merge.")
+            return
+
+        base_dir = Path(base_dir) if base_dir is not None else Path(self.config.output_dir)
+        base_dir.mkdir(parents=True, exist_ok=True)
+
+        base_train_path = base_dir / "base_train.npz"
+        base_val_path = base_dir / "base_val.npz"
+        merged_train_path = base_dir / "merged_train.npz"
+        merged_val_path = base_dir / "merged_val.npz"
+
+        # Pack new samples to arrays
+        packed_new = self._pack(self.new_samples)
+        n_new = packed_new["material_matrix"].shape[0]
+        idxs = np.arange(n_new)
+        self.rng.shuffle(idxs)
+
+        n_train = int(n_new * train_ratio)
+        n_train = min(max(n_train, 0), n_new)
+        n_val = n_new - n_train
+        # Guarantee at least one val sample when possible
+        if n_val == 0 and n_new > 1:
+            n_val = 1
+            n_train = n_new - 1
+
+        train_idx = idxs[:n_train].tolist()
+        val_idx = idxs[n_train:].tolist()
+
+        new_train = self._extract_split(packed_new, train_idx) if train_idx else None
+        new_val = self._extract_split(packed_new, val_idx) if val_idx else None
+
+        # Load existing base splits
+        base_train = _load_split_npz(base_train_path)
+        base_val = _load_split_npz(base_val_path)
+
+        # Merge base + new
+        merged_train = _concat_split(base_train, new_train) if new_train is not None else base_train
+        merged_val = _concat_split(base_val, new_val) if new_val is not None else base_val
+
+        def _save_split(path: Path, data: Dict[str, np.ndarray] | None):
+            if data is None:
+                return
+            np.savez_compressed(path, **data)
+
+        _save_split(merged_train_path, merged_train)
+        _save_split(merged_val_path, merged_val)
+
+        # Update base_* with merged content (append new data)
+        _save_split(base_train_path, merged_train)
+        _save_split(base_val_path, merged_val)
+
+        print(
+            f"RLDataCollector merged {n_new} new samples -> "
+            f"train +{n_train}, val +{n_val}. "
+            f"Saved merged splits to {merged_train_path.name}, {merged_val_path.name} "
+            f"and updated base splits."
+        )
 
 if __name__ == "__main__":
     builder = SurrogateDatasetBuilder()
