@@ -46,7 +46,7 @@ training:
     total_timesteps: 512000
     # total_timesteps: 640
     n_envs: 16
-    learning_rate: 3e-4
+    learning_rate: 0.0003
     n_steps: 240       # multiple of 20; rollout_len = n_envs * n_steps = 3840
     batch_size: 256    # larger batch to smooth updates
     n_epochs: 20       # reduce epochs to avoid overfitting each batch
