@@ -63,6 +63,9 @@ class MinimalEnv(gym.Env):
         self.design_region_y_max = config.simulation.design_region_y_max
         self.pixel_size = config.simulation.pixel_size
 
+        self.is_surrogate = False
+        self.surrogate_model = SurrogateModel()
+
     def _get_default_waveguide_layer(self):
         """
         Create a default layer pattern: silica on sides, silicon in center (like input waveguide).

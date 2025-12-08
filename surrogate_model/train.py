@@ -37,21 +37,6 @@ from surrogate_model.config import config as surrogate_config
 from config import config as main_config
 
 
-def make_unique_run_dir(base_log_dir: str) -> Path:
-    """Create a unique TensorBoard run directory like RUN_1, RUN_2, ..."""
-    base = Path(base_log_dir)
-    base.mkdir(parents=True, exist_ok=True)
-    existing = [
-        p for p in base.iterdir() if p.is_dir() and p.name.startswith("RUN_") and p.name[4:].isdigit()
-    ]
-    next_id = 1
-    if existing:
-        next_id = max(int(p.name[4:]) for p in existing) + 1
-    run_dir = base / f"RUN_{next_id}"
-    run_dir.mkdir(parents=True, exist_ok=True)
-    return run_dir
-
-
 @dataclass
 class TrainArgs:
     data_dir: str
@@ -120,273 +105,294 @@ class SurrogateNPZDataset(Dataset):
         )
 
 
-def build_datasets(args: TrainArgs):
-    data_dir = Path(args.data_dir)
-    train_ds = SurrogateNPZDataset(data_dir / "train.npz")
-    stats = train_ds.stats
-    val_ds = SurrogateNPZDataset(data_dir / "val.npz", stats=stats)
-    test_path = data_dir / "test.npz"
-    test_ds = SurrogateNPZDataset(test_path, stats=stats) if test_path.exists() else None
-    return train_ds, val_ds, test_ds, stats
+class SurrogateTrainer:
+    def __init__(self, args: TrainArgs):
+        self.args = args
+        self.device = torch.device(args.device if torch.cuda.is_available() else "cpu")
+        self.weights = {"hz": args.hz_weight, "mode": args.mode_weight, "input": args.input_weight}
+        self.model = SurrogateCNN().to(self.device)
+        self.opt = torch.optim.AdamW(
+            self.model.parameters(), lr=args.lr, weight_decay=args.weight_decay
+        )
 
+    @staticmethod
+    def make_unique_run_dir(base_log_dir: str) -> Path:
+        """Create a unique TensorBoard run directory like RUN_1, RUN_2, ..."""
+        base = Path(base_log_dir)
+        base.mkdir(parents=True, exist_ok=True)
+        existing = [
+            p for p in base.iterdir() if p.is_dir() and p.name.startswith("RUN_") and p.name[4:].isdigit()
+        ]
+        next_id = 1
+        if existing:
+            next_id = max(int(p.name[4:]) for p in existing) + 1
+        run_dir = base / f"RUN_{next_id}"
+        run_dir.mkdir(parents=True, exist_ok=True)
+        return run_dir
 
-def make_loaders(train_ds, val_ds, test_ds, args: TrainArgs):
-    train_loader = DataLoader(
-        train_ds,
-        batch_size=args.batch_size,
-        shuffle=True,
-        num_workers=args.num_workers,
-        pin_memory=True,
-    )
-    val_loader = DataLoader(
-        val_ds,
-        batch_size=args.batch_size,
-        shuffle=False,
-        num_workers=args.num_workers,
-        pin_memory=True,
-    )
-    test_loader = (
-        DataLoader(
-            test_ds,
+    def build_datasets(self):
+        data_dir = Path(self.args.data_dir)
+        train_ds = SurrogateNPZDataset(data_dir / "train.npz")
+        stats = train_ds.stats
+        val_ds = SurrogateNPZDataset(data_dir / "val.npz", stats=stats)
+        test_path = data_dir / "test.npz"
+        test_ds = SurrogateNPZDataset(test_path, stats=stats) if test_path.exists() else None
+        return train_ds, val_ds, test_ds, stats
+
+    def make_loaders(self, train_ds, val_ds, test_ds):
+        args = self.args
+        train_loader = DataLoader(
+            train_ds,
+            batch_size=args.batch_size,
+            shuffle=True,
+            num_workers=args.num_workers,
+            pin_memory=True,
+        )
+        val_loader = DataLoader(
+            val_ds,
             batch_size=args.batch_size,
             shuffle=False,
             num_workers=args.num_workers,
             pin_memory=True,
         )
-        if test_ds is not None
-        else None
-    )
-    return train_loader, val_loader, test_loader
+        test_loader = (
+            DataLoader(
+                test_ds,
+                batch_size=args.batch_size,
+                shuffle=False,
+                num_workers=args.num_workers,
+                pin_memory=True,
+            )
+            if test_ds is not None
+            else None
+        )
+        return train_loader, val_loader, test_loader
 
-
-def compute_losses(pred: Dict[str, torch.Tensor], hz, mode, input_mode, weights) -> Dict[str, torch.Tensor]:
-    mse = nn.MSELoss()
-    loss_hz = mse(pred["hzfield_state"], hz)
-    loss_mode = mse(pred["mode_transmission"], mode)
-    loss_input = mse(pred["input_mode"].squeeze(-1), input_mode)
-    total = (
-        weights["hz"] * loss_hz
-        + weights["mode"] * loss_mode
-        + weights["input"] * loss_input
-    )
-    return {
-        "total": total,
-        "hz": loss_hz,
-        "mode": loss_mode,
-        "input": loss_input,
-    }
-
-
-def train_one_epoch(model, loader, opt, device, weights):
-    model.train()
-    running = {"total": 0.0, "hz": 0.0, "mode": 0.0, "input": 0.0}
-    for material, hz, mode, input_mode in loader:
-        material = material.to(device)
-        hz = hz.to(device)
-        mode = mode.to(device)
-        input_mode = input_mode.to(device)
-
-        opt.zero_grad()
-        pred = model(material)
-        losses = compute_losses(pred, hz, mode, input_mode, weights)
-        losses["total"].backward()
-        opt.step()
-
-        bsz = material.size(0)
-        for k in running:
-            running[k] += losses[k].item() * bsz
-
-    n = len(loader.dataset)
-    return {k: v / n for k, v in running.items()}
-
-
-@torch.no_grad()
-def evaluate(model, loader, device, weights, stats: Dict[str, Tuple[float, float]] | None = None, return_denorm: bool = False):
-    """Evaluate loss; optionally compute denormalized MAE/RMSE/relative error."""
-    model.eval()
-    running = {"total": 0.0, "hz": 0.0, "mode": 0.0, "input": 0.0}
-
-    denorm_running = None
-    if return_denorm and stats is not None:
-        denorm_running = {
-            "hz": {"abs_sum": 0.0, "sq_sum": 0.0, "rel_sum": 0.0, "count": 0},
-            "mode": {"abs_sum": 0.0, "sq_sum": 0.0, "rel_sum": 0.0, "count": 0},
-            "input": {"abs_sum": 0.0, "sq_sum": 0.0, "rel_sum": 0.0, "count": 0},
+    @staticmethod
+    def compute_losses(pred: Dict[str, torch.Tensor], hz, mode, input_mode, weights) -> Dict[str, torch.Tensor]:
+        mse = nn.MSELoss()
+        loss_hz = mse(pred["hzfield_state"], hz)
+        loss_mode = mse(pred["mode_transmission"], mode)
+        loss_input = mse(pred["input_mode"].squeeze(-1), input_mode)
+        total = (
+            weights["hz"] * loss_hz
+            + weights["mode"] * loss_mode
+            + weights["input"] * loss_input
+        )
+        return {
+            "total": total,
+            "hz": loss_hz,
+            "mode": loss_mode,
+            "input": loss_input,
         }
 
-    eps = 1e-8
+    def train_one_epoch(self, loader):
+        self.model.train()
+        running = {"total": 0.0, "hz": 0.0, "mode": 0.0, "input": 0.0}
+        for material, hz, mode, input_mode in loader:
+            material = material.to(self.device)
+            hz = hz.to(self.device)
+            mode = mode.to(self.device)
+            input_mode = input_mode.to(self.device)
 
-    def _accumulate_denorm(key: str, pred_t: torch.Tensor, target_t: torch.Tensor):
-        stats_key = "input_mode" if key == "input" else key
-        mean, std = stats[stats_key]
-        pred_denorm = pred_t * std + mean
-        target_denorm = target_t * std + mean
-        diff = pred_denorm - target_denorm
-        denorm_running[key]["abs_sum"] += diff.abs().sum().item()
-        denorm_running[key]["sq_sum"] += (diff ** 2).sum().item()
-        denorm_running[key]["rel_sum"] += (diff.abs() / (target_denorm.abs() + eps)).sum().item()
-        denorm_running[key]["count"] += target_denorm.numel()
+            self.opt.zero_grad()
+            pred = self.model(material)
+            losses = self.compute_losses(pred, hz, mode, input_mode, self.weights)
+            losses["total"].backward()
+            self.opt.step()
 
-    for material, hz, mode, input_mode in loader:
-        material = material.to(device)
-        hz = hz.to(device)
-        mode = mode.to(device)
-        input_mode = input_mode.to(device)
+            bsz = material.size(0)
+            for k in running:
+                running[k] += losses[k].item() * bsz
 
-        pred = model(material)
-        losses = compute_losses(pred, hz, mode, input_mode, weights)
+        n = len(loader.dataset)
+        return {k: v / n for k, v in running.items()}
 
-        if denorm_running is not None:
-            _accumulate_denorm("hz", pred["hzfield_state"], hz)
-            _accumulate_denorm("mode", pred["mode_transmission"], mode)
-            _accumulate_denorm("input", pred["input_mode"].squeeze(-1), input_mode)
+    @torch.no_grad()
+    def evaluate(self, loader, stats: Dict[str, Tuple[float, float]] | None = None, return_denorm: bool = False):
+        """Evaluate loss; optionally compute denormalized MAE/RMSE/relative error."""
+        self.model.eval()
+        running = {"total": 0.0, "hz": 0.0, "mode": 0.0, "input": 0.0}
 
-        bsz = material.size(0)
-        for k in running:
-            running[k] += losses[k].item() * bsz
+        denorm_running = None
+        if return_denorm and stats is not None:
+            denorm_running = {
+                "hz": {"abs_sum": 0.0, "sq_sum": 0.0, "rel_sum": 0.0, "count": 0},
+                "mode": {"abs_sum": 0.0, "sq_sum": 0.0, "rel_sum": 0.0, "count": 0},
+                "input": {"abs_sum": 0.0, "sq_sum": 0.0, "rel_sum": 0.0, "count": 0},
+            }
 
-    n = len(loader.dataset)
-    losses_avg = {k: v / n for k, v in running.items()}
+        eps = 1e-8
 
-    if denorm_running is None:
-        return losses_avg
+        def _accumulate_denorm(key: str, pred_t: torch.Tensor, target_t: torch.Tensor):
+            stats_key = "input_mode" if key == "input" else key
+            mean, std = stats[stats_key]
+            pred_denorm = pred_t * std + mean
+            target_denorm = target_t * std + mean
+            diff = pred_denorm - target_denorm
+            denorm_running[key]["abs_sum"] += diff.abs().sum().item()
+            denorm_running[key]["sq_sum"] += (diff ** 2).sum().item()
+            denorm_running[key]["rel_sum"] += (diff.abs() / (target_denorm.abs() + eps)).sum().item()
+            denorm_running[key]["count"] += target_denorm.numel()
 
-    denorm_metrics = {}
-    for k, vals in denorm_running.items():
-        count = max(vals["count"], 1)
-        mae = vals["abs_sum"] / count
-        rmse = (vals["sq_sum"] / count) ** 0.5
-        rel_mae = vals["rel_sum"] / count
-        denorm_metrics[k] = {"mae": mae, "rmse": rmse, "rel_mae": rel_mae}
+        for material, hz, mode, input_mode in loader:
+            material = material.to(self.device)
+            hz = hz.to(self.device)
+            mode = mode.to(self.device)
+            input_mode = input_mode.to(self.device)
 
-    return losses_avg, denorm_metrics
+            pred = self.model(material)
+            losses = self.compute_losses(pred, hz, mode, input_mode, self.weights)
 
+            if denorm_running is not None:
+                _accumulate_denorm("hz", pred["hzfield_state"], hz)
+                _accumulate_denorm("mode", pred["mode_transmission"], mode)
+                _accumulate_denorm("input", pred["input_mode"].squeeze(-1), input_mode)
 
-def save_checkpoint(model, opt, epoch, best_val, path: Path):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    torch.save(
-        {
-            "model": model.state_dict(),
-            "optimizer": opt.state_dict(),
-            "epoch": epoch,
-            "best_val": best_val,
-        },
-        path,
-    )
+            bsz = material.size(0)
+            for k in running:
+                running[k] += losses[k].item() * bsz
 
+        n = len(loader.dataset)
+        losses_avg = {k: v / n for k, v in running.items()}
 
-def load_checkpoint(model, opt, path: Path, device):
-    ckpt = torch.load(path, map_location=device)
-    model.load_state_dict(ckpt["model"])
-    if opt is not None and "optimizer" in ckpt:
-        opt.load_state_dict(ckpt["optimizer"])
-    return ckpt
+        if denorm_running is None:
+            return losses_avg
 
+        denorm_metrics = {}
+        for k, vals in denorm_running.items():
+            count = max(vals["count"], 1)
+            mae = vals["abs_sum"] / count
+            rmse = (vals["sq_sum"] / count) ** 0.5
+            rel_mae = vals["rel_sum"] / count
+            denorm_metrics[k] = {"mae": mae, "rmse": rmse, "rel_mae": rel_mae}
 
-def run(args: TrainArgs):
-    device = torch.device(args.device if torch.cuda.is_available() else "cpu")
+        return losses_avg, denorm_metrics
 
-    train_ds, val_ds, test_ds, stats = build_datasets(args)
-    train_loader, val_loader, test_loader = make_loaders(train_ds, val_ds, test_ds, args)
-
-    model = SurrogateCNN().to(device)
-    opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-
-    ckpt_path = Path(args.ckpt_dir) / "best.pt"
-    start_epoch = 0
-    best_val = float("inf")
-
-    if args.checkpoint:
-        ckpt = load_checkpoint(model, opt if not args.eval_only else None, Path(args.checkpoint), device)
-        start_epoch = ckpt.get("epoch", 0)
-        best_val = ckpt.get("best_val", float("inf"))
-
-    run_log_dir = make_unique_run_dir(args.log_dir)
-    writer = SummaryWriter(log_dir=str(run_log_dir))
-    print(f"Logging TensorBoard to {run_log_dir}")
-
-    weights = {"hz": args.hz_weight, "mode": args.mode_weight, "input": args.input_weight}
-
-    if args.eval_only:
-        val_metrics, val_denorm = evaluate(model, val_loader, device, weights, stats=stats, return_denorm=True)
-        print(f"[Eval-only] Val metrics: {val_metrics}")
-        if val_denorm:
-            print(f"[Eval-only] Val denorm metrics: {val_denorm}")
-        if test_loader is not None:
-            test_metrics, test_denorm = evaluate(model, test_loader, device, weights, stats=stats, return_denorm=True)
-            print(f"[Eval-only] Test metrics: {test_metrics}")
-            if test_denorm:
-                print(f"[Eval-only] Test denorm metrics: {test_denorm}")
-        return
-
-    for epoch in range(start_epoch, args.epochs):
-        train_metrics = train_one_epoch(model, train_loader, opt, device, weights)
-        val_metrics = evaluate(model, val_loader, device, weights)
-
-        writer.add_scalars("loss/train", train_metrics, epoch)
-        writer.add_scalars("loss/val", val_metrics, epoch)
-
-        print(
-            f"Epoch {epoch+1}/{args.epochs} "
-            f"train_total={train_metrics['total']:.4f} val_total={val_metrics['total']:.4f}"
+    @staticmethod
+    def save_checkpoint(model, opt, epoch, best_val, path: Path):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        torch.save(
+            {
+                "model": model.state_dict(),
+                "optimizer": opt.state_dict(),
+                "epoch": epoch,
+                "best_val": best_val,
+            },
+            path,
         )
 
-        if val_metrics["total"] < best_val:
-            best_val = val_metrics["total"]
-            save_checkpoint(model, opt, epoch + 1, best_val, ckpt_path)
-            print(f"Saved best checkpoint to {ckpt_path}")
+    @staticmethod
+    def load_checkpoint(model, opt, path: Path, device):
+        ckpt = torch.load(path, map_location=device)
+        model.load_state_dict(ckpt["model"])
+        if opt is not None and "optimizer" in ckpt:
+            opt.load_state_dict(ckpt["optimizer"])
+        return ckpt
 
-    # Final eval on test split if present
-    if test_loader is not None:
-        ckpt = torch.load(ckpt_path, map_location=device) if ckpt_path.exists() else None
-        if ckpt:
-            model.load_state_dict(ckpt["model"])
-        test_metrics = evaluate(model, test_loader, device, weights)
-        print(f"Test metrics: {test_metrics}")
+    def run(self):
+        train_ds, val_ds, test_ds, stats = self.build_datasets()
+        train_loader, val_loader, test_loader = self.make_loaders(train_ds, val_ds, test_ds)
 
-    writer.close()
+        ckpt_path = Path(self.args.ckpt_dir) / "best.pt"
+        start_epoch = 0
+        best_val = float("inf")
 
+        if self.args.checkpoint:
+            ckpt = self.load_checkpoint(
+                self.model,
+                self.opt if not self.args.eval_only else None,
+                Path(self.args.checkpoint),
+                self.device,
+            )
+            start_epoch = ckpt.get("epoch", 0)
+            best_val = ckpt.get("best_val", float("inf"))
 
-def parse_args() -> TrainArgs:
-    parser = argparse.ArgumentParser(description="Train surrogate CNN with TensorBoard logging.")
+        run_log_dir = self.make_unique_run_dir(self.args.log_dir)
+        writer = SummaryWriter(log_dir=str(run_log_dir))
+        print(f"Logging TensorBoard to {run_log_dir}")
 
-    dcfg = surrogate_config.dataset
-    tcfg = surrogate_config.training
+        if self.args.eval_only:
+            val_metrics, val_denorm = self.evaluate(val_loader, stats=stats, return_denorm=True)
+            print(f"[Eval-only] Val metrics: {val_metrics}")
+            if val_denorm:
+                print(f"[Eval-only] Val denorm metrics: {val_denorm}")
+            if test_loader is not None:
+                test_metrics, test_denorm = self.evaluate(test_loader, stats=stats, return_denorm=True)
+                print(f"[Eval-only] Test metrics: {test_metrics}")
+                if test_denorm:
+                    print(f"[Eval-only] Test denorm metrics: {test_denorm}")
+            writer.close()
+            return
 
-    parser.add_argument("--data-dir", type=str, default=dcfg.output_dir)
-    parser.add_argument("--batch-size", type=int, default=tcfg.batch_size)
-    parser.add_argument("--epochs", type=int, default=tcfg.epochs)
-    parser.add_argument("--lr", type=float, default=tcfg.lr)
-    parser.add_argument("--weight-decay", type=float, default=tcfg.weight_decay)
-    parser.add_argument("--device", type=str, default=tcfg.device)
-    parser.add_argument("--log-dir", type=str, default=tcfg.log_dir)
-    parser.add_argument("--ckpt-dir", type=str, default=tcfg.ckpt_dir)
-    parser.add_argument("--num-workers", type=int, default=tcfg.num_workers)
-    parser.add_argument("--eval-only", action="store_true")
-    parser.add_argument("--checkpoint", type=str, default=None)
-    parser.add_argument("--hz-weight", type=float, default=tcfg.hz_weight, help="Loss weight for hzfield_state")
-    parser.add_argument("--mode-weight", type=float, default=tcfg.mode_weight, help="Loss weight for mode_transmission")
-    parser.add_argument("--input-weight", type=float, default=tcfg.input_weight, help="Loss weight for input_mode")
+        for epoch in range(start_epoch, self.args.epochs):
+            train_metrics = self.train_one_epoch(train_loader)
+            val_metrics = self.evaluate(val_loader)
 
-    args = parser.parse_args()
-    return TrainArgs(
-        data_dir=args.data_dir,
-        batch_size=args.batch_size,
-        epochs=args.epochs,
-        lr=args.lr,
-        weight_decay=args.weight_decay,
-        device=args.device,
-        log_dir=args.log_dir,
-        ckpt_dir=args.ckpt_dir,
-        num_workers=args.num_workers,
-        eval_only=args.eval_only,
-        checkpoint=args.checkpoint,
-        hz_weight=args.hz_weight,
-        mode_weight=args.mode_weight,
-        input_weight=args.input_weight,
-    )
+            writer.add_scalars("loss/train", train_metrics, epoch)
+            writer.add_scalars("loss/val", val_metrics, epoch)
+
+            print(
+                f"Epoch {epoch+1}/{self.args.epochs} "
+                f"train_total={train_metrics['total']:.4f} val_total={val_metrics['total']:.4f}"
+            )
+
+            if val_metrics["total"] < best_val:
+                best_val = val_metrics["total"]
+                self.save_checkpoint(self.model, self.opt, epoch + 1, best_val, ckpt_path)
+                print(f"Saved best checkpoint to {ckpt_path}")
+
+        if test_loader is not None:
+            ckpt = torch.load(ckpt_path, map_location=self.device) if ckpt_path.exists() else None
+            if ckpt:
+                self.model.load_state_dict(ckpt["model"])
+            test_metrics = self.evaluate(test_loader)
+            print(f"Test metrics: {test_metrics}")
+
+        writer.close()
+
+    @staticmethod
+    def parse_args() -> TrainArgs:
+        parser = argparse.ArgumentParser(description="Train surrogate CNN with TensorBoard logging.")
+
+        dcfg = surrogate_config.dataset
+        tcfg = surrogate_config.training
+
+        parser.add_argument("--data-dir", type=str, default=dcfg.output_dir)
+        parser.add_argument("--batch-size", type=int, default=tcfg.batch_size)
+        parser.add_argument("--epochs", type=int, default=tcfg.epochs)
+        parser.add_argument("--lr", type=float, default=tcfg.lr)
+        parser.add_argument("--weight-decay", type=float, default=tcfg.weight_decay)
+        parser.add_argument("--device", type=str, default=tcfg.device)
+        parser.add_argument("--log-dir", type=str, default=tcfg.log_dir)
+        parser.add_argument("--ckpt-dir", type=str, default=tcfg.ckpt_dir)
+        parser.add_argument("--num-workers", type=int, default=tcfg.num_workers)
+        parser.add_argument("--eval-only", action="store_true")
+        parser.add_argument("--checkpoint", type=str, default=None)
+        parser.add_argument("--hz-weight", type=float, default=tcfg.hz_weight, help="Loss weight for hzfield_state")
+        parser.add_argument("--mode-weight", type=float, default=tcfg.mode_weight, help="Loss weight for mode_transmission")
+        parser.add_argument("--input-weight", type=float, default=tcfg.input_weight, help="Loss weight for input_mode")
+
+        args = parser.parse_args()
+        return TrainArgs(
+            data_dir=args.data_dir,
+            batch_size=args.batch_size,
+            epochs=args.epochs,
+            lr=args.lr,
+            weight_decay=args.weight_decay,
+            device=args.device,
+            log_dir=args.log_dir,
+            ckpt_dir=args.ckpt_dir,
+            num_workers=args.num_workers,
+            eval_only=args.eval_only,
+            checkpoint=args.checkpoint,
+            hz_weight=args.hz_weight,
+            mode_weight=args.mode_weight,
+            input_weight=args.input_weight,
+        )
 
 
 if __name__ == "__main__":
-    run(parse_args())
+    trainer = SurrogateTrainer(SurrogateTrainer.parse_args())
+    trainer.run()
 
