@@ -39,6 +39,23 @@ PIXEL_NUM_Y = 20
 
 def _ensure_dir(path: str) -> None:
     os.makedirs(path, exist_ok=True)
+
+
+def _load_split_npz(path: Path) -> Dict[str, np.ndarray] | None:
+    if not path.exists():
+        return None
+    data = np.load(path, allow_pickle=False)
+    return {k: data[k] for k in data.files}
+
+
+def _concat_split(existing: Dict[str, np.ndarray] | None, new: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
+    if existing is None:
+        return new
+    out = {}
+    for k, v_new in new.items():
+        v_exist = existing[k]
+        out[k] = np.concatenate([v_exist, v_new], axis=0)
+    return out
 class SurrogateDatasetBuilder:
     """Generate supervised data by running Meep sweeps."""
 
@@ -87,6 +104,9 @@ class SurrogateDatasetBuilder:
         test_idx = idxs[n_train + n_val :].tolist()
         return train_idx, val_idx, test_idx
 
+    def _extract_split(self, packed: Dict[str, np.ndarray], idx_list: List[int]) -> Dict[str, np.ndarray]:
+        return {k: v[idx_list] for k, v in packed.items()}
+
     def _pack(self, samples: List[Dict[str, np.ndarray]]) -> Dict[str, np.ndarray]:
         return {
             "material_matrix": np.stack([s["material_matrix"] for s in samples]),
@@ -115,21 +135,27 @@ class SurrogateDatasetBuilder:
         splits = {"train": train_idx, "val": val_idx, "test": test_idx}
 
         packed = self._pack(samples)
+
+        # Load existing splits (if any) and append new data
+        final_counts = {}
         for split_name, idx_list in splits.items():
             if not idx_list:
                 continue
-            subset = {k: v[idx_list] for k, v in packed.items()}
-            np.savez_compressed(
-                os.path.join(self.config.output_dir, f"{split_name}.npz"), **subset
-            )
-            print(f"Saved {split_name} with {len(idx_list)} samples")
+            subset_new = self._extract_split(packed, idx_list)
+            split_path = Path(self.config.output_dir) / f"{split_name}.npz"
+            existing = _load_split_npz(split_path)
+            merged = _concat_split(existing, subset_new)
+            np.savez_compressed(split_path, **merged)
+            final_counts[split_name] = merged["material_matrix"].shape[0]
+            prev = existing["material_matrix"].shape[0] if existing else 0
+            print(f"Saved {split_name}: +{len(idx_list)} (prev {prev}) -> total {final_counts[split_name]}")
 
         meta = {
             "num_samples": self.config.num_samples,
             "train_ratio": self.config.train_ratio,
             "val_ratio": self.config.val_ratio,
             "seed": self.config.seed,
-            "splits": {k: len(v) for k, v in splits.items()},
+            "splits": final_counts,
             "pixel_num_x": PIXEL_SHAPE[0],
             "pixel_num_y": PIXEL_SHAPE[1],
         }
