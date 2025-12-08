@@ -201,9 +201,32 @@ def train_one_epoch(model, loader, opt, device, weights):
 
 
 @torch.no_grad()
-def evaluate(model, loader, device, weights):
+def evaluate(model, loader, device, weights, stats: Dict[str, Tuple[float, float]] | None = None, return_denorm: bool = False):
+    """Evaluate loss; optionally compute denormalized MAE/RMSE/relative error."""
     model.eval()
     running = {"total": 0.0, "hz": 0.0, "mode": 0.0, "input": 0.0}
+
+    denorm_running = None
+    if return_denorm and stats is not None:
+        denorm_running = {
+            "hz": {"abs_sum": 0.0, "sq_sum": 0.0, "rel_sum": 0.0, "count": 0},
+            "mode": {"abs_sum": 0.0, "sq_sum": 0.0, "rel_sum": 0.0, "count": 0},
+            "input": {"abs_sum": 0.0, "sq_sum": 0.0, "rel_sum": 0.0, "count": 0},
+        }
+
+    eps = 1e-8
+
+    def _accumulate_denorm(key: str, pred_t: torch.Tensor, target_t: torch.Tensor):
+        stats_key = "input_mode" if key == "input" else key
+        mean, std = stats[stats_key]
+        pred_denorm = pred_t * std + mean
+        target_denorm = target_t * std + mean
+        diff = pred_denorm - target_denorm
+        denorm_running[key]["abs_sum"] += diff.abs().sum().item()
+        denorm_running[key]["sq_sum"] += (diff ** 2).sum().item()
+        denorm_running[key]["rel_sum"] += (diff.abs() / (target_denorm.abs() + eps)).sum().item()
+        denorm_running[key]["count"] += target_denorm.numel()
+
     for material, hz, mode, input_mode in loader:
         material = material.to(device)
         hz = hz.to(device)
@@ -213,12 +236,30 @@ def evaluate(model, loader, device, weights):
         pred = model(material)
         losses = compute_losses(pred, hz, mode, input_mode, weights)
 
+        if denorm_running is not None:
+            _accumulate_denorm("hz", pred["hzfield_state"], hz)
+            _accumulate_denorm("mode", pred["mode_transmission"], mode)
+            _accumulate_denorm("input", pred["input_mode"].squeeze(-1), input_mode)
+
         bsz = material.size(0)
         for k in running:
             running[k] += losses[k].item() * bsz
 
     n = len(loader.dataset)
-    return {k: v / n for k, v in running.items()}
+    losses_avg = {k: v / n for k, v in running.items()}
+
+    if denorm_running is None:
+        return losses_avg
+
+    denorm_metrics = {}
+    for k, vals in denorm_running.items():
+        count = max(vals["count"], 1)
+        mae = vals["abs_sum"] / count
+        rmse = (vals["sq_sum"] / count) ** 0.5
+        rel_mae = vals["rel_sum"] / count
+        denorm_metrics[k] = {"mae": mae, "rmse": rmse, "rel_mae": rel_mae}
+
+    return losses_avg, denorm_metrics
 
 
 def save_checkpoint(model, opt, epoch, best_val, path: Path):
@@ -267,11 +308,15 @@ def run(args: TrainArgs):
     weights = {"hz": args.hz_weight, "mode": args.mode_weight, "input": args.input_weight}
 
     if args.eval_only:
-        val_metrics = evaluate(model, val_loader, device, weights)
+        val_metrics, val_denorm = evaluate(model, val_loader, device, weights, stats=stats, return_denorm=True)
         print(f"[Eval-only] Val metrics: {val_metrics}")
+        if val_denorm:
+            print(f"[Eval-only] Val denorm metrics: {val_denorm}")
         if test_loader is not None:
-            test_metrics = evaluate(model, test_loader, device, weights)
+            test_metrics, test_denorm = evaluate(model, test_loader, device, weights, stats=stats, return_denorm=True)
             print(f"[Eval-only] Test metrics: {test_metrics}")
+            if test_denorm:
+                print(f"[Eval-only] Test denorm metrics: {test_denorm}")
         return
 
     for epoch in range(start_epoch, args.epochs):
