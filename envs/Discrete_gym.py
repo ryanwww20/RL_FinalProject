@@ -217,8 +217,7 @@ class MinimalEnv(gym.Env):
 
         # Action is a binary array representing one layer (row) of the design
         # Get previous layer before updating (for similarity calculation)
-        # FORCE use_cnn=False here because we need the physical layer for similarity calculation
-        previous_layer = self._get_previous_layer(use_cnn=False)
+        previous_layer = self._get_previous_layer()
         
         # Update the material matrix: set the row at material_matrix_idx
         self.material_matrix[self.material_matrix_idx] = action
