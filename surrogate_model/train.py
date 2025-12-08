@@ -37,6 +37,21 @@ from surrogate_model.config import config as surrogate_config
 from config import config as main_config
 
 
+def make_unique_run_dir(base_log_dir: str) -> Path:
+    """Create a unique TensorBoard run directory like RUN_1, RUN_2, ..."""
+    base = Path(base_log_dir)
+    base.mkdir(parents=True, exist_ok=True)
+    existing = [
+        p for p in base.iterdir() if p.is_dir() and p.name.startswith("RUN_") and p.name[4:].isdigit()
+    ]
+    next_id = 1
+    if existing:
+        next_id = max(int(p.name[4:]) for p in existing) + 1
+    run_dir = base / f"RUN_{next_id}"
+    run_dir.mkdir(parents=True, exist_ok=True)
+    return run_dir
+
+
 @dataclass
 class TrainArgs:
     data_dir: str
@@ -245,7 +260,9 @@ def run(args: TrainArgs):
         start_epoch = ckpt.get("epoch", 0)
         best_val = ckpt.get("best_val", float("inf"))
 
-    writer = SummaryWriter(log_dir=args.log_dir)
+    run_log_dir = make_unique_run_dir(args.log_dir)
+    writer = SummaryWriter(log_dir=str(run_log_dir))
+    print(f"Logging TensorBoard to {run_log_dir}")
 
     weights = {"hz": args.hz_weight, "mode": args.mode_weight, "input": args.input_weight}
 

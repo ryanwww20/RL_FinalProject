@@ -20,6 +20,9 @@ models/
 playground/
 archive/
 eval_results/
+surrogate_model/runs
+surrogate_model/checkpoints
+surrogate_model/data
 
 .DS_Store
 
