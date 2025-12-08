@@ -29,6 +29,16 @@ class MatrixCombinedExtractor(BaseFeaturesExtractor):
         matrix_len = pixel_num_x * pixel_num_y
         scalar_len = observation_space.shape[0] - matrix_len
 
+        # 預計 CNN 輸出大小（兩次 2x2 pool）：(pixel_num_x/4)*(pixel_num_y/4)*64
+        pooled_x = pixel_num_x // 4
+        pooled_y = pixel_num_y // 4
+        cnn_out_dim = 64 * pooled_x * pooled_y
+
+        # features_dim = CNN projection + scalar as is
+        features_dim = cnn_proj_dim + scalar_len
+        super().__init__(observation_space, features_dim)
+        self._features_dim = features_dim
+
         # CNN branch only operates on matrix
         self.cnn = nn.Sequential(
             nn.Conv2d(1, 16, kernel_size=3, padding=1),
@@ -42,20 +52,11 @@ class MatrixCombinedExtractor(BaseFeaturesExtractor):
             nn.Flatten(),
         )
 
-        with torch.no_grad():
-            dummy = torch.zeros(1, 1, pixel_num_x, pixel_num_y)
-            cnn_out_dim = self.cnn(dummy).shape[1]
-
         # Compress CNN output to cnn_proj_dim, then concat with scalar
         self.cnn_proj = nn.Sequential(
             nn.Linear(cnn_out_dim, cnn_proj_dim),
             nn.ReLU(),
         )
-
-        # features_dim = CNN projection + scalar as is
-        features_dim = cnn_proj_dim + scalar_len
-        super().__init__(observation_space, features_dim)
-        self._features_dim = features_dim
 
     def forward(self, observations: torch.Tensor) -> torch.Tensor:
         matrix_len = self.pixel_num_x * self.pixel_num_y
