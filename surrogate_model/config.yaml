@@ -10,13 +10,13 @@ model:
   input_channels: 1
   base_channels: 32
   pixel_hw: [20, 20]
-  dropout: 0.05
+  dropout: 0.1
 
 training:
   batch_size: 64
   epochs: 50
   lr: 0.001
-  weight_decay: 0.0001
+  weight_decay: 0.0005
   device: "cuda"
   log_dir: "surrogate_model/runs"
   ckpt_dir: "surrogate_model/checkpoints"
