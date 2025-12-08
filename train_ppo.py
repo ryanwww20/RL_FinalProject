@@ -15,6 +15,7 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env, DummyVecEnv, SubprocVecEnv
 from stable_baselines3.common.callbacks import BaseCallback
 from envs.Discrete_gym import MinimalEnv
+from envs.custom_feature_extractor import MatrixCombinedExtractor
 from PIL import Image
 from eval import ModelEvaluator
 
@@ -435,30 +436,38 @@ def train_ppo(
     # contain lambda functions that can't be pickled for multiprocessing
     print("Creating environment...")
     
-    # Define environment kwargs including CNN usage
     env_kwargs = {
         "render_mode": None,
-        "use_cnn": True  # Enable CNN features
     }
     
-    env = make_vec_env(MinimalEnv, n_envs=n_envs,
-                       env_kwargs=env_kwargs,
-                       vec_env_cls=SubprocVecEnv)
+    env = make_vec_env(
+        MinimalEnv,
+        n_envs=n_envs,
+        env_kwargs=env_kwargs,
+        vec_env_cls=SubprocVecEnv
+    )
 
     # Create evaluation environment
-    eval_env = MinimalEnv(render_mode=None, use_cnn=True)
+    eval_env = MinimalEnv(render_mode=None)
     
     # Define model save path
     save_path_with_timestamp = f"models/ppo_model_{start_timestamp}.zip"
     # Create models directory if it doesn't exist
     os.makedirs("models", exist_ok=True)
 
-    policy_kwargs={
-        "net_arch": dict(
-            pi=[64, 128],
-            vf=[64, 128]
-        )
-    }
+    policy_kwargs = dict(
+        features_extractor_class=MatrixCombinedExtractor,
+        features_extractor_kwargs=dict(
+            cnn_proj_dim=128,  # Dimension of CNN output after compression
+            pixel_num_x=20,
+            pixel_num_y=20,
+            num_monitors=10,
+        ),
+        net_arch=dict(
+            pi=[256, 128],
+            vf=[256, 128],
+        ),
+    )
 
     # Create PPO model
     print("Creating PPO model...")

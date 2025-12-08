@@ -6,75 +6,20 @@ import gymnasium as gym
 import time
 from gymnasium import spaces
 import numpy as np
-import torch
-import torch.nn as nn
 from envs.meep_simulation import WaveguideSimulation
 from config import config
-
-
-class MaterialMatrixCNN(nn.Module):
-    """
-    CNN model for extracting features from material_matrix.
-    Takes a 2D material matrix (pixel_num_x, pixel_num_y) and extracts features.
-    """
-    def __init__(self, input_height=20, input_width=20, feature_dim=64):
-        super(MaterialMatrixCNN, self).__init__()
-        self.feature_dim = feature_dim
-        
-        # Convolutional layers
-        self.conv1 = nn.Conv2d(1, 16, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(16, 32, kernel_size=3, padding=1)
-        self.conv3 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
-        
-        # Batch normalization
-        self.bn1 = nn.BatchNorm2d(16)
-        self.bn2 = nn.BatchNorm2d(32)
-        self.bn3 = nn.BatchNorm2d(64)
-        
-        # Calculate the size after convolutions and pooling
-        # After 3 conv layers with padding=1, size remains the same
-        # After 3 maxpool layers (each /2), size becomes input_size / 8
-        pooled_height = input_height // 8
-        pooled_width = input_width // 8
-        self.fc_input_size = 64 * pooled_height * pooled_width
-        
-        # Fully connected layers
-        self.fc1 = nn.Linear(self.fc_input_size, 128)
-        self.fc2 = nn.Linear(128, feature_dim)
-        
-        # Activation and pooling
-        self.relu = nn.ReLU()
-        self.pool = nn.MaxPool2d(2, 2)
-        self.dropout = nn.Dropout(0.2)
-        
-    def forward(self, x):
-        # x shape: (batch, 1, height, width)
-        x = self.pool(self.relu(self.bn1(self.conv1(x))))
-        x = self.pool(self.relu(self.bn2(self.conv2(x))))
-        x = self.pool(self.relu(self.bn3(self.conv3(x))))
-        
-        # Flatten
-        x = x.view(x.size(0), -1)
-        
-        # Fully connected layers
-        x = self.relu(self.fc1(x))
-        x = self.dropout(x)
-        x = self.fc2(x)
-        
-        return x
 
 
 class MinimalEnv(gym.Env):
 
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
 
-    def __init__(self, render_mode=None, use_cnn=False):
+    def __init__(self, render_mode=None):
         """
         Initialize the environment.
 
         Args:
             render_mode: "human" for GUI, "rgb_array" for image, None for no rendering
-            use_cnn: Whether to use CNN feature extraction
         """
         super().__init__()
 
@@ -86,36 +31,14 @@ class MinimalEnv(gym.Env):
         assert config.environment.max_steps <= self.pixel_num_x, \
             f"max_steps ({config.environment.max_steps}) must be <= pixel_num_x ({self.pixel_num_x})"
         
-        # Initialize CNN feature extractor (optional feature) - must be before obs_size calculation
-        # Extract features from the entire material_matrix instead of just the previous layer
-        # Note: Enabling this feature will change the observation space size (from pixel_num_y to cnn_feature_dim)
-        self.use_cnn_features = use_cnn  # Set from argument
-        self.cnn_feature_dim = 64  # Dimension of CNN-extracted features
-        self.device = torch.device("cpu")  # Can be changed to "cuda" if GPU is available
-        if self.use_cnn_features:
-            self.cnn_model = MaterialMatrixCNN(
-                input_height=self.pixel_num_x,
-                input_width=self.pixel_num_y,
-                feature_dim=self.cnn_feature_dim
-            )
-            self.cnn_model.eval()  # Set to evaluation mode
-            self.cnn_model.to(self.device)
-        else:
-            self.cnn_model = None
-        
-        # Calculate observation size based on whether CNN is enabled
-        # Observation = 10 monitors + 1 matrix index + (previous layer or CNN features)
+        # Observation = flattened matrix + monitors + idx + previous layer
         num_monitors = config.simulation.num_flux_regions  # 10 monitors
-        self.use_hybrid_features = False  # If True, use both CNN features AND previous layer
-        if self.use_cnn_features:
-            if self.use_hybrid_features:
-                # Hybrid: CNN features + previous layer
-                self.obs_size = num_monitors + 1 + self.cnn_feature_dim + self.pixel_num_y
-            else:
-                # CNN only: replace previous layer with CNN features
-                self.obs_size = num_monitors + 1 + self.cnn_feature_dim
-        else:
-            self.obs_size = config.environment.obs_size  # 10 + 1 + 20 = 31 (from config)
+        self.obs_size = (
+            self.pixel_num_x * self.pixel_num_y  # design matrix
+            + num_monitors                       # monitor readings
+            + 1                                  # layer index
+            + self.pixel_num_y                   # previous layer
+        )
         
         # Define observation and action spaces
         self.observation_space = spaces.Box(
@@ -145,7 +68,6 @@ class MinimalEnv(gym.Env):
         # Store previous layers for state space (history of layer matrices)
         self.num_previous_layers = config.environment.num_previous_layers
         self.layer_history = []  # List to store previous layer matrices
-        # pixel_num_x and pixel_num_y are already defined at the beginning of __init__
         self.waveguide_width = config.simulation.waveguide_width
         self.design_region_y_min = config.simulation.design_region_y_min
         self.design_region_y_max = config.simulation.design_region_y_max
@@ -193,81 +115,28 @@ class MinimalEnv(gym.Env):
         For the first layer, returns the input waveguide pattern.
         
         Returns:
-            If use_cnn_features=False: 1D array of length pixel_num_y (20 values: the previous layer)
-            If use_cnn_features=True: 1D array of CNN-extracted features (length = cnn_feature_dim)
+            1D array of length pixel_num_y (20 values: the previous layer)
         """
-        # Use CNN feature extraction if enabled
-        if hasattr(self, 'use_cnn_features') and self.use_cnn_features:
-            return self._get_previous_layer(use_cnn=True)
-        
-        # Original behavior: return previous layer
         if self.material_matrix_idx == 0:
-            # First layer: use input waveguide pattern as previous layer
-            previous_layer = self._get_default_waveguide_layer()
-        else:
-            # Get the previous layer from material_matrix
-            # material_matrix_idx has been incremented, so previous is at idx - 1
-            previous_layer = self.material_matrix[self.material_matrix_idx - 1].copy()
-        
-        return previous_layer.astype(np.float32)
-
-    def _get_previous_layer(self, use_cnn=None):
-        """
-        Get the previous layer (the layer before the current one).
-        For the first layer (material_matrix_idx == 0), returns the input waveguide pattern.
-        
-        Args:
-            use_cnn: If True, extract CNN features. If False, return physical layer.
-                    If None (default), use self.use_cnn_features setting.
-        
-        Returns:
-            If using CNN: 1D array of CNN-extracted features (length = cnn_feature_dim)
-            If not using CNN: 1D array of length pixel_num_y (20 values) with 1=silicon, 0=silica
-        """
-        # Determine whether to use CNN based on argument priority
-        # If use_cnn is explicitly provided (True/False), use it.
-        # Otherwise, fall back to the environment configuration.
-        should_use_cnn = self.use_cnn_features if use_cnn is None else use_cnn
-
-        # Use CNN feature extraction if enabled
-        if should_use_cnn:
-            if not hasattr(self, 'cnn_model') or self.cnn_model is None:
-                # Fallback to regular method if CNN not initialized
-                if self.material_matrix_idx == 0:
-                    return self._get_default_waveguide_layer()
-                else:
-                    return self.material_matrix[self.material_matrix_idx - 1].copy()
-            
-            # Prepare material_matrix for CNN input
-            # Handle partial matrix (fill uninitialized rows with default waveguide pattern)
-            matrix_for_cnn = self.material_matrix.copy()
-            
-            # Fill uninitialized rows (from material_matrix_idx onwards) with default pattern
-            default_layer = self._get_default_waveguide_layer()
-            for idx in range(self.material_matrix_idx, self.pixel_num_x):
-                matrix_for_cnn[idx] = default_layer
-            
-            # Convert to tensor: (1, 1, height, width) for CNN input
-            matrix_tensor = torch.FloatTensor(matrix_for_cnn).unsqueeze(0).unsqueeze(0)
-            matrix_tensor = matrix_tensor.to(self.device)
-            
-            # Extract features using CNN
-            with torch.no_grad():
-                cnn_features = self.cnn_model(matrix_tensor)
-            
-            # Convert back to numpy array
-            cnn_features_np = cnn_features.cpu().numpy().flatten().astype(np.float32)
-            
-            return cnn_features_np
-        
-        # Original behavior: return previous layer
-        if self.material_matrix_idx == 0:
-            # First layer: use input waveguide pattern as previous layer
             return self._get_default_waveguide_layer()
-        else:
-            # Get the previous layer from material_matrix
-            # material_matrix_idx has been incremented, so previous is at idx - 1
-            return self.material_matrix[self.material_matrix_idx - 1].copy()
+        return self.material_matrix[self.material_matrix_idx - 1].copy().astype(np.float32)
+
+    def _get_previous_layer(self):
+        """
+        Return the physical previous layer (no CNN involved).
+        """
+        return self._get_previous_layers_state()
+
+    def _build_observation(self, hzfield_state_normalized: np.ndarray) -> np.ndarray:
+        """
+        Build observation vector in the following order:
+        [flattened material_matrix | monitors | index | previous_layer]
+        """
+        matrix_flat = self.material_matrix.flatten().astype(np.float32)
+        monitors = hzfield_state_normalized.astype(np.float32)
+        idx_arr = np.array([float(self.material_matrix_idx)], dtype=np.float32)
+        previous_layer = self._get_previous_layers_state()
+        return np.concatenate([matrix_flat, monitors, idx_arr, previous_layer])
 
     def _calculate_similarity(self, current_layer, previous_layer):
         """
@@ -319,22 +188,7 @@ class MinimalEnv(gym.Env):
         else:
             hzfield_state_normalized = hzfield_state  # If all zeros, keep as is
         
-        # Build observation: 10 monitors + matrix index + (previous layer or CNN features)
-        observation = hzfield_state_normalized.copy().astype(np.float32)  # 10 monitor values (normalized)
-        observation = np.append(observation, float(self.material_matrix_idx))  # 1 matrix index
-        
-        # Add CNN features and/or previous layer based on configuration
-        if hasattr(self, 'use_cnn_features') and self.use_cnn_features:
-            cnn_features = self._get_previous_layer(use_cnn=True)  # CNN features
-            observation = np.append(observation, cnn_features)
-            
-            # If hybrid mode, also add previous layer
-            if hasattr(self, 'use_hybrid_features') and self.use_hybrid_features:
-                previous_layer = self._get_previous_layer(use_cnn=False)  # Original layer
-                observation = np.append(observation, previous_layer)
-        else:
-            previous_layer = self._get_previous_layers_state()  # 20 values (previous layer)
-            observation = np.append(observation, previous_layer)
+        observation = self._build_observation(hzfield_state_normalized)
         
         info = {}
 
@@ -407,36 +261,14 @@ class MinimalEnv(gym.Env):
                 'similarity_score': self._step_metrics.get('similarity_score', 0.0),
             }
 
-        # Get observation - return the current hzfield_state as observation
-        # This gives the agent feedback about the current state
         if self.material_matrix_idx > 0:
-            # Normalize hzfield_state by dividing by maximum (bounded between 0 and 1)
             hzfield_max = np.max(hzfield_state)
             if hzfield_max > 0:
                 hzfield_state_normalized = hzfield_state / hzfield_max
             else:
-                hzfield_state_normalized = hzfield_state  # If all zeros, keep as is
-            
-            # Build observation: 10 monitors + matrix index + (previous layer or CNN features)
-            observation = hzfield_state_normalized.copy().astype(np.float32)  # 10 monitor values (normalized)
-            observation = np.append(observation, float(self.material_matrix_idx))  # 1 matrix index
-            
-            # Add CNN features and/or previous layer based on configuration
-            if hasattr(self, 'use_cnn_features') and self.use_cnn_features:
-                cnn_features = self._get_previous_layer(use_cnn=True)  # CNN features
-                observation = np.append(observation, cnn_features)
-                
-                # If hybrid mode, also add previous layer
-                if hasattr(self, 'use_hybrid_features') and self.use_hybrid_features:
-                    # Explicitly get physical layer for observation
-                    prev_phys_layer = self._get_previous_layer(use_cnn=False)  # Original layer
-                    observation = np.append(observation, prev_phys_layer)
-            else:
-                # No CNN, use standard previous layer method
-                previous_layer = self._get_previous_layers_state()  # 20 values (previous layer)
-                observation = np.append(observation, previous_layer)
+                hzfield_state_normalized = hzfield_state
+            observation = self._build_observation(hzfield_state_normalized)
         else:
-            # Initial state: return zeros (shouldn't happen after reset, but just in case)
             observation = np.zeros(self.obs_size, dtype=np.float32)
 
         # Info dictionary with custom metrics
