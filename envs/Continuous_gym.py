@@ -212,8 +212,7 @@ class MinimalEnv(gym.Env):
         self.layer_history.append(action.copy())
         if len(self.layer_history) > self.num_previous_layers:
             self.layer_history.pop(0)  # Remove oldest layer
-        
-        self.material_matrix_idx += 1
+
 
         # calculate_flux returns: input_mode_flux, output_mode_flux_1, output_mode_flux_2, hzfield_state, hz_data, input_mode, output_mode_1, output_mode_2
         _, _, _, hzfield_state, _, _, _, _ = self.simulation.calculate_flux(
