@@ -14,7 +14,7 @@ if str(ROOT_DIR) not in sys.path:
 from surrogate_model.config import config as surrogate_config
 from surrogate_model.model import SurrogateCNN
 from surrogate_model.train import SurrogateNPZDataset
-
+from surrogate_model.data_generation import RLDataCollector
 
 class RLSurrogateModel:
     """Lightweight wrapper for loading a trained surrogate and running inference."""
@@ -38,6 +38,7 @@ class RLSurrogateModel:
 
         self.stats = self._load_stats()
         self.model = self._load_model()
+        self.RL_data_collector = RLDataCollector()
 
     def _load_stats(self) -> Dict[str, tuple]:
         """Load normalization stats from training data (mean/std per target)."""
@@ -95,21 +96,11 @@ class RLSurrogateModel:
             "input_mode": float(input_mode.item()),
         }
 
-
-def _load_matrix(path: str) -> np.ndarray:
-    if path.endswith(".npz"):
-        data = np.load(path)
-        if len(data.files) == 0:
-            raise ValueError("NPZ file is empty.")
-        arr = data[data.files[0]]
-    else:
-        arr = np.load(path)
-    if arr.ndim == 3 and arr.shape[0] == 1:
-        arr = arr[0]
-    if arr.ndim != 2:
-        raise ValueError(f"Expected matrix shape [H, W], got {arr.shape}")
-    return arr
-
+    def finetune(self):
+        """
+        Finetune the surrogate model.
+        """
+        self.RL_data_collector.build()
 
 def main():
     parser = argparse.ArgumentParser(description="Run surrogate model prediction on a material matrix.")

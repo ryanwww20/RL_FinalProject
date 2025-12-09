@@ -268,8 +268,8 @@ class MinimalEnv(gym.Env):
                 "output_mode_2": output_mode_2,
                 "input_mode": input_mode,
             }
-            self.surrogate_model.surrogate_dataset_builder.add_sample(self.surrogate_train_data)
-            current_score, reward = self.surrogate_get_reward(current_layer=action, previous_layer=previous_layer)
+            self.surrogate_model.RL_data_collector.add_sample(self.surrogate_train_data)
+            current_score, reward = self.get_reward(current_layer=action, previous_layer=previous_layer)
 
 
         # Use MODE coefficients for reward calculation (instead of raw flux)

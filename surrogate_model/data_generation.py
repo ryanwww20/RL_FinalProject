@@ -167,10 +167,24 @@ class RLDataCollector(SurrogateDatasetBuilder):
     def __init__(self):
         super().__init__()
         self.new_samples: List[Dict[str, np.ndarray]] = []
+        # target ratio: new : old = 9 : 1
+        self.new_to_old_ratio = 9.0
 
     def add_sample(self, sample_data: Dict[str, np.ndarray]):
         self.new_samples.append(sample_data)
         return sample_data
+
+    def _sample_existing_split(
+        self, existing: Dict[str, np.ndarray] | None, desired_count: int
+    ) -> Dict[str, np.ndarray] | None:
+        """Randomly sample desired_count rows from an existing split."""
+        if existing is None or desired_count <= 0:
+            return None
+        total = existing["material_matrix"].shape[0]
+        if desired_count >= total:
+            return existing
+        idxs = self.rng.choice(total, size=desired_count, replace=False)
+        return {k: v[idxs] for k, v in existing.items()}
 
     def build(
         self,
@@ -223,9 +237,23 @@ class RLDataCollector(SurrogateDatasetBuilder):
         base_train = _load_split_npz(base_train_path)
         base_val = _load_split_npz(base_val_path)
 
-        # Merge base + new
-        merged_train = _concat_split(base_train, new_train) if new_train is not None else base_train
-        merged_val = _concat_split(base_val, new_val) if new_val is not None else base_val
+        new_train_count = new_train["material_matrix"].shape[0] if new_train is not None else 0
+        new_val_count = new_val["material_matrix"].shape[0] if new_val is not None else 0
+
+        # Determine how many old samples to keep to reach new:old = 9:1 (i.e., old ~= new/9)
+        desired_old_train = int(new_train_count / self.new_to_old_ratio) if new_train_count else 0
+        desired_old_val = int(new_val_count / self.new_to_old_ratio) if new_val_count else 0
+
+        sampled_base_train = self._sample_existing_split(base_train, desired_old_train)
+        sampled_base_val = self._sample_existing_split(base_val, desired_old_val)
+
+        # Merge sampled old + new for the final merged_* splits (ratio-enforced)
+        merged_train = _concat_split(sampled_base_train, new_train) if new_train is not None else sampled_base_train
+        merged_val = _concat_split(sampled_base_val, new_val) if new_val is not None else sampled_base_val
+
+        # Always update the base_* splits with all accumulated data (no downsampling)
+        base_train_updated = _concat_split(base_train, new_train) if new_train is not None else base_train
+        base_val_updated = _concat_split(base_val, new_val) if new_val is not None else base_val
 
         def _save_split(path: Path, data: Dict[str, np.ndarray] | None):
             if data is None:
@@ -236,15 +264,18 @@ class RLDataCollector(SurrogateDatasetBuilder):
         _save_split(merged_val_path, merged_val)
 
         # Update base_* with merged content (append new data)
-        _save_split(base_train_path, merged_train)
-        _save_split(base_val_path, merged_val)
+        _save_split(base_train_path, base_train_updated)
+        _save_split(base_val_path, base_val_updated)
 
         print(
-            f"RLDataCollector merged {n_new} new samples -> "
-            f"train +{n_train}, val +{n_val}. "
-            f"Saved merged splits to {merged_train_path.name}, {merged_val_path.name} "
-            f"and updated base splits."
+            f"RLDataCollector merged {n_new} new samples "
+            f"(train new {n_train}, val new {n_val}) with ratio ~{self.new_to_old_ratio}:1 "
+            f"-> merged_train old+new {merged_train['material_matrix'].shape[0] if merged_train else 0}, "
+            f"merged_val old+new {merged_val['material_matrix'].shape[0] if merged_val else 0}. "
+            f"Saved merged splits to {merged_train_path.name}, {merged_val_path.name}; "
+            f"base splits updated with full data."
         )
+        self.new_samples = []
 
 if __name__ == "__main__":
     builder = SurrogateDatasetBuilder()
