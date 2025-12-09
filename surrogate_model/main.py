@@ -5,6 +5,12 @@ from typing import Dict, Optional
 import numpy as np
 import torch
 
+import sys
+
+ROOT_DIR = Path(__file__).resolve().parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
 from surrogate_model.config import config as surrogate_config
 from surrogate_model.model import SurrogateCNN
 from surrogate_model.train import SurrogateNPZDataset
@@ -107,17 +113,18 @@ def _load_matrix(path: str) -> np.ndarray:
 
 def main():
     parser = argparse.ArgumentParser(description="Run surrogate model prediction on a material matrix.")
-    parser.add_argument("--matrix", type=str, required=True, help="Path to .npy/.npz file containing a 2D matrix.")
-    parser.add_argument("--checkpoint", type=str, default=None, help="Path to model checkpoint (default: training ckpt_dir/best.pt).")
-    parser.add_argument("--data-dir", type=str, default=None, help="Data directory containing train.npz for stats (default: dataset.output_dir).")
-    parser.add_argument("--device", type=str, default=None, help="Device string, e.g., cuda or cpu (default: auto).")
+    # parser.add_argument("--matrix", type=str, required=True, help="Path to .npy/.npz file containing a 2D matrix.")
+    parser.add_argument("--checkpoint", type=str, default="surrogate_model/checkpoints/best.pt", help="Path to model checkpoint (default: training ckpt_dir/best.pt).")
+    parser.add_argument("--data-dir", type=str, default="surrogate_model/data", help="Data directory containing train.npz for stats (default: dataset.output_dir).")
+    parser.add_argument("--device", type=str, default="cpu", help="Device string, e.g., cuda or cpu (default: auto).")
     args = parser.parse_args()
 
-    matrix_path = Path(args.matrix)
-    if not matrix_path.exists():
-        raise FileNotFoundError(f"Matrix file not found: {matrix_path}")
+    # matrix_path = Path(args.matrix)
+    # if not matrix_path.exists():
+    #     raise FileNotFoundError(f"Matrix file not found: {matrix_path}")
 
-    material_matrix = _load_matrix(str(matrix_path))
+    rng = np.random.default_rng(42)
+    material_matrix = rng.integers(0, 2, size=(20, 20), dtype=np.int8)
     predictor = RLSurrogateModel(
         checkpoint=args.checkpoint,
         data_dir=args.data_dir,
