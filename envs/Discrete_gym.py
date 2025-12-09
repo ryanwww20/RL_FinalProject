@@ -169,10 +169,10 @@ class MinimalEnv(gym.Env):
         self.last_score = None
 
         # Use calculate_flux to get initial hzfield_state for initial matrix
-        # This returns: input_mode_flux, output_mode_flux_1, output_mode_flux_2, hzfield_state, hz_data, input_mode, output_mode_1, output_mode_2
-        # For initial state, use empty matrix (all zeros)
-        empty_matrix = np.zeros((config.simulation.pixel_num_x, config.simulation.pixel_num_y))
-        hzfield_state, _ = self.simulation.calculate_flux(empty_matrix)
+        # This returns: hzfield_state, hz_data
+        # For initial state, use matrix with all 1's (silicon)
+        initial_matrix = np.ones((config.simulation.pixel_num_x, config.simulation.pixel_num_y))
+        hzfield_state, _ = self.simulation.calculate_flux(initial_matrix)
         
         # Normalize hzfield_state by dividing by maximum (bounded between 0 and 1)
         hzfield_max = np.max(hzfield_state)
@@ -310,7 +310,7 @@ class MinimalEnv(gym.Env):
         current_score = transmission_score * 10 + balance_score * 10
         reward = current_score - self.last_score if self.last_score is not None else 0
         # Add similarity_score directly to reward (not to current_score)
-        reward += similarity_score/2
+        # reward += similarity_score/2
 
         self.last_score = current_score
 
