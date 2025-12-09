@@ -61,13 +61,13 @@ training:
   sac:
     total_timesteps: 1000000
     n_envs: 1
-    learning_rate: 0.0003 # 0.0001 0.0003 0.001
+    learning_rate: 0.0005 # Increased from 0.0003 for faster learning
     buffer_size: 100000
-    learning_starts: 1000
+    learning_starts: 200 # Reduced from 1000 to start learning earlier
     tau: 0.005
     gamma: 0.99
-    train_freq: 20
-    gradient_steps: 2
+    train_freq: 10 # Reduced from 20 for more frequent updates
+    gradient_steps: 5 # Increased from 2 for better learning
     ent_coef: auto
     target_update_interval: 2
     target_entropy: auto

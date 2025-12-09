@@ -1,5 +1,22 @@
 """
 SAC Training Script with Continuous Relaxation (SIMP)
+
+Beta Scheduler Options:
+- 'linear': Linear interpolation from beta_min to beta_max
+- 'exponential': Exponential growth (beta_min * (beta_max/beta_min)^progress)
+- 'step': 3-step schedule (0-33%: min, 33-66%: mid, 66-100%: max)
+- 'cosine': Cosine annealing (smooth S-curve)
+- 'warmup_linear': Stay at beta_min for warmup_ratio, then linear
+- 'warmup_exponential': Stay at beta_min for warmup_ratio, then exponential
+- 'warmup_step': 0-20%: beta_min, 20-40%: linear to 7.5, 40-100%: exponential to beta_max (recommended)
+
+Example usage:
+    train_sac2(
+        total_timesteps=1000000,
+        beta_schedule='warmup_exponential',
+        beta_warmup_ratio=0.2,  # Keep beta=1 for first 20% of training
+        beta_max=100.0
+    )
 """
 
 import numpy as np
@@ -33,6 +50,116 @@ TRAIN_SAC_KWARGS = {
     "target_update_interval", "target_entropy", "use_sde", "tensorboard_log", "save_path",
 }
 
+class BetaScheduler:
+    """
+    Flexible Beta (projection filter steepness) scheduler for SIMP.
+    Supports multiple scheduling strategies.
+    """
+    def __init__(self, beta_min=1.0, beta_max=100.0, schedule_type='exponential', 
+                 warmup_ratio=0.0, steps=None):
+        """
+        Args:
+            beta_min: Starting beta value
+            beta_max: Target beta value
+            schedule_type: 'linear', 'exponential', 'step', 'cosine', 'warmup_linear'
+            warmup_ratio: Fraction of training to keep beta at beta_min (for warmup_linear)
+            steps: Optional list of (progress_ratio, beta_value) for custom step schedule
+        """
+        self.beta_min = beta_min
+        self.beta_max = beta_max
+        self.schedule_type = schedule_type
+        self.warmup_ratio = warmup_ratio
+        self.steps = steps  # For custom step schedule
+        
+    def get_beta(self, progress):
+        """
+        Get beta value at given training progress.
+        
+        Args:
+            progress: Training progress in [0, 1]
+            
+        Returns:
+            Current beta value
+        """
+        progress = max(0.0, min(1.0, progress))
+        
+        if self.schedule_type == 'linear':
+            return self.beta_min + progress * (self.beta_max - self.beta_min)
+        
+        elif self.schedule_type == 'exponential':
+            # Exponential: beta = beta_min * (beta_max/beta_min)^progress
+            if self.beta_min <= 0 or self.beta_max <= 0:
+                return self.beta_min
+            return self.beta_min * ((self.beta_max / self.beta_min) ** progress)
+        
+        elif self.schedule_type == 'step':
+            # Step schedule: use predefined steps or default 3-step
+            if self.steps is not None:
+                # Custom steps: [(progress_ratio, beta_value), ...]
+                for p_ratio, beta_val in sorted(self.steps):
+                    if progress <= p_ratio:
+                        return beta_val
+                return self.beta_max
+            else:
+                # Default 3-step: 0-33%: beta_min, 33-66%: mid, 66-100%: beta_max
+                mid_beta = (self.beta_min + self.beta_max) / 2
+                if progress < 0.33:
+                    return self.beta_min
+                elif progress < 0.66:
+                    return mid_beta
+                else:
+                    return self.beta_max
+        
+        elif self.schedule_type == 'cosine':
+            # Cosine annealing: smooth S-curve
+            return self.beta_min + (self.beta_max - self.beta_min) * \
+                   (1 - np.cos(np.pi * progress)) / 2
+        
+        elif self.schedule_type == 'warmup_linear':
+            # Warmup + Linear: stay at beta_min for warmup_ratio, then linear
+            if progress < self.warmup_ratio:
+                return self.beta_min
+            else:
+                # Linear from warmup_ratio to 1.0
+                adjusted_progress = (progress - self.warmup_ratio) / (1 - self.warmup_ratio)
+                return self.beta_min + adjusted_progress * (self.beta_max - self.beta_min)
+        
+        elif self.schedule_type == 'warmup_exponential':
+            # Warmup + Exponential: stay at beta_min for warmup_ratio, then exponential
+            if progress < self.warmup_ratio:
+                return self.beta_min
+            else:
+                adjusted_progress = (progress - self.warmup_ratio) / (1 - self.warmup_ratio)
+                if self.beta_min <= 0 or self.beta_max <= 0:
+                    return self.beta_min
+                return self.beta_min * ((self.beta_max / self.beta_min) ** adjusted_progress)
+        
+        elif self.schedule_type == 'warmup_step':
+            # Warmup + Step: stay at beta_min for warmup_ratio, then slow linear to mid, then exponential
+            # 0-20%: beta_min (1.0)
+            # 20-40%: linear growth to beta_mid (5-10)
+            # 40-100%: exponential growth to beta_max
+            if progress < self.warmup_ratio:
+                return self.beta_min
+            elif progress < 0.4:  # 20-40%: slow linear growth
+                # Linear from beta_min to beta_mid (7.5, midpoint of 5-10)
+                beta_mid = 7.5
+                slow_progress = (progress - self.warmup_ratio) / (0.4 - self.warmup_ratio)
+                return self.beta_min + slow_progress * (beta_mid - self.beta_min)
+            else:  # 40-100%: exponential growth
+                # Exponential from beta_mid to beta_max
+                beta_mid = 7.5
+                fast_progress = (progress - 0.4) / (1.0 - 0.4)
+                if beta_mid <= 0 or self.beta_max <= 0:
+                    return beta_mid
+                return beta_mid * ((self.beta_max / beta_mid) ** fast_progress)
+        
+        else:
+            raise ValueError(f"Unknown schedule_type: {self.schedule_type}")
+    
+    def __repr__(self):
+        return f"BetaScheduler(type={self.schedule_type}, min={self.beta_min}, max={self.beta_max})"
+
 class SIMPTrainingCallback(BaseCallback):
     """
     Callback for SIMP training:
@@ -41,6 +168,7 @@ class SIMPTrainingCallback(BaseCallback):
     - Runs Double Evaluation (Soft/Projected vs Hard/Binary)
     """
     def __init__(self, save_dir, total_timesteps, beta_min=1.0, beta_max=100.0, 
+                 beta_schedule='exponential', beta_warmup_ratio=0.0,
                  verbose=1, eval_env=None, model_save_path=None, eval_freq=5):
         super().__init__(verbose)
         self.save_dir = Path(save_dir)
@@ -50,10 +178,14 @@ class SIMPTrainingCallback(BaseCallback):
         self.model_save_path = model_save_path
         self.eval_freq = eval_freq
         
-        # Beta Scheduling
+        # Beta Scheduling with Scheduler
         self.total_timesteps = total_timesteps
-        self.beta_min = beta_min
-        self.beta_max = beta_max
+        self.beta_scheduler = BetaScheduler(
+            beta_min=beta_min,
+            beta_max=beta_max,
+            schedule_type=beta_schedule,
+            warmup_ratio=beta_warmup_ratio
+        )
         self.current_beta = beta_min
         
         # Best model tracking
@@ -91,14 +223,13 @@ class SIMPTrainingCallback(BaseCallback):
         self.distribution_image_paths_hard = []
 
     def _on_step(self) -> bool:
-        """Called at each environment step. Updates Beta."""
+        """Called at each environment step. Updates Beta using scheduler."""
         # Calculate progress [0, 1]
         progress = self.num_timesteps / self.total_timesteps
         progress = min(max(progress, 0), 1)
         
-        # Exponential schedule: beta_min -> beta_max
-        # 1 -> 10 (at 0.5) -> 100 (at 1.0) implies log scale
-        self.current_beta = self.beta_min * (self.beta_max / self.beta_min) ** progress
+        # Get beta from scheduler
+        self.current_beta = self.beta_scheduler.get_beta(progress)
         
         # Update training environment(s)
         if self.training_env is not None:
@@ -347,6 +478,10 @@ def train_sac2(
     use_sde=False,
     tensorboard_log="./sac_simp_tensorboard/",
     save_path="./sac_simp_model",
+    beta_min=1.0,
+    beta_max=50.0,  # Reduced from 100.0 for gentler progression
+    beta_schedule='warmup_step',  # Custom step schedule: warmup -> slow growth -> fast growth
+    beta_warmup_ratio=0.2,  # Keep beta at beta_min for first 20% of training
 ):
     start_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     callback_dir = f"sac_simp_log_{start_timestamp}"
@@ -356,13 +491,13 @@ def train_sac2(
     # Create SIMP Envs
     print("Creating SIMP environment...")
     vec_env_cls = DummyVecEnv if n_envs == 1 else SubprocVecEnv
-    # Initialize with beta=1.0
+    # Training env: use random seed for diversity
     env = make_vec_env(ContinuousSIMPEnv, n_envs=n_envs,
-                       env_kwargs={"render_mode": None, "beta": 1.0},
+                       env_kwargs={"render_mode": None, "beta": 1.0, "use_random_seed": True},
                        vec_env_cls=vec_env_cls)
     
-    # Eval Env
-    eval_env = ContinuousSIMPEnv(render_mode=None, beta=1.0)
+    # Eval Env: use deterministic seed (use_random_seed=False)
+    eval_env = ContinuousSIMPEnv(render_mode=None, beta=1.0, use_random_seed=False)
     
     save_path_with_timestamp = f"models/sac_simp_{start_timestamp}.zip"
     
@@ -391,12 +526,16 @@ def train_sac2(
     callback = SIMPTrainingCallback(
         save_dir=callback_dir,
         total_timesteps=total_timesteps,
-        beta_min=1.0,
-        beta_max=100.0, # Target 100 at end (approx 10 at 50%)
+        beta_min=beta_min,
+        beta_max=beta_max,
+        beta_schedule=beta_schedule,
+        beta_warmup_ratio=beta_warmup_ratio,
         eval_env=eval_env,
         model_save_path=save_path_with_timestamp,
         eval_freq=5
     )
+    
+    print(f"Beta Schedule: {beta_schedule} (min={beta_min}, max={beta_max}, warmup={beta_warmup_ratio})")
     
     print(f"Training SAC (SIMP) for {total_timesteps} steps...")
     try:

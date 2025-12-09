@@ -10,7 +10,7 @@ from envs.Continuous_gym import MinimalEnv
 from config import config
 
 class ContinuousSIMPEnv(MinimalEnv):
-    def __init__(self, render_mode=None, beta=1.0, eta=0.5):
+    def __init__(self, render_mode=None, beta=1.0, eta=0.5, use_random_seed=True):
         """
         Initialize the SIMP environment.
         
@@ -18,6 +18,8 @@ class ContinuousSIMPEnv(MinimalEnv):
             render_mode: Rendering mode
             beta: Steepness of the projection filter (1.0 = linear/smooth, >10 = step-like)
             eta: Threshold for the projection filter (usually 0.5)
+            use_random_seed: If True, use random seed in reset() for training diversity.
+                            If False, use deterministic seed (for evaluation)
         """
         super().__init__(render_mode)
         
@@ -33,6 +35,7 @@ class ContinuousSIMPEnv(MinimalEnv):
         # SIMP parameters
         self.beta = beta
         self.eta = eta
+        self.use_random_seed = use_random_seed
         
     def set_beta(self, beta):
         """Update the beta (steepness) parameter"""
@@ -147,6 +150,19 @@ class ContinuousSIMPEnv(MinimalEnv):
 
         return observation, reward, terminated, truncated, info
 
+    def reset(self, seed=None, options=None):
+        """
+        Reset the environment to initial state.
+        For training: uses random seed if use_random_seed=True
+        For evaluation: can pass seed=None for deterministic behavior
+        """
+        # If use_random_seed=True and no seed provided, generate random seed
+        if self.use_random_seed and seed is None:
+            seed = np.random.randint(0, 2**31 - 1)
+        
+        # Call parent reset with seed
+        return super().reset(seed=seed, options=options)
+    
     def save_design_plot(self, save_path, title_suffix=None):
         """Save design plot, appending beta info to title"""
         if title_suffix:
