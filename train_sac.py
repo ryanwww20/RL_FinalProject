@@ -17,6 +17,7 @@ from stable_baselines3.common.callbacks import BaseCallback
 from envs.Continuous_gym import MinimalEnv
 from PIL import Image
 from eval import ModelEvaluator
+from envs.custom_gumbel import GumbelSACPolicy
 
 CONFIG_ENV_VAR = "TRAINING_CONFIG_PATH"
 DEFAULT_CONFIG_PATH = Path(__file__).resolve().parent / "config.yaml"
@@ -499,11 +500,29 @@ def train_sac(
 
     # Create SAC model
     print("Creating SAC model...")
+    # model = SAC(
+    #     "MlpPolicy",
+    #     env,
+    #     learning_rate=learning_rate,
+    #     policy_kwargs=policy_kwargs,
+    #     buffer_size=buffer_size,
+    #     learning_starts=learning_starts,
+    #     batch_size=batch_size,
+    #     tau=tau,
+    #     gamma=gamma,
+    #     train_freq=train_freq,
+    #     gradient_steps=gradient_steps,
+    #     ent_coef=ent_coef,
+    #     target_update_interval=target_update_interval,
+    #     target_entropy=target_entropy,
+    #     use_sde=use_sde,
+    #     tensorboard_log=tensorboard_log,
+    #     verbose=1
+    # )
     model = SAC(
-        "MlpPolicy",
+        GumbelSACPolicy,
         env,
         learning_rate=learning_rate,
-        policy_kwargs=policy_kwargs,
         buffer_size=buffer_size,
         learning_starts=learning_starts,
         batch_size=batch_size,
@@ -514,9 +533,13 @@ def train_sac(
         ent_coef=ent_coef,
         target_update_interval=target_update_interval,
         target_entropy=target_entropy,
-        use_sde=use_sde,
+        use_sde=False,
         tensorboard_log=tensorboard_log,
-        verbose=1
+        verbose=1,
+        policy_kwargs=dict(
+            temperature=0.5,      # Gumbel 溫度，可調
+            net_arch=(512, 512),  # Actor 網路結構
+        ),
     )
 
     # Create callback with model save path for best model tracking
