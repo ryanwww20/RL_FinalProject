@@ -27,6 +27,8 @@ class TrainingConfig:
     batch_size: int
     epochs: int
     lr: float
+    finetune_epochs: int
+    finetune_lr: float
     weight_decay: float
     device: str
     log_dir: str
