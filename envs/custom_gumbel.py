@@ -53,7 +53,6 @@ class GumbelActor(Actor):
             features_dim=features_dim,
             net_arch=list(net_arch),
             activation_fn=nn.ReLU,
-            use_sde=False,
             log_std_init=-3.0,
             full_std=True,
             use_expln=False,
@@ -112,5 +111,4 @@ class GumbelSACPolicy(SACPolicy):
             features_dim,
             temperature=self.gumbel_temperature,
             net_arch=self.gumbel_net_arch,
-            use_sde=False,
         )
