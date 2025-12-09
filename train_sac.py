@@ -7,6 +7,7 @@ import numpy as np
 import os
 from pathlib import Path
 from datetime import datetime
+import sys
 
 import yaml
 import pandas as pd
@@ -656,6 +657,8 @@ def load_training_config(config_path=None):
         dict: Filtered kwargs to pass into train_sac.
     """
     path = Path(config_path) if config_path else DEFAULT_CONFIG_PATH
+    print(f"[config] Loading config from: {path.absolute()}")
+    
     if not path.exists():
         print(
             f"[config] Config file not found at {path}. Using train_sac defaults.")
@@ -663,6 +666,9 @@ def load_training_config(config_path=None):
 
     with path.open("r", encoding="utf-8") as f:
         data = yaml.safe_load(f) or {}
+
+    # Print raw config for debugging
+    print(f"[config] Raw YAML content (training section): {data.get('training', {})}")
 
     training_cfg = data.get("training", {}).get("sac", {}) or {}
     filtered_cfg = {k: v for k, v in training_cfg.items()
@@ -672,6 +678,7 @@ def load_training_config(config_path=None):
     if unknown_keys:
         print(f"[config] Ignoring unsupported train_sac keys: {unknown_keys}")
 
+    print(f"[config] Parsed train_kwargs: {filtered_cfg}")
     return filtered_cfg
 
 
