@@ -62,22 +62,7 @@ class ContinuousSIMPEnv(MinimalEnv):
         # Result should be in [0, 1], but numerical issues might occur
         return num / den
 
-    def _calculate_similarity(self, current_layer, previous_layer):
-        """
-        Calculate similarity between current and previous layer.
-        For continuous values, we use 1 - L1_distance.
-        
-        Args:
-            current_layer: 1D array of current layer (length pixel_num_y)
-            previous_layer: 1D array of previous layer (length pixel_num_y)
-        
-        Returns:
-            similarity: Sum of (1 - abs(diff)), max is pixel_num_y
-        """
-        # Count pixels where current_layer is close to previous_layer
-        # Using L1 distance metric: 1 - |a - b|
-        # If a=b, score=1 per pixel. If |a-b|=1, score=0 per pixel.
-        return np.sum(1.0 - np.abs(current_layer - previous_layer))
+    # Similarity metrics disabled; inherit base behavior without similarity use
 
     def step(self, action):
         """

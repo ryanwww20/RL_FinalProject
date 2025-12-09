@@ -15,6 +15,14 @@ from stable_baselines3.common.callbacks import BaseCallback
 from envs.Continuous_gym_simp import ContinuousSIMPEnv
 from PIL import Image
 from eval import ModelEvaluator
+import sys
+
+# Ensure stdout/stderr are line-buffered so Slurm --output captures prints immediately
+try:
+    sys.stdout.reconfigure(line_buffering=True)
+    sys.stderr.reconfigure(line_buffering=True)
+except Exception:
+    pass
 
 # Use configuration logic from train_sac.py (re-implemented here for standalone)
 CONFIG_ENV_VAR = "TRAINING_CONFIG_PATH"
@@ -67,12 +75,12 @@ class SIMPTrainingCallback(BaseCallback):
         self.train_csv_path = self.save_dir / "train_metrics.csv"
         if not self.train_csv_path.exists():
             with open(self.train_csv_path, 'w') as f:
-                f.write('timestamp,rollout_count,type,transmission,balance_score,score,reward,similarity_score,beta\n')
+                f.write('timestamp,rollout_count,type,transmission,balance_score,score,reward,beta\n')
         
         self.eval_csv_path = self.save_dir / "eval_metrics.csv"
         if not self.eval_csv_path.exists():
             with open(self.eval_csv_path, 'w') as f:
-                f.write('timestamp,rollout_count,type,transmission,balance_score,score,reward,similarity_score,beta\n')
+                f.write('timestamp,rollout_count,type,transmission,balance_score,score,reward,beta\n')
         
         self.design_image_paths = []
         self.distribution_image_paths = []
@@ -116,7 +124,7 @@ class SIMPTrainingCallback(BaseCallback):
             train_trans, train_bal, train_score, train_sim, train_reward = 0, 0, 0, 0, 0
             
         with open(self.train_csv_path, 'a') as f:
-            f.write(f'{timestamp},{self.rollout_count},train,{train_trans},{train_bal},{train_score},{train_reward},{train_sim},{self.current_beta}\n')
+            f.write(f'{timestamp},{self.rollout_count},train,{train_trans},{train_bal},{train_score},{train_reward},{self.current_beta}\n')
 
         print(f"\n[Train] Rollout {self.rollout_count}: Score={train_score:.4f}, Beta={self.current_beta:.2f}")
 
@@ -205,15 +213,13 @@ class SIMPTrainingCallback(BaseCallback):
         bal = m.get('balance_score', 0.0)
         score = m.get('current_score', 0.0)
         rew = m.get('total_reward', 0.0)
-        sim = m.get('similarity_score', 0.0)
-        
         # Log to eval_metrics
         with open(self.eval_csv_path, 'a') as f:
-            f.write(f'{timestamp},{self.rollout_count},{type_label},{trans},{bal},{score},{rew},{sim},{self.current_beta}\n')
+            f.write(f'{timestamp},{self.rollout_count},{type_label},{trans},{bal},{score},{rew},{self.current_beta}\n')
             
         # Log to train_metrics (for combined plotting)
         with open(self.train_csv_path, 'a') as f:
-            f.write(f'{timestamp},{self.rollout_count},{type_label},{trans},{bal},{score},{rew},{sim},{self.current_beta}\n')
+            f.write(f'{timestamp},{self.rollout_count},{type_label},{trans},{bal},{score},{rew},{self.current_beta}\n')
 
         print(f"[Eval]  {type_label}: Trans={trans:.4f}, Score={score:.4f}")
 
@@ -252,31 +258,36 @@ class SIMPTrainingCallback(BaseCallback):
             df = pd.read_csv(self.train_csv_path)
             if len(df) == 0: return
             
-            # Plot Score
-            plt.figure(figsize=(10, 6))
             train_df = df[df['type'] == 'train']
             soft_df = df[df['type'] == 'eval_soft']
             hard_df = df[df['type'] == 'eval_hard']
-            
-            if len(train_df): plt.plot(train_df['rollout_count'], train_df['score'], 'b-', alpha=0.5, label='Train')
-            if len(soft_df): plt.plot(soft_df['rollout_count'], soft_df['score'], 'g-s', label='Eval (Soft)')
-            if len(hard_df): plt.plot(hard_df['rollout_count'], hard_df['score'], 'r-^', label='Eval (Hard)')
-            
-            # Plot Beta on secondary axis
-            ax1 = plt.gca()
-            ax2 = ax1.twinx()
-            if len(train_df):
-                ax2.plot(train_df['rollout_count'], train_df['beta'], 'k--', alpha=0.3, label='Beta')
-                ax2.set_ylabel('Beta')
-            
-            ax1.set_xlabel('Rollout')
-            ax1.set_ylabel('Score')
-            ax1.set_title('Score & Beta over Training')
-            ax1.legend(loc='upper left')
-            ax2.legend(loc='upper right')
-            plt.tight_layout()
-            plt.savefig(self.plot_dir / "score_beta.png")
-            plt.close()
+
+            def _plot_metric(metric: str, ylabel: str, fname: str, use_beta: bool = True):
+                plt.figure(figsize=(10, 6))
+                if len(train_df): plt.plot(train_df['rollout_count'], train_df[metric], 'b-', alpha=0.5, label='Train')
+                if len(soft_df): plt.plot(soft_df['rollout_count'], soft_df[metric], 'g-s', label='Eval (Soft)')
+                if len(hard_df): plt.plot(hard_df['rollout_count'], hard_df[metric], 'r-^', label='Eval (Hard)')
+
+                ax1 = plt.gca()
+                if use_beta and len(train_df):
+                    ax2 = ax1.twinx()
+                    ax2.plot(train_df['rollout_count'], train_df['beta'], 'k--', alpha=0.3, label='Beta')
+                    ax2.set_ylabel('Beta')
+                    ax2.legend(loc='upper right')
+
+                ax1.set_xlabel('Rollout')
+                ax1.set_ylabel(ylabel)
+                ax1.set_title(f'{ylabel} over Training')
+                ax1.legend(loc='upper left')
+                plt.tight_layout()
+                plt.savefig(self.plot_dir / fname)
+                plt.close()
+
+            # Plot multiple metrics so圖片包含 transmission / balance / reward
+            _plot_metric('score', 'Score', "score_beta.png")
+            _plot_metric('transmission', 'Transmission', "transmission_beta.png")
+            _plot_metric('balance_score', 'Balance Score', "balance_beta.png")
+            _plot_metric('reward', 'Reward', "reward_beta.png")
             
         except Exception:
             pass

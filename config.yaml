@@ -63,7 +63,7 @@ training:
     n_envs: 1
     learning_rate: 0.0003 # 0.0001 0.0003 0.001
     buffer_size: 100000
-    learning_starts: 100
+    learning_starts: 1000
     tau: 0.005
     gamma: 0.99
     train_freq: 20
