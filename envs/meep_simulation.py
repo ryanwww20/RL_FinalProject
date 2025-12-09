@@ -180,6 +180,94 @@ class WaveguideSimulation:
 
         self.geometry = geometry
 
+    def create_geometry_continuous(self, matrix=None):
+        """
+        Create waveguide geometry: 1 Input and 2 Outputs
+        with continuous material distribution based on matrix (rho) in the 2um x 2um square region.
+        
+        Args:
+            matrix: 2D array of rho values in [0, 1]
+        """
+        geometry = []
+
+        # --- 1. Input Waveguide (Left side) ---
+        input_start_x = self.design_region_x_min - self.input_coupler_length
+        input_length = self.input_coupler_length
+        input_center_x = input_start_x + input_length / 2.0
+
+        input_waveguide = mp.Block(
+            center=mp.Vector3(input_center_x, 0, 0),
+            size=mp.Vector3(input_length, self.waveguide_width, 0),
+            material=mp.Medium(index=self.waveguide_index)
+        )
+        geometry.append(input_waveguide)
+
+        # --- 2. Two Output Waveguides (Right side) ---
+        output_start_x = self.design_region_x_max
+        output_length = self.output_coupler_length
+        output_center_x = output_start_x + output_length / 2.0
+
+        # Output Waveguide 1 (Top)
+        output_waveguide_1 = mp.Block(
+            center=mp.Vector3(output_center_x, self.output_y_separation, 0),
+            size=mp.Vector3(output_length, self.waveguide_width, 0),
+            material=mp.Medium(index=self.waveguide_index)
+        )
+        geometry.append(output_waveguide_1)
+
+        # Output Waveguide 2 (Bottom)
+        output_waveguide_2 = mp.Block(
+            center=mp.Vector3(output_center_x, -self.output_y_separation, 0),
+            size=mp.Vector3(output_length, self.waveguide_width, 0),
+            material=mp.Medium(index=self.waveguide_index)
+        )
+        geometry.append(output_waveguide_2)
+        
+        # --- 3. Add continuous material distribution (Design Region) ---
+        if matrix is not None:
+            matrix = np.array(matrix)
+
+            if matrix.shape != (self.pixel_num_x, self.pixel_num_y):
+                raise ValueError(
+                    f"matrix must be {self.pixel_num_x}x{self.pixel_num_y}, got shape {matrix.shape}")
+
+            # Design region boundaries
+            square_x_min = self.design_region_x_min
+            square_y_min = self.design_region_y_min
+            dx = self.pixel_size
+            dy = self.pixel_size
+            
+            # Pre-calculate epsilon values
+            eps_silica = self.silica_index ** 2
+            eps_silicon = self.silicon_index ** 2
+
+            # Create pixel blocks
+            for i in range(self.pixel_num_x):
+                for j in range(self.pixel_num_y):
+                    # Calculate center within [-1, 1] range
+                    x_center = square_x_min + (i + 0.5) * dx
+                    y_center = square_y_min + (j + 0.5) * dy
+                    
+                    rho = matrix[i, j]
+                    # Clamp rho between 0 and 1
+                    rho = max(0.0, min(1.0, rho))
+                    
+                    # Interpolate dielectric constant (epsilon)
+                    # eps(rho) = eps_silica + rho * (eps_si - eps_silica)
+                    eps = eps_silica + rho * (eps_silicon - eps_silica)
+                    
+                    # Refractive index n = sqrt(eps)
+                    current_index = np.sqrt(eps)
+
+                    pixel = mp.Block(
+                        center=mp.Vector3(x_center, y_center, 0),
+                        size=mp.Vector3(dx, dy, 0),
+                        material=mp.Medium(index=current_index)
+                    )
+                    geometry.append(pixel)
+
+        self.geometry = geometry
+
     def plot_geometry(self, save_path=None, show_plot=True, x_range=None, y_range=None):
         """
         Plot the generated geometry (waveguides and design region) based solely on 
@@ -969,6 +1057,40 @@ class WaveguideSimulation:
         """
         # Create geometry with material matrix
         self.create_geometry(matrix=matrix)
+
+        # Create simulation and add monitors
+        self.create_simulation()
+        self.add_hzfield_monitor_state()
+        self.add_flux_monitor_input_mode()
+        self.add_flux_monitor_output_mode()
+
+        # Run simulation
+        self.run()
+
+        # Get electric field state (distribution along y-axis)
+        hzfield_state = self.get_hzfield_state()  # Returns |Hz|^2 values
+        
+        # Get input and output flux values and mode coefficients (using existing functions)
+        input_mode_flux, input_mode = self.get_flux_input_mode(band_num=1)
+        output_mode_flux_1, output_mode_flux_2, output_mode_1, output_mode_2, _ = self.get_flux_output_mode(band_num=1)
+
+        # Get field data
+        hz_data = self.get_hzfield_data()
+
+        return input_mode_flux, output_mode_flux_1, output_mode_flux_2, hzfield_state, hz_data, input_mode, output_mode_1, output_mode_2
+
+    def calculate_flux_continuous(self, matrix):
+        """
+        Same as calculate_flux but uses create_geometry_continuous.
+        
+        Args:
+            matrix: Material matrix (pixel_num_x x pixel_num_y), values in [0, 1]
+            
+        Returns:
+            Same results as calculate_flux
+        """
+        # Create geometry with material matrix (continuous)
+        self.create_geometry_continuous(matrix=matrix)
 
         # Create simulation and add monitors
         self.create_simulation()
