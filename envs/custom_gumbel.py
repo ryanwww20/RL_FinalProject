@@ -125,6 +125,12 @@ class GumbelSACPolicy(SACPolicy):
         self.gumbel_net_arch = net_arch
         super().__init__(*args, **kwargs)
 
+    def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
+        # Override to ensure we return only the action tensor, not (action, log_prob)
+        # This fixes "tuple has no attribute cpu" error during evaluation
+        actions, _ = self.actor(observation, deterministic=deterministic)
+        return actions
+
     def make_actor(self, features_extractor=None):
         # Some versions of SB3 call make_actor before features_extractor is fully built
         extractor = features_extractor or getattr(self, "features_extractor", None)
