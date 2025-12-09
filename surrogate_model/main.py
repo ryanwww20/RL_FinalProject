@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Dict, Optional
 
 import numpy as np
+from pandas.core import base
 import torch
 
 import sys
@@ -29,7 +30,7 @@ class RLSurrogateModel:
         cfg_train = surrogate_config.training
         cfg_data = surrogate_config.dataset
 
-        self.data_dir = Path(data_dir) if data_dir is not None else Path(cfg_data.output_dir)
+        self.base_dir = Path(data_dir) if data_dir is not None else Path(cfg_data.base_dir)
         self.checkpoint_dir = Path(cfg_train.ckpt_dir)
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
         self.checkpoint_num = checkpoint_num if checkpoint_num is not None else 0
@@ -53,9 +54,9 @@ class RLSurrogateModel:
 
     def _load_stats(self) -> Dict[str, tuple]:
         """Load normalization stats from training data (mean/std per target)."""
-        train_npz = self.data_dir / "train.npz"
+        train_npz = self.base_dir / "base_train.npz"
         if not train_npz.exists():
-            raise FileNotFoundError(f"train.npz not found at {train_npz}")
+            raise FileNotFoundError(f"base_train.npz not found at {train_npz}")
         train_ds = SurrogateNPZDataset(train_npz)
         return train_ds.stats
 

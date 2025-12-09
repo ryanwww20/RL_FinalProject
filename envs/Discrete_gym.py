@@ -159,11 +159,18 @@ class MinimalEnv(gym.Env):
         """
         Determine whether to use surrogate model or meep simulation.
         """
-        if self.episode < 10:
+        if self.is_eval:
+            self.is_surrogate = False
+            return
+        elif self.episode < 10:
             self.is_surrogate = False
         else:
             if self.episode % 2 == 0:
                 self.is_surrogate = True
+            else:
+                self.is_surrogate = False
+        if self.is_surrogate:
+            self.surrogate_model.finetune()
 
     def reset(self, seed=None, options=None):
         """
