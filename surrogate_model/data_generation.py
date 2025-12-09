@@ -168,20 +168,14 @@ class RLDataCollector(SurrogateDatasetBuilder):
         super().__init__()
         self.new_samples: List[Dict[str, np.ndarray]] = []
 
-    def _run_single(self, matrix, hzfield_state, mode_transmission_1, mode_transmission_2, input_mode):
-        sample = {
-            "material_matrix": matrix.astype(np.float32),
-            "hzfield_state": hzfield_state.astype(np.float32),
-            "mode_transmission_1": mode_transmission_1,
-            "mode_transmission_2": mode_transmission_2,
-            "input_mode": input_mode,
-        }
-        self.new_samples.append(sample)
-        return sample
+    def add_sample(self, sample_data: Dict[str, np.ndarray]):
+        self.new_samples.append(sample_data)
+        return sample_data
 
     def build(
         self,
         base_dir: str | Path | None = None,
+        merge_dir: str | Path | None = None,
         train_ratio: float = 0.9,
     ) -> None:
         """
@@ -195,13 +189,15 @@ class RLDataCollector(SurrogateDatasetBuilder):
             print("RLDataCollector: no new samples to merge.")
             return
 
-        base_dir = Path(base_dir) if base_dir is not None else Path(self.config.output_dir)
+        base_dir = Path(self.config.base_dir) if base_dir is not None else Path(self.config.output_dir)
+        merge_dir = Path(self.config.merge_dir) if merge_dir is not None else Path(self.config.output_dir)
         base_dir.mkdir(parents=True, exist_ok=True)
+        merge_dir.mkdir(parents=True, exist_ok=True)
 
         base_train_path = base_dir / "base_train.npz"
         base_val_path = base_dir / "base_val.npz"
-        merged_train_path = base_dir / "merged_train.npz"
-        merged_val_path = base_dir / "merged_val.npz"
+        merged_train_path = merge_dir / "merged_train.npz"
+        merged_val_path = merge_dir / "merged_val.npz"
 
         # Pack new samples to arrays
         packed_new = self._pack(self.new_samples)

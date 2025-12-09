@@ -5,6 +5,8 @@ dataset:
   val_ratio: 0.1
   seed: 42
   output_dir: "surrogate_model/data"
+  base_dir: "surrogate_model/data/base"
+  merge_dir: "surrogate_model/data/merge"
   
 model:
   input_channels: 1

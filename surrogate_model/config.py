@@ -13,7 +13,8 @@ class DatasetConfig:
     val_ratio: float
     seed: int
     output_dir: str
-
+    base_dir: str
+    merge_dir: str
 @dataclass
 class ModelConfig:
     input_channels: int

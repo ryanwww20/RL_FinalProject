@@ -7,6 +7,7 @@ from gymnasium import spaces
 import numpy as np
 from envs.meep_simulation import WaveguideSimulation
 from config import config
+from surrogate_model.main import RLSurrogateModel
 class MinimalEnv(gym.Env):
 
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
@@ -64,7 +65,9 @@ class MinimalEnv(gym.Env):
         self.pixel_size = config.simulation.pixel_size
 
         self.is_surrogate = False
-        self.surrogate_model = SurrogateModel()
+        self.surrogate_model = RLSurrogateModel()
+        self.surrogate_step_metrics = None
+        self.surrogate_train_data = None
 
     def _get_default_waveguide_layer(self):
         """
@@ -226,13 +229,34 @@ class MinimalEnv(gym.Env):
         
         self.material_matrix_idx += 1
 
-        # calculate_flux returns: input_mode_flux, output_mode_flux_1, output_mode_flux_2, hzfield_state, hz_data, input_mode, output_mode_1, output_mode_2
-        hzfield_state, hz_data= self.simulation.calculate_flux(
-            self.material_matrix)
+        if self.is_surrogate:
+            hzfield_state, output_mode_1, output_mode_2, input_mode = self.surrogate_model.predict(self.material_matrix)
+            self.surrogate_train_data = {
+                "material_matrix": self.material_matrix,
+                "hzfield_state": hzfield_state,
+                "output_mode_1": output_mode_1,
+                "output_mode_2": output_mode_2,
+                "input_mode": input_mode,
+            }
+            current_score, reward = self.surrogate_get_reward(current_layer=action, previous_layer=previous_layer)
+        else:
+            hzfield_state, hz_data= self.simulation.calculate_flux(self.material_matrix)
+            current_score, reward = self.get_reward(current_layer=action, previous_layer=previous_layer)
+            _, input_mode = self.simulation.get_flux_input_mode(band_num=1)
+            output_mode_1, output_mode_2, _, _ = self.simulation.get_output_transmission(band_num=1)
+            self.surrogate_train_data = {
+                "material_matrix": self.material_matrix,
+                "hzfield_state": hzfield_state,
+                "output_mode_1": output_mode_1,
+                "output_mode_2": output_mode_2,
+                "input_mode": input_mode,
+            }
+            self.surrogate_model.surrogate_dataset_builder.add_sample(self.surrogate_train_data)
+            current_score, reward = self.surrogate_get_reward(current_layer=action, previous_layer=previous_layer)
+
 
         # Use MODE coefficients for reward calculation (instead of raw flux)
         # Pass current layer and previous layer for similarity calculation
-        current_score, reward = self.get_reward(current_layer=action, previous_layer=previous_layer)
        
         terminated = self.material_matrix_idx >= self.max_steps  # Goal reached
         truncated = False   # Time limit exceeded
@@ -406,3 +430,56 @@ class MinimalEnv(gym.Env):
             show_plot=False,
             title_suffix=title_suffix
         )
+
+    def surrogate_get_reward(self, current_layer=None, previous_layer=None):
+        """
+        Calculate reward using surrogate model.
+        
+        Args:
+            current_layer: Current layer (1D array) for similarity calculation
+            previous_layer: Previous layer (1D array) for similarity calculation
+        """
+        # Get transmission using the method from meep_simulation
+        total_transmission = self.surrogate_step_metrics["output_mode_1"]+self.surrogate_step_metrics["output_mode_2"]
+        diff_transmission = abs(self.surrogate_step_metrics["output_mode_1"]-self.surrogate_step_metrics["output_mode_2"])
+        transmission_score = min(max((total_transmission)/self.surrogate_step_metrics["input_mode"], 0), 1)
+
+        # Calculate balance score (how evenly distributed between outputs)
+        if total_transmission > 0:
+            diff_ratio = diff_transmission / total_transmission
+        else:
+            diff_ratio = 1.0  # If no transmission, balance is worst
+        balance_score = max(1 - diff_ratio, 0)
+
+        # Calculate similarity: number of identical pixels between current and previous layer
+        if current_layer is not None and previous_layer is not None:
+            similarity = self._calculate_similarity(current_layer, previous_layer)
+            # Normalize similarity to [0, 1] by dividing by pixel_num_y
+            similarity_score = similarity / self.pixel_num_y
+        else:
+            similarity = 0.0
+            similarity_score = 0.0
+
+        # Calculate current_score: use transmission_score which is already normalized to [0,1]
+        # transmission_score = (total_transmission/input_mode) normalized to [0,1] with min/max clamping
+        current_score = transmission_score * 10 + balance_score * 10
+        reward = current_score - self.last_score if self.last_score is not None else 0
+        # Add similarity_score directly to reward (not to current_score)
+        reward += similarity_score/10
+
+        self.last_score = current_score
+
+        # Store metrics for info dict
+        self._step_metrics = {
+            "total_transmission": total_transmission,
+            "diff_transmission": diff_transmission,
+            "transmission_1": self.surrogate_step_metrics["output_mode_1"],
+            "transmission_2": self.surrogate_step_metrics["output_mode_2"],
+            "transmission_score": transmission_score,
+            "balance_score": balance_score,
+            "similarity": similarity,
+            "similarity_score": similarity_score,
+            "current_score": current_score,
+        }
+
+        return current_score, reward
