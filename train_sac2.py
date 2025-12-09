@@ -66,10 +66,13 @@ class SIMPTrainingCallback(BaseCallback):
         self.img_dir.mkdir(exist_ok=True)
         self.plot_dir.mkdir(exist_ok=True)
         
-        self.design_dir = self.save_dir / "design_images"
-        self.distribution_dir = self.save_dir / "distribution_images"
-        self.design_dir.mkdir(exist_ok=True)
-        self.distribution_dir.mkdir(exist_ok=True)
+        # Separate soft/hard outputs
+        self.design_dir_soft = self.save_dir / "design_images" / "soft"
+        self.design_dir_hard = self.save_dir / "design_images" / "hard"
+        self.distribution_dir_soft = self.save_dir / "distribution_images" / "soft"
+        self.distribution_dir_hard = self.save_dir / "distribution_images" / "hard"
+        for p in [self.design_dir_soft, self.design_dir_hard, self.distribution_dir_soft, self.distribution_dir_hard]:
+            p.mkdir(parents=True, exist_ok=True)
         
         # CSVs
         self.train_csv_path = self.save_dir / "train_metrics.csv"
@@ -82,8 +85,10 @@ class SIMPTrainingCallback(BaseCallback):
             with open(self.eval_csv_path, 'w') as f:
                 f.write('timestamp,rollout_count,type,transmission,balance_score,score,reward,beta\n')
         
-        self.design_image_paths = []
-        self.distribution_image_paths = []
+        self.design_image_paths_soft = []
+        self.design_image_paths_hard = []
+        self.distribution_image_paths_soft = []
+        self.distribution_image_paths_hard = []
 
     def _on_step(self) -> bool:
         """Called at each environment step. Updates Beta."""
@@ -145,11 +150,6 @@ class SIMPTrainingCallback(BaseCallback):
             res_soft = evaluator.evaluate(n_episodes=1, deterministic=True)
             self._log_eval_results(res_soft, timestamp, "eval_soft")
             
-            # Extract score for best model tracking
-            soft_score = 0
-            if len(res_soft) > 0:
-                soft_score = res_soft.iloc[0].get('current_score', 0.0)
-
             # --- Pass B: Hard Clip (Beta -> infinity) ---
             # Set a very high beta (e.g., 1000)
             hard_beta = 1000.0
@@ -167,34 +167,45 @@ class SIMPTrainingCallback(BaseCallback):
             else:
                 self.eval_env.set_beta(self.current_beta)
 
-            # Best Model Logic (based on Soft score or Hard score? Usually Soft during training)
-            # But ultimately we want Hard. Let's track Soft for now as it's the optimization objective.
-            if soft_score > self.best_eval_score:
-                self.best_eval_score = soft_score
+            # Best Model Logic: use Hard score as the target metric
+            hard_score = 0
+            if len(res_hard) > 0:
+                hard_score = res_hard.iloc[0].get('current_score', 0.0)
+
+            if hard_score > self.best_eval_score:
+                self.best_eval_score = hard_score
                 self.best_eval_rollout = self.rollout_count
-                print(f"[Eval]  ★ New best soft score! Saving model...")
+                print(f"[Eval]  ★ New best hard score! Saving model...")
                 if self.model_save_path:
                     best_path = self.model_save_path.replace('.zip', '_best.zip')
                     self.model.save(best_path)
                     
-                    # Save best plots (Soft)
-                    self._save_plots(self.eval_env, self.img_dir / "best_design.png", 
-                                     self.img_dir / "best_distribution.png", 
-                                     f"Best (Rollout {self.rollout_count}, Soft)")
+                    # Save best plots (Hard)
+                    self._save_plots(self.eval_env, self.img_dir / "best_design_hard.png", 
+                                     self.img_dir / "best_distribution_hard.png", 
+                                     f"Best Hard (Rollout {self.rollout_count})")
 
             # Save periodic plots (Soft)
-            design_path = self.design_dir / f"design_rollout_{self.rollout_count:04d}.png"
-            dist_path = self.distribution_dir / f"distribution_rollout_{self.rollout_count:04d}.png"
-            self.design_image_paths.append(str(design_path))
-            self.distribution_image_paths.append(str(dist_path))
-            self._save_plots(self.eval_env, design_path, dist_path, f"Rollout {self.rollout_count} (Soft)")
+            design_path_soft = self.design_dir_soft / f"design_rollout_{self.rollout_count:04d}.png"
+            dist_path_soft = self.distribution_dir_soft / f"distribution_rollout_{self.rollout_count:04d}.png"
+            self.design_image_paths_soft.append(str(design_path_soft))
+            self.distribution_image_paths_soft.append(str(dist_path_soft))
+            self._save_plots(self.eval_env, design_path_soft, dist_path_soft, f"Rollout {self.rollout_count} (Soft)")
+
+            # Save periodic plots (Hard)
+            design_path_hard = self.design_dir_hard / f"design_rollout_{self.rollout_count:04d}.png"
+            dist_path_hard = self.distribution_dir_hard / f"distribution_rollout_{self.rollout_count:04d}.png"
+            self.design_image_paths_hard.append(str(design_path_hard))
+            self.distribution_image_paths_hard.append(str(dist_path_hard))
+            # Save with hard beta already set earlier
+            self._save_plots(self.eval_env, design_path_hard, dist_path_hard, f"Rollout {self.rollout_count} (Hard)")
             
         else:
             # Save plots from training env
-            design_path = self.design_dir / f"design_rollout_{self.rollout_count:04d}.png"
-            dist_path = self.distribution_dir / f"distribution_rollout_{self.rollout_count:04d}.png"
-            self.design_image_paths.append(str(design_path))
-            self.distribution_image_paths.append(str(dist_path))
+            design_path = self.design_dir_soft / f"design_rollout_{self.rollout_count:04d}.png"
+            dist_path = self.distribution_dir_soft / f"distribution_rollout_{self.rollout_count:04d}.png"
+            self.design_image_paths_soft.append(str(design_path))
+            self.distribution_image_paths_soft.append(str(dist_path))
             
             # Use training env to save
             try:
@@ -235,11 +246,15 @@ class SIMPTrainingCallback(BaseCallback):
             print(f"Warning: Could not save plots: {e}")
 
     def _update_gifs_and_plots(self):
-        # Create GIFs
-        if self.design_image_paths:
-            self._create_gif(self.design_image_paths, str(self.img_dir / "design.gif"))
-        if self.distribution_image_paths:
-            self._create_gif(self.distribution_image_paths, str(self.img_dir / "flux.gif"))
+        # Create GIFs (soft/hard separated)
+        if self.design_image_paths_soft:
+            self._create_gif(self.design_image_paths_soft, str(self.img_dir / "design_soft.gif"))
+        if self.design_image_paths_hard:
+            self._create_gif(self.design_image_paths_hard, str(self.img_dir / "design_hard.gif"))
+        if self.distribution_image_paths_soft:
+            self._create_gif(self.distribution_image_paths_soft, str(self.img_dir / "flux_soft.gif"))
+        if self.distribution_image_paths_hard:
+            self._create_gif(self.distribution_image_paths_hard, str(self.img_dir / "flux_hard.gif"))
             
         # Plot Metrics
         self._plot_metrics()
@@ -262,11 +277,25 @@ class SIMPTrainingCallback(BaseCallback):
             soft_df = df[df['type'] == 'eval_soft']
             hard_df = df[df['type'] == 'eval_hard']
 
-            def _plot_metric(metric: str, ylabel: str, fname: str, use_beta: bool = True):
+            def _plot_metric(metric: str, ylabel: str, fname: str, use_beta: bool = True, normalize: bool = False):
                 plt.figure(figsize=(10, 6))
-                if len(train_df): plt.plot(train_df['rollout_count'], train_df[metric], 'b-', alpha=0.5, label='Train')
-                if len(soft_df): plt.plot(soft_df['rollout_count'], soft_df[metric], 'g-s', label='Eval (Soft)')
-                if len(hard_df): plt.plot(hard_df['rollout_count'], hard_df[metric], 'r-^', label='Eval (Hard)')
+                # Normalize if requested (use global max across all splits)
+                def _maybe_norm(series):
+                    if not normalize:
+                        return series
+                    max_val = max(
+                        series.max() if len(series) else 0,
+                        train_df[metric].max() if len(train_df) else 0,
+                        soft_df[metric].max() if len(soft_df) else 0,
+                        hard_df[metric].max() if len(hard_df) else 0,
+                    )
+                    if max_val > 0:
+                        return series / max_val
+                    return series
+
+                if len(train_df): plt.plot(train_df['rollout_count'], _maybe_norm(train_df[metric]), 'b-', alpha=0.5, label='Train')
+                if len(soft_df): plt.plot(soft_df['rollout_count'], _maybe_norm(soft_df[metric]), 'g-s', label='Eval (Soft)')
+                if len(hard_df): plt.plot(hard_df['rollout_count'], _maybe_norm(hard_df[metric]), 'r-^', label='Eval (Hard)')
 
                 ax1 = plt.gca()
                 if use_beta and len(train_df):
@@ -285,7 +314,8 @@ class SIMPTrainingCallback(BaseCallback):
 
             # Plot multiple metrics so圖片包含 transmission / balance / reward
             _plot_metric('score', 'Score', "score_beta.png")
-            _plot_metric('transmission', 'Transmission', "transmission_beta.png")
+            # Transmission normalized to its global max for readability
+            _plot_metric('transmission', 'Transmission (normalized)', "transmission_beta.png", normalize=True)
             _plot_metric('balance_score', 'Balance Score', "balance_beta.png")
             _plot_metric('reward', 'Reward', "reward_beta.png")
             
