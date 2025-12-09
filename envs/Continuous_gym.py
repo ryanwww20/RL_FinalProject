@@ -168,13 +168,13 @@ class MinimalEnv(gym.Env):
             self.is_surrogate = False
             return
         else:
-            if self.episode % 5 != 1 and self.episode % 5 != 2: # use surrogate model 2 out of 5 episodes
+            if self.episode % 5 != 1 # use surrogate model 3 out of 5 episodes
                 self.is_surrogate = True
             else:
                 self.is_surrogate = False
-                print("Finetuning surrogate model")
-                print(f"Episode {self.episode}")
-                self.surrogate_model.finetune()
+                # print("Finetuning surrogate model")
+                # print(f"Episode {self.episode}")
+                # self.surrogate_model.finetune()
 
     def reset(self, seed=None, options=None):
         """
@@ -450,6 +450,8 @@ class MinimalEnv(gym.Env):
         else:
             matrix = self.material_matrix
             _, hz_data= self.simulation.calculate_flux(self.material_matrix)
+        if hz_data is None:
+            return
         self.simulation.plot_design(
             matrix=matrix,
             hz_data=hz_data,
