@@ -87,7 +87,7 @@ class RLSurrogateModel:
             checkpoint_num: If provided, load checkpoint_{checkpoint_num}.pt instead.
 
         Returns:
-            Dictionary with denormalized outputs: output_mode_1, output_mode_2, input_mode.
+            Dictionary with denormalized outputs: mode_transmission_1, mode_transmission_2, input_mode.
         """
         if material_matrix.ndim != 2:
             raise ValueError(f"material_matrix must be 2D [H, W]; got shape {material_matrix.shape}")
@@ -117,20 +117,21 @@ class RLSurrogateModel:
             mean, std = self.stats[key]
             return t * std + mean
 
-        hz = denorm(pred["hzfield_state"].cpu(), "hz").squeeze(0)  # [M]
-        mode = denorm(pred["mode_transmission"].cpu(), "mode").squeeze(0)  # [2]
-        input_mode = denorm(pred["input_mode"].cpu().squeeze(-1), "input_mode").squeeze(0)  # scalar
+        hz = denorm(pred["hzfield_state"].cpu(), "hz").squeeze(0).numpy().astype(np.float32)  # [M]
+        mode_transmission = denorm(pred["mode_transmission"].cpu(), "mode").squeeze(0).numpy().astype(np.float32)  # [2]
+        input_mode = float(denorm(pred["input_mode"].cpu().squeeze(-1), "input_mode").squeeze(0).item())  # scalar
 
+        # Return strictly numeric types/arrays for downstream environments
         return {
-            "hzfield_state": hz.numpy().tolist(),
-            "output_mode_1": float(mode[0].item()),
-            "output_mode_2": float(mode[1].item()),
-            "input_mode": float(input_mode.item()),
+            "hzfield_state": hz,  # np.ndarray [M]
+            "mode_transmission_1": float(mode_transmission[0]),
+            "mode_transmission_2": float(mode_transmission[1]),
+            "input_mode": input_mode,
         }
 
     def finetune(
         self,
-        epochs: int = 10,
+        epochs: int = 5,
         batch_size: int | None = None,
         lr: float | None = None,
         weight_decay: float | None = None,
@@ -142,9 +143,9 @@ class RLSurrogateModel:
         Returns:
             Path to the saved checkpoint (checkpoint_[num].pt).
         """
-        epochs = epochs or tcfg.finetune_epochs
         # Use config defaults when args are not provided
         tcfg = surrogate_config.training
+        epochs = tcfg.finetune_epochs
         batch_size = batch_size or tcfg.batch_size
         lr = lr or tcfg.finetune_lr
         weight_decay = weight_decay or tcfg.weight_decay
@@ -165,6 +166,9 @@ class RLSurrogateModel:
         # Datasets share original stats to keep normalization consistent
         train_ds = SurrogateNPZDataset(train_path, stats=self.stats)
         val_ds = SurrogateNPZDataset(val_path, stats=self.stats)
+
+        # Log dataset sizes for visibility when finetuning
+        print(f"[Finetune] train samples: {len(train_ds)}, val samples: {len(val_ds)}")
 
         train_loader = torch.utils.data.DataLoader(
             train_ds,
@@ -268,8 +272,8 @@ def main():
     outputs = predictor.predict(material_matrix)
 
     print(
-        f"output_mode_1={outputs['output_mode_1']:.6f}, "
-        f"output_mode_2={outputs['output_mode_2']:.6f}, "
+        f"mode_transmission_1={outputs['mode_transmission_1']:.6f}, "
+        f"mode_transmission_2={outputs['mode_transmission_2']:.6f}, "
         f"input_mode={outputs['input_mode']:.6f}"
     )
     print(f"hzfield_state (denorm, list length {len(outputs['hzfield_state'])}):")

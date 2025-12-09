@@ -112,7 +112,7 @@ class SurrogateDatasetBuilder:
             "material_matrix": np.stack([s["material_matrix"] for s in samples]),
             "hzfield_state": np.stack([s["hzfield_state"] for s in samples]),
             "mode_transmission": np.stack(
-                [[s["output_mode_1"], s["output_mode_2"]] for s in samples]
+                [[s["mode_transmission_1"], s["mode_transmission_2"]] for s in samples]
             ).astype(np.float32),
             "input_mode": np.array(
                 [s["input_mode"] for s in samples], dtype=np.float32
@@ -203,8 +203,8 @@ class RLDataCollector(SurrogateDatasetBuilder):
             print("RLDataCollector: no new samples to merge.")
             return
 
-        base_dir = Path(self.config.base_dir) if base_dir is not None else Path(self.config.output_dir)
-        merge_dir = Path(self.config.merge_dir) if merge_dir is not None else Path(self.config.output_dir)
+        base_dir = Path(base_dir) if base_dir is not None else Path(self.config.base_dir)
+        merge_dir = Path(merge_dir) if merge_dir is not None else Path(self.config.merge_dir)
         base_dir.mkdir(parents=True, exist_ok=True)
         merge_dir.mkdir(parents=True, exist_ok=True)
 

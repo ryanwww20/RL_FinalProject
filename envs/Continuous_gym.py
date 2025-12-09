@@ -166,13 +166,15 @@ class MinimalEnv(gym.Env):
             return
         elif self.episode < 10:
             self.is_surrogate = False
+            return
         else:
-            if self.episode % 2 == 0:
+            if self.episode % 5 != 1 and self.episode % 5 != 2: # use surrogate model 2 out of 5 episodes
                 self.is_surrogate = True
             else:
                 self.is_surrogate = False
-        if self.is_surrogate:
-            self.surrogate_model.finetune()
+                print("Finetuning surrogate model")
+                print(f"Episode {self.episode}")
+                self.surrogate_model.finetune()
 
     def reset(self, seed=None, options=None):
         """
@@ -260,12 +262,18 @@ class MinimalEnv(gym.Env):
         self.material_matrix_idx += 1
 
         if self.is_surrogate and not self.is_eval:
-            hzfield_state, output_mode_1, output_mode_2, input_mode = self.surrogate_model.predict(self.material_matrix)
-            self.surrogate_train_data = {
+            print("Using surrogate model")
+            pred = self.surrogate_model.predict(self.material_matrix)
+            # surrogate_model.predict returns dict; normalize types for downstream use
+            hzfield_state = np.array(pred.get("hzfield_state", pred.get("hz", [])), dtype=np.float32)
+            mode_transmission_1 = float(pred.get("mode_transmission_1", pred.get("output_mode_1", 0.0)))
+            mode_transmission_2 = float(pred.get("mode_transmission_2", pred.get("output_mode_2", 0.0)))
+            input_mode = float(pred.get("input_mode", 1e-6))
+            self.surrogate_step_metrics = {
                 "material_matrix": self.material_matrix,
                 "hzfield_state": hzfield_state,
-                "output_mode_1": output_mode_1,
-                "output_mode_2": output_mode_2,
+                "mode_transmission_1": mode_transmission_1,
+                "mode_transmission_2": mode_transmission_2,
                 "input_mode": input_mode,
             }
             hz_data = None
@@ -274,12 +282,12 @@ class MinimalEnv(gym.Env):
             hzfield_state, hz_data= self.simulation.calculate_flux(self.material_matrix)
             current_score, reward = self.get_reward(current_layer=action, previous_layer=previous_layer)
             _, input_mode = self.simulation.get_flux_input_mode(band_num=1)
-            output_mode_1, output_mode_2, _, _ = self.simulation.get_output_transmission(band_num=1)
+            mode_transmission_1, mode_transmission_2, _, _ = self.simulation.get_output_transmission(band_num=1)
             self.surrogate_train_data = {
                 "material_matrix": self.material_matrix,
                 "hzfield_state": hzfield_state,
-                "output_mode_1": output_mode_1,
-                "output_mode_2": output_mode_2,
+                "mode_transmission_1": mode_transmission_1,
+                "mode_transmission_2": mode_transmission_2,
                 "input_mode": input_mode,
             }
             self.surrogate_model.RL_data_collector.add_sample(self.surrogate_train_data)
@@ -295,8 +303,8 @@ class MinimalEnv(gym.Env):
         if terminated:
             self.last_episode_metrics = {
                 'material_matrix': self.material_matrix.copy(),
-                'hz_data': hz_data.copy(),
-                'hzfield_state': hzfield_state.copy(),
+                'hz_data': hz_data.copy() if hz_data is not None else None,
+                'hzfield_state': hzfield_state.copy() if hzfield_state is not None else None,
                 'total_transmission': self._step_metrics['total_transmission'],
                 'transmission_1': self._step_metrics['transmission_1'],
                 'transmission_2': self._step_metrics['transmission_2'],
@@ -305,6 +313,8 @@ class MinimalEnv(gym.Env):
                 'similarity_score': self._step_metrics.get('similarity_score', 0.0),
                 'total_reward': self.episode_reward,  # Add total episode reward
             }
+            # Count completed episodes (only when an episode ends)
+            self.episode += 1
 
         # Get observation - return the current hzfield_state as observation
         # This gives the agent feedback about the current state
@@ -471,8 +481,8 @@ class MinimalEnv(gym.Env):
             previous_layer: Previous layer (1D array) for similarity calculation
         """
         # Get transmission using the method from meep_simulation
-        total_transmission = self.surrogate_step_metrics["output_mode_1"]+self.surrogate_step_metrics["output_mode_2"]
-        diff_transmission = abs(self.surrogate_step_metrics["output_mode_1"]-self.surrogate_step_metrics["output_mode_2"])
+        total_transmission = self.surrogate_step_metrics["mode_transmission_1"]+self.surrogate_step_metrics["mode_transmission_2"]
+        diff_transmission = abs(self.surrogate_step_metrics["mode_transmission_1"]-self.surrogate_step_metrics["mode_transmission_2"])
         transmission_score = min(max((total_transmission)/self.surrogate_step_metrics["input_mode"], 0), 1)
 
         # Calculate balance score (how evenly distributed between outputs)
@@ -504,8 +514,8 @@ class MinimalEnv(gym.Env):
         self._step_metrics = {
             "total_transmission": total_transmission,
             "diff_transmission": diff_transmission,
-            "transmission_1": self.surrogate_step_metrics["output_mode_1"],
-            "transmission_2": self.surrogate_step_metrics["output_mode_2"],
+            "transmission_1": self.surrogate_step_metrics["mode_transmission_1"],
+            "transmission_2": self.surrogate_step_metrics["mode_transmission_2"],
             "transmission_score": transmission_score,
             "balance_score": balance_score,
             "similarity": similarity,
