@@ -112,7 +112,7 @@ class SurrogateDatasetBuilder:
             "material_matrix": np.stack([s["material_matrix"] for s in samples]),
             "hzfield_state": np.stack([s["hzfield_state"] for s in samples]),
             "mode_transmission": np.stack(
-                [[s["mode_transmission_1"], s["mode_transmission_2"]] for s in samples]
+                [[s["output_mode_1"], s["output_mode_2"]] for s in samples]
             ).astype(np.float32),
             "input_mode": np.array(
                 [s["input_mode"] for s in samples], dtype=np.float32
