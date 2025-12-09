@@ -382,18 +382,16 @@ class MinimalEnv(gym.Env):
             diff_ratio = 1.0
         balance_score = max(1 - diff_ratio, 0)
         
-        # Keep transmission_score as-is (without dividing by input_mode) for logging
-        transmission_score = min(max(total_transmission, 0), 1)
         # Use same formula as get_reward() for consistency
-        # Calculate normalized transmission score for current_score (matching get_reward)
-        normalized_transmission = min(max(total_transmission / input_mode, 0), 1)
-        current_score = normalized_transmission * 10 + balance_score * 10
+        # Calculate normalized transmission score (matching get_reward)
+        transmission_score = min(max(total_transmission / input_mode, 0), 1)
+        current_score = transmission_score * 10 + balance_score * 10
         
         return {
             'material_matrix': self.material_matrix.copy(),
             'hzfield_state': hzfield_state,
             'total_transmission': total_transmission,
-            'transmission_score': normalized_transmission,  # Use normalized score for consistency
+            'transmission_score': transmission_score,  # Use normalized score for consistency
             'diff_transmission': diff_transmission,
             'transmission_1': transmission_1,
             'transmission_2': transmission_2,

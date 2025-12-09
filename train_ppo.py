@@ -47,19 +47,22 @@ class TrainingCallback(BaseCallback):
     Callback to record metrics, plot designs, save to CSV, and create GIFs.
     Follows README structure: ppo_model_log_<start_time>/ with img/, plot/, result.csv
     """
-    def __init__(self, save_dir, verbose=1, eval_env=None, model_save_path=None, eval_freq=5, rolling_window=5):
+    def __init__(self, save_dir, verbose=1, eval_env=None, model_save_path=None, eval_freq=5, 
+                 initial_rollout_count=0, rolling_window=10, best_eval_score_resume=-float('inf'), 
+                 best_eval_rollout_resume=0):
         super(TrainingCallback, self).__init__(verbose)
         self.save_dir = Path(save_dir)
         self.save_dir.mkdir(parents=True, exist_ok=True)
-        self.rollout_count = 0
+        self.rollout_count = initial_rollout_count  # Start from previous count if resuming
         self.eval_env = eval_env
         self.model_save_path = model_save_path  # Path to save best model
         self.eval_freq = eval_freq  # Run full evaluation every N rollouts
         self.rolling_window = max(1, int(rolling_window))  # Window size for moving-average plots
         
         # Best model tracking (based on evaluation score)
-        self.best_eval_score = -float('inf')
-        self.best_eval_rollout = 0
+        # Resume from previous best if resuming training
+        self.best_eval_score = best_eval_score_resume
+        self.best_eval_rollout = best_eval_rollout_resume
         
         # Create directory structure according to README
         self.img_dir = self.save_dir / "img"
@@ -86,8 +89,30 @@ class TrainingCallback(BaseCallback):
                 f.write('timestamp,rollout_count,transmission,balance_score,score,reward,similarity_score\n')
         
         # Store image paths for GIF creation
+        # If resuming, try to load existing image paths
         self.design_image_paths = []
         self.distribution_image_paths = []
+        
+        # If resuming (check if CSV exists, not just rollout_count > 0)
+        # This handles cases where CSV read failed but directory exists
+        train_csv = self.save_dir / "train_metrics.csv"
+        is_resuming = train_csv.exists() and initial_rollout_count > 0
+        
+        if is_resuming:
+            design_dir = self.save_dir / "design_images"
+            distribution_dir = self.save_dir / "distribution_images"
+            
+            if design_dir.exists():
+                existing_designs = sorted(design_dir.glob("design_rollout_*.png"))
+                self.design_image_paths = [str(p) for p in existing_designs]
+                if self.design_image_paths:
+                    print(f"Loaded {len(self.design_image_paths)} existing design images")
+            
+            if distribution_dir.exists():
+                existing_distributions = sorted(distribution_dir.glob("distribution_rollout_*.png"))
+                self.distribution_image_paths = [str(p) for p in existing_distributions]
+                if self.distribution_image_paths:
+                    print(f"Loaded {len(self.distribution_image_paths)} existing distribution images")
 
         # Time tracking
         self.rollout_start_time = time.time()
@@ -120,8 +145,8 @@ class TrainingCallback(BaseCallback):
             # Calculate average across all environments
             n_envs = len(all_metrics)
             # Use transmission_score (normalized efficiency) instead of raw total_transmission
-            train_transmission = sum(m['transmission_score'] for m in all_metrics) / n_envs
-            train_balance = sum(m['balance_score'] for m in all_metrics) / n_envs
+            train_transmission_score = sum(m['transmission_score'] for m in all_metrics) / n_envs
+            train_balance_score = sum(m['balance_score'] for m in all_metrics) / n_envs
             train_score = sum(m['current_score'] for m in all_metrics) / n_envs
             train_similarity = sum(m.get('similarity_score', 0.0) for m in all_metrics) / n_envs
             
@@ -139,6 +164,7 @@ class TrainingCallback(BaseCallback):
             train_score = 0.0
             train_reward = 0.0
             train_similarity = 0.0
+            n_envs = 1
         
         # Record training metrics to CSV
         with open(self.train_csv_path, 'a') as f:
@@ -163,10 +189,10 @@ class TrainingCallback(BaseCallback):
             if len(results_df) > 0:
                 metrics = results_df.iloc[0]
                 # Use transmission_score if available, fall back to normalized calculation
-                eval_transmission = metrics.get('transmission_score', 
+                eval_transmission_score = metrics.get('transmission_score', 
                                               metrics.get('total_mode_transmission', 0.0) / metrics.get('input_mode_flux', 1.0) 
                                               if metrics.get('input_mode_flux', 0) > 0 else 0.0)
-                eval_balance = metrics.get('balance_score', 0.0)
+                eval_balance_score = metrics.get('balance_score', 0.0)
                 eval_score = metrics.get('current_score', 0.0)
                 eval_reward = metrics.get('reward', 0.0)
                 eval_similarity_score = metrics.get('similarity_score', 0.0)
@@ -175,7 +201,7 @@ class TrainingCallback(BaseCallback):
                 eval_balance_score = 0.0
                 eval_score = 0.0
                 eval_reward = 0.0
-                eval_similarity = 0.0
+                eval_similarity_score = 0.0
             
             # Record evaluation metrics to CSV
             with open(self.eval_csv_path, 'a') as f:
@@ -429,9 +455,54 @@ def train_ppo(
     # Save starting timestamp for model saving
     start_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     
-    # Create output directory for callbacks (following README structure)
-    callback_dir = f"ppo_model_log_{start_timestamp}"
-    os.makedirs(callback_dir, exist_ok=True)
+    # Determine callback directory: use existing one if resuming, otherwise create new
+    callback_dir = None
+    initial_rollout_count = 0
+    best_eval_score_resume = -float('inf')
+    best_eval_rollout_resume = 0
+    
+    if load_model_path and os.path.exists(load_model_path):
+        # Try to find existing callback directory from model path
+        # Model path format: models/ppo_model_YYYYMMDD_HHMMSS.zip
+        model_stem = Path(load_model_path).stem
+        if 'ppo_model_' in model_stem:
+            model_timestamp = model_stem.replace('ppo_model_', '')
+            potential_callback_dir = f"ppo_model_log_{model_timestamp}"
+            if os.path.exists(potential_callback_dir):
+                callback_dir = potential_callback_dir
+                print(f"Found existing callback directory: {callback_dir}")
+                
+                # Try to read last rollout_count from CSV
+                train_csv = Path(callback_dir) / "train_metrics.csv"
+                if train_csv.exists():
+                    try:
+                        df = pd.read_csv(train_csv)
+                        if len(df) > 0:
+                            # Get max rollout_count from CSV
+                            csv_max_rollout = int(df['rollout_count'].max())
+                            
+                            # Also try to calculate from model timesteps (more accurate)
+                            # This will be set after model is loaded
+                            initial_rollout_count = csv_max_rollout
+                            print(f"CSV shows last rollout: {initial_rollout_count}")
+                            
+                            # Try to restore best eval score from CSV
+                            eval_df = df[df['type'] == 'eval']
+                            if len(eval_df) > 0:
+                                best_idx = eval_df['score'].idxmax()
+                                best_eval_score_resume = float(eval_df.loc[best_idx, 'score'])
+                                best_eval_rollout_resume = int(eval_df.loc[best_idx, 'rollout_count'])
+                                print(f"Restored best eval: score={best_eval_score_resume:.4f} at rollout {best_eval_rollout_resume}")
+                    except Exception as e:
+                        print(f"Warning: Could not read rollout count from CSV: {e}")
+                        import traceback
+                        traceback.print_exc()
+    
+    # Create new callback directory if not resuming
+    if callback_dir is None:
+        callback_dir = f"ppo_model_log_{start_timestamp}"
+        os.makedirs(callback_dir, exist_ok=True)
+        print(f"Creating new callback directory: {callback_dir}")
 
     # Create vectorized environment (parallel environments)
     # Using DummyVecEnv instead of SubprocVecEnv because Meep simulation objects
@@ -489,6 +560,20 @@ def train_ppo(
         print(f"Model has been trained for {trained_timesteps} timesteps.")
         print(f"Continuing training for {remaining_timesteps} more timesteps...")
         
+        # Calculate rollout count from timesteps (more accurate than CSV)
+        # rollout_timesteps = n_envs * n_steps = 16 * 240 = 3840
+        rollout_timesteps = n_envs * n_steps
+        calculated_rollout_count = trained_timesteps // rollout_timesteps
+        
+        # Use the maximum of CSV and calculated rollout count (more accurate)
+        if calculated_rollout_count > initial_rollout_count:
+            print(f"Calculated rollout count from timesteps: {calculated_rollout_count} "
+                  f"(CSV had {initial_rollout_count}, using calculated value)")
+            initial_rollout_count = calculated_rollout_count
+        else:
+            print(f"Using rollout count from CSV: {initial_rollout_count} "
+                  f"(calculated would be {calculated_rollout_count})")
+        
         # Update total_timesteps to remaining amount
         total_timesteps = remaining_timesteps
     else:
@@ -521,7 +606,10 @@ def train_ppo(
         verbose=1, 
         eval_env=eval_env,
         model_save_path=save_path_with_timestamp,
-        eval_freq=5  # Run full evaluation every 5 rollouts
+        eval_freq=5,  # Run full evaluation every 5 rollouts
+        initial_rollout_count=initial_rollout_count,  # Resume from previous rollout count
+        best_eval_score_resume=best_eval_score_resume,  # Resume best eval score
+        best_eval_rollout_resume=best_eval_rollout_resume  # Resume best eval rollout
     )
 
     # Train the model
