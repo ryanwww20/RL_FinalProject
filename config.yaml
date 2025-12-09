@@ -62,7 +62,8 @@ training:
     total_timesteps: 1000000
     n_envs: 1
     learning_rate: 0.0003 # 0.0001 0.0003 0.001
-    buffer_size: 256
+    buffer_size: 100000
+    batch_size: 256
     learning_starts: 100
     tau: 0.005
     gamma: 0.99
