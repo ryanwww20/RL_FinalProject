@@ -21,6 +21,24 @@ class GumbelBernoulliDistribution(Distribution):
     def log_prob(self, actions: th.Tensor) -> th.Tensor:
         return self._dist.log_prob(actions).sum(dim=1, keepdim=True)
 
+    # === Abstracts from Distribution ===
+    def proba_distribution_net(self, latent_dim: int) -> nn.Module:
+        # For API compatibility; not used because Actor supplies logits directly
+        return nn.Linear(latent_dim, self.action_dim)
+
+    def log_prob_from_params(self, action_logits: th.Tensor, actions: th.Tensor) -> th.Tensor:
+        dist = self.proba_distribution(action_logits=action_logits)
+        return dist.log_prob(actions)
+
+    def actions_from_params(self, action_logits: th.Tensor, deterministic: bool = False):
+        dist = self.proba_distribution(action_logits=action_logits)
+        actions = dist.mode() if deterministic else dist.rsample()
+        log_prob = dist.log_prob(actions)
+        return actions, log_prob
+
+    def entropy(self) -> th.Tensor:
+        return self._dist.entropy().sum(dim=1, keepdim=True)
+
     def sample(self) -> th.Tensor:
         return self._dist.sample()
 
