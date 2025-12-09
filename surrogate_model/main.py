@@ -51,7 +51,7 @@ class RLSurrogateModel:
         model.eval()
         return model
 
-    def predict(self, material_matrix: np.ndarray) -> Dict[str, float]:
+    def predict(self, material_matrix: np.ndarray) -> Dict[str, object]:
         """
         Run inference.
 
@@ -78,10 +78,12 @@ class RLSurrogateModel:
             mean, std = self.stats[key]
             return t * std + mean
 
+        hz = denorm(pred["hzfield_state"].cpu(), "hz").squeeze(0)  # [M]
         mode = denorm(pred["mode_transmission"].cpu(), "mode").squeeze(0)  # [2]
         input_mode = denorm(pred["input_mode"].cpu().squeeze(-1), "input_mode").squeeze(0)  # scalar
 
         return {
+            "hzfield_state": hz.numpy().tolist(),
             "output_mode_1": float(mode[0].item()),
             "output_mode_2": float(mode[1].item()),
             "input_mode": float(input_mode.item()),
@@ -128,6 +130,8 @@ def main():
         f"output_mode_2={outputs['output_mode_2']:.6f}, "
         f"input_mode={outputs['input_mode']:.6f}"
     )
+    print(f"hzfield_state (denorm, list length {len(outputs['hzfield_state'])}):")
+    print(outputs["hzfield_state"])
 
 
 if __name__ == "__main__":

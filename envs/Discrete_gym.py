@@ -238,6 +238,7 @@ class MinimalEnv(gym.Env):
                 "output_mode_2": output_mode_2,
                 "input_mode": input_mode,
             }
+            hz_data = None
             current_score, reward = self.surrogate_get_reward(current_layer=action, previous_layer=previous_layer)
         else:
             hzfield_state, hz_data= self.simulation.calculate_flux(self.material_matrix)
