@@ -449,6 +449,7 @@ def train_sac(
     tensorboard_log="./sac_tensorboard/",
     save_path="./sac_model",
 ):
+    print(f"DEBUG: train_sac called with total_timesteps={total_timesteps}", flush=True)
     """
     Train a SAC agent on the MinimalEnv environment.
 
@@ -688,6 +689,12 @@ if __name__ == "__main__":
     print("DEBUG: Entering main block", flush=True)
     config_override_path = os.environ.get(CONFIG_ENV_VAR)
     train_kwargs = load_training_config(config_override_path)
+    
+    print(f"DEBUG: train_kwargs content: {train_kwargs}", flush=True)
+    if 'total_timesteps' in train_kwargs:
+        print(f"DEBUG: total_timesteps from config: {train_kwargs['total_timesteps']}", flush=True)
+    else:
+        print("DEBUG: total_timesteps NOT found in config, using default", flush=True)
 
     # Train SAC agent
     model = train_sac(**train_kwargs)
