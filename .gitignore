@@ -28,3 +28,6 @@ job_log/
 job.sh
 
 Slurm_User_Guide.pdf
+
+# Ignore log files with prefix rl_log
+rl_log*
