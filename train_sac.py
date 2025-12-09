@@ -9,6 +9,8 @@ from pathlib import Path
 from datetime import datetime
 import sys
 
+print(f"DEBUG: Loading train_sac.py...", flush=True)
+
 import yaml
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -657,7 +659,7 @@ def load_training_config(config_path=None):
         dict: Filtered kwargs to pass into train_sac.
     """
     path = Path(config_path) if config_path else DEFAULT_CONFIG_PATH
-    print(f"[config] Loading config from: {path.absolute()}")
+    print(f"[config] Loading config from: {path.absolute()}", flush=True)
     
     if not path.exists():
         print(
@@ -683,6 +685,7 @@ def load_training_config(config_path=None):
 
 
 if __name__ == "__main__":
+    print("DEBUG: Entering main block", flush=True)
     config_override_path = os.environ.get(CONFIG_ENV_VAR)
     train_kwargs = load_training_config(config_override_path)
 
