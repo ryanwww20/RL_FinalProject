@@ -4,7 +4,7 @@ import torch.nn as nn
 from torch.distributions import RelaxedBernoulli
 from stable_baselines3.common.distributions import Distribution
 from stable_baselines3.sac.policies import SACPolicy, Actor
-from stable_baselines3.common.torch_layers import create_mlp
+from stable_baselines3.common.torch_layers import create_mlp, MlpExtractor
 
 
 class GumbelBernoulliDistribution(Distribution):
@@ -77,6 +77,15 @@ class GumbelActor(Actor):
             **kwargs,
         )
 
+        # SB3 的 Actor 通常會在 __init__ 建立 mlp_extractor
+        # 若基類版本不同未設置，這裡補一個預設的 MlpExtractor
+        if not hasattr(self, "mlp_extractor"):
+            self.mlp_extractor = MlpExtractor(
+                features_dim=features_dim,
+                net_arch=list(net_arch),
+                activation_fn=nn.ReLU,
+            )
+
         act_dim = self.action_space.shape[0]
         self.action_dist = GumbelBernoulliDistribution(act_dim, temperature)
         # Replace action_net to output logits only (no std head)
@@ -128,4 +137,5 @@ class GumbelSACPolicy(SACPolicy):
             features_dim,
             temperature=self.gumbel_temperature,
             net_arch=self.gumbel_net_arch,
+            use_sde=False,
         )
