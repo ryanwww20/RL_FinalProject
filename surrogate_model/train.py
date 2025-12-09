@@ -53,6 +53,8 @@ class TrainArgs:
     hz_weight: float
     mode_weight: float
     input_weight: float
+    early_stop_patience: int
+    early_stop_min_delta: float
 
 
 class SurrogateNPZDataset(Dataset):
@@ -297,6 +299,8 @@ class SurrogateTrainer:
         ckpt_path = Path(self.args.ckpt_dir) / "best.pt"
         start_epoch = 0
         best_val = float("inf")
+        epochs_no_improve = 0
+        best_epoch = 0
 
         if self.args.checkpoint:
             ckpt = self.load_checkpoint(
@@ -307,6 +311,8 @@ class SurrogateTrainer:
             )
             start_epoch = ckpt.get("epoch", 0)
             best_val = ckpt.get("best_val", float("inf"))
+            epochs_no_improve = 0
+            best_epoch = start_epoch
 
         run_log_dir = self.make_unique_run_dir(self.args.log_dir)
         writer = SummaryWriter(log_dir=str(run_log_dir))
@@ -337,10 +343,24 @@ class SurrogateTrainer:
                 f"train_total={train_metrics['total']:.4f} val_total={val_metrics['total']:.4f}"
             )
 
-            if val_metrics["total"] < best_val:
+            improved = val_metrics["total"] + self.args.early_stop_min_delta < best_val
+            if improved:
                 best_val = val_metrics["total"]
+                best_epoch = epoch + 1
                 self.save_checkpoint(self.model, self.opt, epoch + 1, best_val, ckpt_path)
                 print(f"Saved best checkpoint to {ckpt_path}")
+                epochs_no_improve = 0
+            else:
+                epochs_no_improve += 1
+                if (
+                    self.args.early_stop_patience > 0
+                    and epochs_no_improve >= self.args.early_stop_patience
+                ):
+                    print(
+                        f"Early stopping at epoch {epoch+1} "
+                        f"(no val improvement for {epochs_no_improve} epochs; best epoch {best_epoch})"
+                    )
+                    break
 
         if test_loader is not None:
             ckpt = torch.load(ckpt_path, map_location=self.device) if ckpt_path.exists() else None
@@ -372,6 +392,18 @@ class SurrogateTrainer:
         parser.add_argument("--hz-weight", type=float, default=tcfg.hz_weight, help="Loss weight for hzfield_state")
         parser.add_argument("--mode-weight", type=float, default=tcfg.mode_weight, help="Loss weight for mode_transmission")
         parser.add_argument("--input-weight", type=float, default=tcfg.input_weight, help="Loss weight for input_mode")
+        parser.add_argument(
+            "--early-stop-patience",
+            type=int,
+            default=tcfg.early_stop_patience,
+            help="Stop training after this many epochs without val loss improvement (0 disables).",
+        )
+        parser.add_argument(
+            "--early-stop-min-delta",
+            type=float,
+            default=tcfg.early_stop_min_delta,
+            help="Minimum decrease in val loss to count as improvement.",
+        )
 
         args = parser.parse_args()
         return TrainArgs(
@@ -389,6 +421,8 @@ class SurrogateTrainer:
             hz_weight=args.hz_weight,
             mode_weight=args.mode_weight,
             input_weight=args.input_weight,
+            early_stop_patience=args.early_stop_patience,
+            early_stop_min_delta=args.early_stop_min_delta,
         )
 
 

@@ -26,3 +26,5 @@ training:
   hz_weight: 1.0
   mode_weight: 1.0
   input_weight: 1.0
+  early_stop_patience: 10
+  early_stop_min_delta: 0.2

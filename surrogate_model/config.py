@@ -35,7 +35,8 @@ class TrainingConfig:
     hz_weight: float
     mode_weight: float
     input_weight: float
-
+    early_stop_patience: int
+    early_stop_min_delta: float
 @dataclass
 class Config:
     dataset: DatasetConfig
