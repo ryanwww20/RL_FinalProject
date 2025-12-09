@@ -92,10 +92,13 @@ class TrainingCallback(BaseCallback):
     
     def _on_step(self) -> bool:
         """Called at each environment step."""
+        if self.num_timesteps % 20 == 0:
+            print(f"DEBUG: Callback _on_step at timestep {self.num_timesteps}", flush=True)
         return True
     
     def _on_rollout_end(self) -> None:
         """Called when rollout collection ends."""
+        print(f"DEBUG: Callback _on_rollout_end start (rollout_count={self.rollout_count})", flush=True)
         self.rollout_count += 1
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
@@ -271,6 +274,7 @@ class TrainingCallback(BaseCallback):
         
         # Update GIFs and plots after each rollout
         self._update_gifs_and_plots()
+        print(f"DEBUG: Callback _on_rollout_end finished", flush=True)
 
     def _update_gifs_and_plots(self):
         """Update GIFs and metric plots with current data."""
