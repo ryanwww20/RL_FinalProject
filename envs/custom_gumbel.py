@@ -68,11 +68,15 @@ class GumbelSACPolicy(SACPolicy):
         super().__init__(*args, **kwargs)
 
     def make_actor(self, features_extractor=None):
+        # 有些版本的 SB3 在 _build 之前尚未設置 features_dim，保險起見取用 extractor 的 features_dim
+        extractor = features_extractor or self.features_extractor
+        features_dim = getattr(self, "features_dim", None) or getattr(extractor, "features_dim")
+
         return GumbelActor(
             self.observation_space,
             self.action_space,
-            features_extractor or self.features_extractor,
-            self.features_dim,
+            extractor,
+            features_dim,
             temperature=self.gumbel_temperature,
             net_arch=self.gumbel_net_arch,
             use_sde=False,
