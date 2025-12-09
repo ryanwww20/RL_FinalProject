@@ -63,6 +63,9 @@ class GumbelActor(Actor):
         net_arch=(512, 512),
         **kwargs,
     ):
+        # 兼容不同版本 SB3：若上層以 feature_dim 傳入，轉為 features_dim
+        if "feature_dim" in kwargs and "features_dim" not in kwargs:
+            kwargs["features_dim"] = kwargs.pop("feature_dim")
         # Call base Actor to init common parts; then override action_net/action_dist
         super().__init__(
             observation_space=observation_space,
