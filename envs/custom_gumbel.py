@@ -71,9 +71,14 @@ class GumbelSACPolicy(SACPolicy):
         # Some versions of SB3 call make_actor before features_extractor is fully built
         extractor = features_extractor or getattr(self, "features_extractor", None)
         if extractor is None:
-            # Explicitly construct features_extractor
-            extractor = self._build_features_extractor()
-        features_dim = getattr(self, "features_dim", None) or getattr(extractor, "features_dim")
+            # Build a fresh features_extractor when none is available
+            extractor = self.features_extractor_class(
+                self.observation_space, **self.features_extractor_kwargs
+            )
+
+        features_dim = getattr(self, "features_dim", None) or getattr(extractor, "features_dim", None)
+        if features_dim is None:
+            raise AttributeError("features_dim is not set on features_extractor")
 
         return GumbelActor(
             self.observation_space,
