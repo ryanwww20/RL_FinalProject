@@ -38,6 +38,7 @@ TRAIN_PPO_KWARGS = {
     "max_grad_norm",
     "tensorboard_log",
     "save_path",
+    "load_model_path",  # Path to existing model to resume training
 }
 
 
@@ -404,6 +405,7 @@ def train_ppo(
     max_grad_norm=0.5,
     tensorboard_log="./ppo_tensorboard/",
     save_path="./ppo_model",
+    load_model_path=None,  # Path to existing model to resume training
 ):
     """
     Train a PPO agent on the MinimalEnv environment.
@@ -469,25 +471,49 @@ def train_ppo(
         ),
     )
 
-    # Create PPO model
-    print("Creating PPO model...")
-    model = PPO(
-        "MlpPolicy",
-        env,
-        policy_kwargs=policy_kwargs,
-        learning_rate=learning_rate,
-        n_steps=n_steps,
-        batch_size=batch_size,
-        n_epochs=n_epochs,
-        gamma=gamma,
-        gae_lambda=gae_lambda,
-        clip_range=clip_range,
-        ent_coef=ent_coef,
-        vf_coef=vf_coef,
-        max_grad_norm=max_grad_norm,
-        tensorboard_log=tensorboard_log,
-        verbose=1
-    )
+    # Load existing model or create new one
+    if load_model_path and os.path.exists(load_model_path):
+        print(f"Loading existing model from {load_model_path}...")
+        model = PPO.load(load_model_path, env=env)
+        
+        # Get the number of timesteps already trained
+        trained_timesteps = model.num_timesteps
+        remaining_timesteps = total_timesteps - trained_timesteps
+        
+        if remaining_timesteps <= 0:
+            print(f"Model has already been trained for {trained_timesteps} timesteps, "
+                  f"which exceeds the target {total_timesteps} timesteps.")
+            print("Returning loaded model without additional training.")
+            return model
+        
+        print(f"Model has been trained for {trained_timesteps} timesteps.")
+        print(f"Continuing training for {remaining_timesteps} more timesteps...")
+        
+        # Update total_timesteps to remaining amount
+        total_timesteps = remaining_timesteps
+    else:
+        if load_model_path:
+            print(f"Warning: Model path {load_model_path} not found. Creating new model...")
+        
+        # Create PPO model
+        print("Creating new PPO model...")
+        model = PPO(
+            "MlpPolicy",
+            env,
+            policy_kwargs=policy_kwargs,
+            learning_rate=learning_rate,
+            n_steps=n_steps,
+            batch_size=batch_size,
+            n_epochs=n_epochs,
+            gamma=gamma,
+            gae_lambda=gae_lambda,
+            clip_range=clip_range,
+            ent_coef=ent_coef,
+            vf_coef=vf_coef,
+            max_grad_norm=max_grad_norm,
+            tensorboard_log=tensorboard_log,
+            verbose=1
+        )
 
     # Create callback with model save path for best model tracking
     callback = TrainingCallback(
@@ -514,8 +540,17 @@ def train_ppo(
         print(f"Error during training: {e}")
 
     # Save the final model (even if interrupted)
-    model.save(save_path_with_timestamp)
-    print(f"Model saved to {save_path_with_timestamp}")
+    # If resuming from a checkpoint, save to the same path or new timestamp
+    if load_model_path and os.path.exists(load_model_path):
+        # Option 1: Overwrite the loaded model
+        model.save(load_model_path)
+        print(f"Model saved to {load_model_path} (updated checkpoint)")
+        # Option 2: Also save with new timestamp
+        model.save(save_path_with_timestamp)
+        print(f"Model also saved to {save_path_with_timestamp}")
+    else:
+        model.save(save_path_with_timestamp)
+        print(f"Model saved to {save_path_with_timestamp}")
     
     # Print best model info
     if callback.best_eval_rollout > 0:
