@@ -15,7 +15,8 @@ class GumbelBernoulliDistribution(Distribution):
         self._dist = None
 
     def proba_distribution(self, action_logits: th.Tensor):
-        self._dist = RelaxedBernoulli(self.temperature, logits=action_logits)
+        temperature = th.as_tensor(self.temperature, device=action_logits.device, dtype=action_logits.dtype)
+        self._dist = RelaxedBernoulli(temperature, logits=action_logits)
         return self
 
     def log_prob(self, actions: th.Tensor) -> th.Tensor:
