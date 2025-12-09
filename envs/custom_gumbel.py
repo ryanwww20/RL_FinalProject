@@ -35,10 +35,35 @@ class GumbelActor(Actor):
     """
     Actor outputs logits, then Gumbel-Sigmoid sampling (0~1 continuous).
     """
-    def __init__(self, *args, temperature: float = 0.5, net_arch=(512, 512), **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        observation_space,
+        action_space,
+        features_extractor,
+        features_dim,
+        temperature: float = 0.5,
+        net_arch=(512, 512),
+        **kwargs,
+    ):
+        # Call base Actor to init common parts; then override action_net/action_dist
+        super().__init__(
+            observation_space=observation_space,
+            action_space=action_space,
+            features_extractor=features_extractor,
+            features_dim=features_dim,
+            net_arch=list(net_arch),
+            activation_fn=nn.ReLU,
+            use_sde=False,
+            log_std_init=-3.0,
+            full_std=True,
+            use_expln=False,
+            squash_output=False,
+            **kwargs,
+        )
+
         act_dim = self.action_space.shape[0]
         self.action_dist = GumbelBernoulliDistribution(act_dim, temperature)
+        # Replace action_net to output logits only (no std head)
         self.action_net = nn.Sequential(
             *create_mlp(self.features_dim, act_dim, net_arch, nn.ReLU)
         )
