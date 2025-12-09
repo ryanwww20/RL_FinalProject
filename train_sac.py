@@ -483,7 +483,7 @@ def train_sac(
                        vec_env_cls=vec_env_cls)
 
     # Create evaluation environment
-    eval_env = MinimalEnv(render_mode=None)
+    eval_env = MinimalEnv(render_mode=None, is_eval=True)
     
     # Define model save path
     save_path_with_timestamp = f"models/sac_model_{start_timestamp}.zip"

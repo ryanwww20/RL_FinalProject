@@ -213,7 +213,7 @@ def main():
         
     # Initialize environment
     # Note: MinimalEnv writes logs to ppo_model_logs by default. 
-    env = MinimalEnv(render_mode=None)
+    env = MinimalEnv(render_mode=None, is_eval=True)
     
     print(f"Loading {args.algo.upper()} model from {args.model_path}...")
     try:

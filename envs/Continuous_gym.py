@@ -11,12 +11,13 @@ class MinimalEnv(gym.Env):
 
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
 
-    def __init__(self, render_mode=None):
+    def __init__(self, render_mode=None, is_eval=False):
         """
         Initialize the environment.
 
         Args:
             render_mode: "human" for GUI, "rgb_array" for image, None for no rendering
+            is_eval: True when running in evaluation/inference mode
         """
         super().__init__()
 
@@ -64,6 +65,8 @@ class MinimalEnv(gym.Env):
         self.design_region_y_min = config.simulation.design_region_y_min
         self.design_region_y_max = config.simulation.design_region_y_max
         self.pixel_size = config.simulation.pixel_size
+        # Flag to let downstream code know whether this env is used for evaluation
+        self.is_eval = is_eval
 
     def _get_default_waveguide_layer(self):
         """
@@ -188,7 +191,7 @@ class MinimalEnv(gym.Env):
         previous_layer = self._get_previous_layers_state()  # 20 values (previous layer)
         observation = np.append(observation, previous_layer)
         
-        info = {}
+        info = {"is_eval": self.is_eval}
 
         return observation, info
 
@@ -279,7 +282,8 @@ class MinimalEnv(gym.Env):
             observation = np.zeros(self.obs_size, dtype=np.float32)
 
         # Info dictionary with custom metrics
-        info = self._step_metrics if hasattr(self, '_step_metrics') else {}
+        info = self._step_metrics.copy() if hasattr(self, '_step_metrics') else {}
+        info["is_eval"] = self.is_eval
 
         return observation, reward, terminated, truncated, info
 

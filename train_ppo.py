@@ -448,7 +448,7 @@ def train_ppo(
                        vec_env_cls=SubprocVecEnv)
 
     # Create evaluation environment
-    eval_env = MinimalEnv(render_mode=None)
+    eval_env = MinimalEnv(render_mode=None, is_eval=True)
     
     # Define model save path
     save_path_with_timestamp = f"models/ppo_model_{start_timestamp}.zip"

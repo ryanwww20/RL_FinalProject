@@ -12,12 +12,13 @@ class MinimalEnv(gym.Env):
 
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
 
-    def __init__(self, render_mode=None):
+    def __init__(self, render_mode=None, is_eval=False):
         """
         Initialize the environment.
 
         Args:
             render_mode: "human" for GUI, "rgb_array" for image, None for no rendering
+            is_eval: True when running in evaluation/inference mode
         """
         super().__init__()
 
@@ -65,9 +66,12 @@ class MinimalEnv(gym.Env):
         self.pixel_size = config.simulation.pixel_size
 
         self.is_surrogate = False
+        self.episode = 0
         self.surrogate_model = RLSurrogateModel()
         self.surrogate_step_metrics = None
         self.surrogate_train_data = None
+        # Flag to let downstream code know whether this env is used for evaluation
+        self.is_eval = is_eval
 
     def _get_default_waveguide_layer(self):
         """
@@ -150,6 +154,16 @@ class MinimalEnv(gym.Env):
         # Count pixels where current_layer == previous_layer
         similarity = np.sum(current_layer == previous_layer)
         return float(similarity)
+    
+    def _is_surrogate_mode(self):
+        """
+        Determine whether to use surrogate model or meep simulation.
+        """
+        if self.episode < 10:
+            self.is_surrogate = False
+        else:
+            if self.episode % 2 == 0:
+                self.is_surrogate = True
 
     def reset(self, seed=None, options=None):
         """
@@ -191,7 +205,9 @@ class MinimalEnv(gym.Env):
         previous_layer = self._get_previous_layers_state()  # 20 values (previous layer)
         observation = np.append(observation, previous_layer)
         
-        info = {}
+        info = {"is_eval": self.is_eval}
+
+        self._is_surrogate_mode() # Determine whether to use surrogate model or meep simulation.
 
         return observation, info
 
@@ -229,7 +245,7 @@ class MinimalEnv(gym.Env):
         
         self.material_matrix_idx += 1
 
-        if self.is_surrogate:
+        if self.is_surrogate and not self.is_eval:
             hzfield_state, output_mode_1, output_mode_2, input_mode = self.surrogate_model.predict(self.material_matrix)
             self.surrogate_train_data = {
                 "material_matrix": self.material_matrix,
@@ -275,6 +291,7 @@ class MinimalEnv(gym.Env):
                 'current_score': self._step_metrics['current_score'],
                 'similarity_score': self._step_metrics.get('similarity_score', 0.0),
             }
+            self.episode += 1
 
         # Get observation - return the current hzfield_state as observation
         # This gives the agent feedback about the current state
@@ -296,7 +313,8 @@ class MinimalEnv(gym.Env):
             observation = np.zeros(self.obs_size, dtype=np.float32)
 
         # Info dictionary with custom metrics
-        info = self._step_metrics if hasattr(self, '_step_metrics') else {}
+        info = self._step_metrics.copy() if hasattr(self, '_step_metrics') else {}
+        info["is_eval"] = self.is_eval
 
         return observation, reward, terminated, truncated, info
 
