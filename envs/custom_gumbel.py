@@ -56,7 +56,6 @@ class GumbelActor(Actor):
             log_std_init=-3.0,
             full_std=True,
             use_expln=False,
-            squash_output=False,
             **kwargs,
         )
 
