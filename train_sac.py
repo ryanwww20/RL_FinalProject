@@ -9,7 +9,7 @@ from pathlib import Path
 from datetime import datetime
 import sys
 
-print(f"DEBUG: Loading train_sac.py...", flush=True)
+    # print(f"DEBUG: Loading train_sac.py...", flush=True)
 
 import yaml
 import pandas as pd
@@ -92,13 +92,13 @@ class TrainingCallback(BaseCallback):
     
     def _on_step(self) -> bool:
         """Called at each environment step."""
-        if self.num_timesteps % 20 == 0:
-            print(f"DEBUG: Callback _on_step at timestep {self.num_timesteps}", flush=True)
+        # if self.num_timesteps % 20 == 0:
+        #     print(f"DEBUG: Callback _on_step at timestep {self.num_timesteps}", flush=True)
         return True
     
     def _on_rollout_end(self) -> None:
         """Called when rollout collection ends."""
-        print(f"DEBUG: Callback _on_rollout_end start (rollout_count={self.rollout_count})", flush=True)
+        # print(f"DEBUG: Callback _on_rollout_end start (rollout_count={self.rollout_count})", flush=True)
         self.rollout_count += 1
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
@@ -274,7 +274,7 @@ class TrainingCallback(BaseCallback):
         
         # Update GIFs and plots after each rollout
         self._update_gifs_and_plots()
-        print(f"DEBUG: Callback _on_rollout_end finished", flush=True)
+        # print(f"DEBUG: Callback _on_rollout_end finished", flush=True)
 
     def _update_gifs_and_plots(self):
         """Update GIFs and metric plots with current data."""
@@ -453,7 +453,7 @@ def train_sac(
     tensorboard_log="./sac_tensorboard/",
     save_path="./sac_model",
 ):
-    print(f"DEBUG: train_sac called with total_timesteps={total_timesteps}", flush=True)
+    # print(f"DEBUG: train_sac called with total_timesteps={total_timesteps}", flush=True)
     """
     Train a SAC agent on the MinimalEnv environment.
 
@@ -664,7 +664,7 @@ def load_training_config(config_path=None):
         dict: Filtered kwargs to pass into train_sac.
     """
     path = Path(config_path) if config_path else DEFAULT_CONFIG_PATH
-    print(f"[config] Loading config from: {path.absolute()}", flush=True)
+    # print(f"[config] Loading config from: {path.absolute()}", flush=True)
     
     if not path.exists():
         print(
@@ -675,7 +675,7 @@ def load_training_config(config_path=None):
         data = yaml.safe_load(f) or {}
 
     # Print raw config for debugging
-    print(f"[config] Raw YAML content (training section): {data.get('training', {})}")
+    # print(f"[config] Raw YAML content (training section): {data.get('training', {})}")
 
     training_cfg = data.get("training", {}).get("sac", {}) or {}
     filtered_cfg = {k: v for k, v in training_cfg.items()
@@ -685,20 +685,20 @@ def load_training_config(config_path=None):
     if unknown_keys:
         print(f"[config] Ignoring unsupported train_sac keys: {unknown_keys}")
 
-    print(f"[config] Parsed train_kwargs: {filtered_cfg}")
+    # print(f"[config] Parsed train_kwargs: {filtered_cfg}")
     return filtered_cfg
 
 
 if __name__ == "__main__":
-    print("DEBUG: Entering main block", flush=True)
+    # print("DEBUG: Entering main block", flush=True)
     config_override_path = os.environ.get(CONFIG_ENV_VAR)
     train_kwargs = load_training_config(config_override_path)
     
-    print(f"DEBUG: train_kwargs content: {train_kwargs}", flush=True)
-    if 'total_timesteps' in train_kwargs:
-        print(f"DEBUG: total_timesteps from config: {train_kwargs['total_timesteps']}", flush=True)
-    else:
-        print("DEBUG: total_timesteps NOT found in config, using default", flush=True)
+    # print(f"DEBUG: train_kwargs content: {train_kwargs}", flush=True)
+    # if 'total_timesteps' in train_kwargs:
+    #     print(f"DEBUG: total_timesteps from config: {train_kwargs['total_timesteps']}", flush=True)
+    # else:
+    #     print("DEBUG: total_timesteps NOT found in config, using default", flush=True)
 
     # Train SAC agent
     model = train_sac(**train_kwargs)
