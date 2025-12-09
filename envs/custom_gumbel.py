@@ -84,17 +84,21 @@ class GumbelActor(Actor):
         # 若基類版本不同未設置，這裡補一個預設的 MlpExtractor
         if not hasattr(self, "mlp_extractor"):
             self.mlp_extractor = MlpExtractor(
-                features_dim=features_dim,
+                feature_dim=features_dim,
                 net_arch=list(net_arch),
                 activation_fn=nn.ReLU,
             )
 
         act_dim = self.action_space.shape[0]
         self.action_dist = GumbelBernoulliDistribution(act_dim, temperature)
+        
+        # Calculate latent_dim_pi based on net_arch
+        # MlpExtractor outputs vectors of size net_arch[-1]
+        latent_dim_pi = list(net_arch)[-1] if len(net_arch) > 0 else features_dim
+        
         # Replace action_net to output logits only (no std head)
-        self.action_net = nn.Sequential(
-            *create_mlp(self.features_dim, act_dim, net_arch, nn.ReLU)
-        )
+        # Input is latent_pi from mlp_extractor
+        self.action_net = nn.Linear(latent_dim_pi, act_dim)
 
     def get_action_dist_params(self, obs: th.Tensor):
         features = self.extract_features(obs, self.features_extractor)
