@@ -47,7 +47,9 @@ class ModelEvaluator:
         episode_metrics = []
         
         for i in range(n_episodes):
-            obs, info = self.env.reset()
+            # Use different seed for each episode to ensure diversity
+            # Start from seed=0 and increment for each episode
+            obs, info = self.env.reset(seed=i)
             done = False
             truncated = False
             total_reward = 0
