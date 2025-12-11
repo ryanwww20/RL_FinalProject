@@ -195,27 +195,27 @@ class TrainingCallback(BaseCallback):
                                               if metrics.get('input_mode_flux', 0) > 0 else 0.0)
                 eval_balance_score = metrics.get('balance_score', 0.0)
                 eval_score = metrics.get('current_score', 0.0)
-                eval_reward = metrics.get('reward', 0.0)
+                eval_total_reward = metrics.get('total_reward', 0.0)
                 eval_similarity_score = metrics.get('similarity_score', 0.0)
             else:
                 eval_transmission_score = 0.0
                 eval_balance_score = 0.0
                 eval_score = 0.0
-                eval_reward = 0.0
+                eval_total_reward = 0.0
                 eval_similarity_score = 0.0
             
             # Record evaluation metrics to CSV
             with open(self.eval_csv_path, 'a') as f:
-                f.write(f'{timestamp},{self.rollout_count},{eval_transmission_score},{eval_balance_score},{eval_score},{eval_reward},{eval_similarity_score}\n')
+                f.write(f'{timestamp},{self.rollout_count},{eval_transmission_score},{eval_balance_score},{eval_score},{eval_total_reward},{eval_similarity_score}\n')
             
             # Also add to train_csv with 'eval' type for combined plotting
             with open(self.train_csv_path, 'a') as f:
-                f.write(f'{timestamp},{self.rollout_count},eval,{eval_transmission_score},{eval_balance_score},{eval_score},{eval_reward},{eval_similarity_score}\n')
+                f.write(f'{timestamp},{self.rollout_count},eval,{eval_transmission_score},{eval_balance_score},{eval_score},{eval_total_reward},{eval_similarity_score}\n')
             
             # Print evaluation metrics
             print(f"[Eval]  Rollout {self.rollout_count} (deterministic): "
                   f"Trans={eval_transmission_score:.4f}, Bal={eval_balance_score:.4f}, "
-                  f"Score={eval_score:.4f}, Reward={eval_reward:.4f}")
+                  f"Score={eval_score:.4f}, Reward={eval_total_reward:.4f}")
             
             # Check if this is the best evaluation score
             if eval_score > self.best_eval_score:
@@ -326,10 +326,6 @@ class TrainingCallback(BaseCallback):
         #     shutil.rmtree(self.distribution_dir)
     
     def _plot_metrics(self, verbose=True):
-        plt.style.use("seaborn-v0_8")
-
-        rcParams['figure.figsize'] = (10, 5)
-        rcParams['font.size'] = 13
         """Plot transmission, balance_score, and score from CSV (both train and eval)."""
         if not self.train_csv_path.exists():
             if verbose:
@@ -350,39 +346,40 @@ class TrainingCallback(BaseCallback):
             eval_df = df[df['type'] == 'eval']
             
             def plot_metric(metric, title, ylabel, filename):
-                plt.figure(figsize=(12, 6))
-                plotted = False
-                
-                if len(train_df) > 0:
-                    t = train_df.sort_values('rollout_count')
-                    x = t['rollout_count']
-                    y = t[metric]
-                    plt.plot(x, y, 'b-o', linewidth=1.5, markersize=3, alpha=0.35, label='Train (raw)')
-                    y_ma = y.rolling(window=self.rolling_window, min_periods=1).mean()
-                    plt.plot(x, y_ma, 'b-', linewidth=2.2, label=f'Train MA (w={self.rolling_window})')
-                    plotted = True
-                
-                if len(eval_df) > 0:
-                    e = eval_df.sort_values('rollout_count')
-                    x = e['rollout_count']
-                    y = e[metric]
-                    plt.plot(x, y, 'r-s', linewidth=1.5, markersize=4, alpha=0.35, label='Eval (raw)')
-                    y_ma = y.rolling(window=self.rolling_window, min_periods=1).mean()
-                    plt.plot(x, y_ma, 'r-', linewidth=2.2, label=f'Eval MA (w={self.rolling_window})')
-                    plotted = True
-                
-                if not plotted:
+                with plt.style.context("seaborn-v0_8"), plt.rc_context({"figure.figsize": (12, 6), "font.size": 13}):
+                    plt.figure()
+                    plotted = False
+                    
+                    if len(train_df) > 0:
+                        t = train_df.sort_values('rollout_count')
+                        x = t['rollout_count']
+                        y = t[metric]
+                        plt.plot(x, y, 'b-o', linewidth=1.5, markersize=3, alpha=0.35, label='Train (raw)')
+                        y_ma = y.rolling(window=self.rolling_window, min_periods=1).mean()
+                        plt.plot(x, y_ma, 'b-', linewidth=2.2, label=f'Train MA (w={self.rolling_window})')
+                        plotted = True
+                    
+                    if len(eval_df) > 0:
+                        e = eval_df.sort_values('rollout_count')
+                        x = e['rollout_count']
+                        y = e[metric]
+                        plt.plot(x, y, 'r-s', linewidth=1.5, markersize=4, alpha=0.35, label='Eval (raw)')
+                        y_ma = y.rolling(window=self.rolling_window, min_periods=1).mean()
+                        plt.plot(x, y_ma, 'r-', linewidth=2.2, label=f'Eval MA (w={self.rolling_window})')
+                        plotted = True
+                    
+                    if not plotted:
+                        plt.close()
+                        return
+                    
+                    plt.xlabel('Rollout Count')
+                    plt.ylabel(ylabel)
+                    plt.title(title)
+                    plt.legend()
+                    plt.grid(True, alpha=0.3)
+                    plt.tight_layout()
+                    plt.savefig(self.plot_dir / filename, dpi=150, bbox_inches='tight')
                     plt.close()
-                    return
-                
-                plt.xlabel('Rollout Count')
-                plt.ylabel(ylabel)
-                plt.title(title)
-                plt.legend()
-                plt.grid(True, alpha=0.3)
-                plt.tight_layout()
-                plt.savefig(self.plot_dir / filename, dpi=150, bbox_inches='tight')
-                plt.close()
             
             plot_metric('transmission_score', 'Transmission Score Over Training', 'Transmission Score', 'transmission.png')
             plot_metric('balance_score', 'Balance Score Over Training', 'Balance Score', 'balance.png')
