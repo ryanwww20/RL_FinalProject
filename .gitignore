@@ -22,6 +22,7 @@ archive/
 eval_results/
 
 .DS_Store
+.vscode/
 
 job_log/
 
