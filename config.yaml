@@ -57,6 +57,21 @@ training:
     max_grad_norm: 0.5
     use_cnn: true
     tensorboard_log: ./ppo_tensorboard/
+    load_model_path: ""
+    save_path: models/
+  a2c:
+    total_timesteps: 960000
+    n_envs: 16
+    learning_rate: 0.0001
+    n_steps: 240       # multiple of 20; rollout_len = n_envs * n_steps = 3840
+    gamma: 0.99
+    gae_lambda: 0.95
+    ent_coef: 0.01
+    vf_coef: 0.5
+    max_grad_norm: 0.5
+    use_cnn: true
+    tensorboard_log: ./a2c_tensorboard/
+    load_model_path: ""
     save_path: models/
   sac:
     total_timesteps: 1000000
