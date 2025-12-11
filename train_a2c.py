@@ -192,27 +192,27 @@ class TrainingCallback(BaseCallback):
                                           if metrics.get('input_mode_flux', 0) > 0 else 0.0)
                 eval_balance_score = metrics.get('balance_score', 0.0)
                 eval_score = metrics.get('current_score', 0.0)
-                eval_reward = metrics.get('reward', 0.0)
+                eval_total_reward = metrics.get('total_reward', 0.0)
                 eval_similarity_score = metrics.get('similarity_score', 0.0)
             else:
                 eval_transmission_score = 0.0
                 eval_balance_score = 0.0
                 eval_score = 0.0
-                eval_reward = 0.0
+                eval_total_reward = 0.0
                 eval_similarity_score = 0.0
             
             # Record evaluation metrics to CSV
             with open(self.eval_csv_path, 'a') as f:
-                f.write(f'{timestamp},{self.rollout_count},{eval_transmission_score},{eval_balance_score},{eval_score},{eval_reward},{eval_similarity_score}\n')
+                f.write(f'{timestamp},{self.rollout_count},{eval_transmission_score},{eval_balance_score},{eval_score},{eval_total_reward},{eval_similarity_score}\n')
             
             # Also add to train_csv with 'eval' type for combined plotting
             with open(self.train_csv_path, 'a') as f:
-                f.write(f'{timestamp},{self.rollout_count},eval,{eval_transmission_score},{eval_balance_score},{eval_score},{eval_reward},{eval_similarity_score}\n')
+                f.write(f'{timestamp},{self.rollout_count},eval,{eval_transmission_score},{eval_balance_score},{eval_score},{eval_total_reward},{eval_similarity_score}\n')
             
             # Print evaluation metrics
             print(f"[Eval]  Rollout {self.rollout_count} (deterministic): "
                   f"Trans={eval_transmission_score:.4f}, Bal={eval_balance_score:.4f}, "
-                  f"Score={eval_score:.4f}, Reward={eval_reward:.4f}")
+                  f"Score={eval_score:.4f}, Reward={eval_total_reward:.4f}")
             
             # Check if this is the best evaluation score
             if eval_score > self.best_eval_score:
