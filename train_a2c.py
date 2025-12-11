@@ -505,6 +505,7 @@ def train_a2c(
     
     env_kwargs = {
         "render_mode": None,
+        "use_cnn": use_cnn,
     }
     
     env = make_vec_env(
@@ -515,7 +516,7 @@ def train_a2c(
     )
 
     # Create evaluation environment
-    eval_env = MinimalEnv(render_mode=None)
+    eval_env = MinimalEnv(render_mode=None, use_cnn=use_cnn)
     
     # Define model save path
     save_path_with_timestamp = f"models/a2c_model_{start_timestamp}.zip"

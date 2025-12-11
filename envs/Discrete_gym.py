@@ -14,15 +14,18 @@ class MinimalEnv(gym.Env):
 
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
 
-    def __init__(self, render_mode=None):
+    def __init__(self, render_mode=None, use_cnn=True):
         """
         Initialize the environment.
 
         Args:
             render_mode: "human" for GUI, "rgb_array" for image, None for no rendering
+            use_cnn: True -> new CNN-style observation (matrix flatten + monitors + idx + prev layer);
+                     False -> legacy dense observation (monitors + idx + prev layer)
         """
         super().__init__()
 
+        self.use_cnn = use_cnn
         self.action_size = config.environment.action_size
         self.pixel_num_x = config.simulation.pixel_num_x
         self.pixel_num_y = config.simulation.pixel_num_y
@@ -31,14 +34,19 @@ class MinimalEnv(gym.Env):
         assert config.environment.max_steps <= self.pixel_num_x, \
             f"max_steps ({config.environment.max_steps}) must be <= pixel_num_x ({self.pixel_num_x})"
         
-        # Observation = flattened matrix + monitors + idx + previous layer
+        # Observation
         num_monitors = config.simulation.num_flux_regions  # 10 monitors
-        self.obs_size = (
-            self.pixel_num_x * self.pixel_num_y  # design matrix
-            + num_monitors                       # monitor readings
-            + 1                                  # layer index
-            + self.pixel_num_y                   # previous layer
-        )
+        if self.use_cnn:
+            # Flattened matrix + monitors + idx + previous layer
+            self.obs_size = (
+                self.pixel_num_x * self.pixel_num_y  # design matrix
+                + num_monitors                       # monitor readings
+                + 1                                  # layer index
+                + self.pixel_num_y                   # previous layer
+            )
+        else:
+            # Legacy dense obs (monitors + idx + previous layer), match old_discrete_gym
+            self.obs_size = config.environment.obs_size
         
         # Define observation and action spaces
         self.observation_space = spaces.Box(
@@ -129,14 +137,19 @@ class MinimalEnv(gym.Env):
 
     def _build_observation(self, hzfield_state_normalized: np.ndarray) -> np.ndarray:
         """
-        Build observation vector in the following order:
-        [flattened material_matrix | monitors | index | previous_layer]
+        Build observation.
+        - use_cnn=True : [flattened matrix | monitors | index | previous_layer]
+        - use_cnn=False: [monitors | index | previous_layer] (legacy dense)
         """
-        matrix_flat = self.material_matrix.flatten().astype(np.float32)
         monitors = hzfield_state_normalized.astype(np.float32)
         idx_arr = np.array([float(self.material_matrix_idx)], dtype=np.float32)
         previous_layer = self._get_previous_layers_state()
-        return np.concatenate([matrix_flat, monitors, idx_arr, previous_layer])
+
+        if self.use_cnn:
+            matrix_flat = self.material_matrix.flatten().astype(np.float32)
+            return np.concatenate([matrix_flat, monitors, idx_arr, previous_layer])
+
+        return np.concatenate([monitors, idx_arr, previous_layer]).astype(np.float32)
 
     def _calculate_similarity(self, current_layer, previous_layer):
         """
