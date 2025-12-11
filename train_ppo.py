@@ -81,13 +81,13 @@ class TrainingCallback(BaseCallback):
         self.train_csv_path = self.save_dir / "train_metrics.csv"
         if not self.train_csv_path.exists():
             with open(self.train_csv_path, 'w') as f:
-                f.write('timestamp,rollout_count,type,transmission,balance_score,score,reward,similarity_score\n')
+                f.write('timestamp,rollout_count,type,transmission_score,balance_score,score,reward,similarity_score\n')
         
         # CSV file for evaluation metrics (every eval_freq rollouts)
         self.eval_csv_path = self.save_dir / "eval_metrics.csv"
         if not self.eval_csv_path.exists():
             with open(self.eval_csv_path, 'w') as f:
-                f.write('timestamp,rollout_count,transmission,balance_score,score,reward,similarity_score\n')
+                f.write('timestamp,rollout_count,transmission_score,balance_score,score,reward,similarity_score\n')
         
         # Store image paths for GIF creation
         # If resuming, try to load existing image paths
