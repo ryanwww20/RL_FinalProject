@@ -29,7 +29,7 @@ class MatrixCombinedExtractor(BaseFeaturesExtractor):
         matrix_len = pixel_num_x * pixel_num_y
         scalar_len = observation_space.shape[0] - matrix_len
 
-        # 預計 CNN 輸出大小（兩次 2x2 pool）：(pixel_num_x/4)*(pixel_num_y/4)*64
+        # Expected CNN output size (twice 2x2 pool): (pixel_num_x/4)*(pixel_num_y/4)*64
         pooled_x = pixel_num_x // 4
         pooled_y = pixel_num_y // 4
         cnn_out_dim = 64 * pooled_x * pooled_y
