@@ -123,7 +123,7 @@ class MinimalEnv(gym.Env):
 
     def _get_previous_layer(self):
         """
-        Return the physical previous layer (no CNN involved).
+        Return the physical previous layer.
         """
         return self._get_previous_layers_state()
 
