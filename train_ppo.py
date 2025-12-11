@@ -36,6 +36,7 @@ TRAIN_PPO_KWARGS = {
     "ent_coef",
     "vf_coef",
     "max_grad_norm",
+    "use_cnn",
     "tensorboard_log",
     "save_path",
     "load_model_path",  # Path to existing model to resume training
@@ -429,6 +430,7 @@ def train_ppo(
     ent_coef=0.01,
     vf_coef=0.5,
     max_grad_norm=0.5,
+    use_cnn=True,
     tensorboard_log="./ppo_tensorboard/",
     save_path="./ppo_model",
     load_model_path=None,  # Path to existing model to resume training
@@ -449,6 +451,7 @@ def train_ppo(
         ent_coef: Entropy coefficient
         vf_coef: Value function coefficient
         max_grad_norm: Maximum gradient norm for clipping
+        use_cnn: Whether to use CNN feature extractor
         tensorboard_log: Directory for tensorboard logs
         save_path: Path to save the trained model
     """
@@ -529,18 +532,22 @@ def train_ppo(
     os.makedirs("models", exist_ok=True)
 
     policy_kwargs = dict(
-        features_extractor_class=MatrixCombinedExtractor,
-        features_extractor_kwargs=dict(
-            cnn_proj_dim=128,  # Dimension of CNN output after compression
-            pixel_num_x=20,
-            pixel_num_y=20,
-            num_monitors=10,
-        ),
         net_arch=dict(
             pi=[256, 128],
             vf=[256, 128],
         ),
     )
+
+    if use_cnn:
+        policy_kwargs.update(dict(
+            features_extractor_class=MatrixCombinedExtractor,
+            features_extractor_kwargs=dict(
+                cnn_proj_dim=128,  # Dimension of CNN output after compression
+                pixel_num_x=20,
+                pixel_num_y=20,
+                num_monitors=10,
+            ),
+        ))
 
     # Load existing model or create new one
     if load_model_path and os.path.exists(load_model_path):

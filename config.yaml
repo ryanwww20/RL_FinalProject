@@ -44,7 +44,6 @@ simulation:
 training:
   ppo:
     total_timesteps: 960000
-    # total_timesteps: 640
     n_envs: 16
     learning_rate: 0.0001
     n_steps: 240       # multiple of 20; rollout_len = n_envs * n_steps = 3840
@@ -56,6 +55,7 @@ training:
     ent_coef: 0.005
     vf_coef: 0.5
     max_grad_norm: 0.5
+    use_cnn: true
     tensorboard_log: ./ppo_tensorboard/
     save_path: models/
   sac:
