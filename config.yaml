@@ -43,6 +43,12 @@ simulation:
 
 training:
   ppo:
+    # total_timesteps: 192000
+    # n_envs: 1
+    # learning_rate: 0.001
+    # n_steps: 80
+    # batch_size: 64
+    # n_epochs: 40
     total_timesteps: 960000
     n_envs: 16
     learning_rate: 0.0001
@@ -53,6 +59,7 @@ training:
     gae_lambda: 0.95
     clip_range: 0.2
     ent_coef: 0.005
+    # ent_coef: 0.01
     vf_coef: 0.5
     max_grad_norm: 0.5
     use_cnn: true
