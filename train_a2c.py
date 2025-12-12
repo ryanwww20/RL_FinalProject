@@ -19,8 +19,6 @@ from envs.custom_feature_extractor import MatrixCombinedExtractor
 from PIL import Image
 from eval import ModelEvaluator
 
-from matplotlib import rcParams
-
 CONFIG_ENV_VAR = "TRAINING_CONFIG_PATH"
 DEFAULT_CONFIG_PATH = Path(__file__).resolve().parent / "config.yaml"
 TRAIN_A2C_KWARGS = {
@@ -323,10 +321,6 @@ class TrainingCallback(BaseCallback):
         #     shutil.rmtree(self.distribution_dir)
     
     def _plot_metrics(self, verbose=True):
-        plt.style.use("seaborn-v0_8")
-
-        rcParams['figure.figsize'] = (10, 5)
-        rcParams['font.size'] = 13
         """Plot transmission, balance_score, and score from CSV (both train and eval)."""
         if not self.train_csv_path.exists():
             if verbose:
@@ -347,39 +341,40 @@ class TrainingCallback(BaseCallback):
             eval_df = df[df['type'] == 'eval']
             
             def plot_metric(metric, title, ylabel, filename):
-                plt.figure(figsize=(12, 6))
-                plotted = False
-                
-                if len(train_df) > 0:
-                    t = train_df.sort_values('rollout_count')
-                    x = t['rollout_count']
-                    y = t[metric]
-                    plt.plot(x, y, 'b-o', linewidth=1.5, markersize=3, alpha=0.35, label='Train (raw)')
-                    y_ma = y.rolling(window=self.rolling_window, min_periods=1).mean()
-                    plt.plot(x, y_ma, 'b-', linewidth=2.2, label=f'Train MA (w={self.rolling_window})')
-                    plotted = True
-                
-                if len(eval_df) > 0:
-                    e = eval_df.sort_values('rollout_count')
-                    x = e['rollout_count']
-                    y = e[metric]
-                    plt.plot(x, y, 'r-s', linewidth=1.5, markersize=4, alpha=0.35, label='Eval (raw)')
-                    y_ma = y.rolling(window=self.rolling_window, min_periods=1).mean()
-                    plt.plot(x, y_ma, 'r-', linewidth=2.2, label=f'Eval MA (w={self.rolling_window})')
-                    plotted = True
-                
-                if not plotted:
+                with plt.style.context("seaborn-v0_8"), plt.rc_context({"figure.figsize": (12, 6), "font.size": 13}):
+                    plt.figure()
+                    plotted = False
+                    
+                    if len(train_df) > 0:
+                        t = train_df.sort_values('rollout_count')
+                        x = t['rollout_count']
+                        y = t[metric]
+                        plt.plot(x, y, 'b-o', linewidth=1.5, markersize=3, alpha=0.35, label='Train (raw)')
+                        y_ma = y.rolling(window=self.rolling_window, min_periods=1).mean()
+                        plt.plot(x, y_ma, 'b-', linewidth=2.2, label=f'Train MA (w={self.rolling_window})')
+                        plotted = True
+                    
+                    if len(eval_df) > 0:
+                        e = eval_df.sort_values('rollout_count')
+                        x = e['rollout_count']
+                        y = e[metric]
+                        plt.plot(x, y, 'r-s', linewidth=1.5, markersize=4, alpha=0.35, label='Eval (raw)')
+                        y_ma = y.rolling(window=self.rolling_window, min_periods=1).mean()
+                        plt.plot(x, y_ma, 'r-', linewidth=2.2, label=f'Eval MA (w={self.rolling_window})')
+                        plotted = True
+                    
+                    if not plotted:
+                        plt.close()
+                        return
+                    
+                    plt.xlabel('Rollout Count')
+                    plt.ylabel(ylabel)
+                    plt.title(title)
+                    plt.legend()
+                    plt.grid(True, alpha=0.3)
+                    plt.tight_layout()
+                    plt.savefig(self.plot_dir / filename, dpi=150, bbox_inches='tight')
                     plt.close()
-                    return
-                
-                plt.xlabel('Rollout Count')
-                plt.ylabel(ylabel)
-                plt.title(title)
-                plt.legend()
-                plt.grid(True, alpha=0.3)
-                plt.tight_layout()
-                plt.savefig(self.plot_dir / filename, dpi=150, bbox_inches='tight')
-                plt.close()
             
             plot_metric('transmission_score', 'Transmission Score Over Training', 'Transmission Score', 'transmission.png')
             plot_metric('balance_score', 'Balance Score Over Training', 'Balance Score', 'balance.png')
