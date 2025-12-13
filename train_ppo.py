@@ -18,6 +18,7 @@ from envs.Discrete_gym import MinimalEnv
 from envs.custom_feature_extractor import MatrixCombinedExtractor
 from PIL import Image
 from eval import ModelEvaluator
+from config import config
 
 from matplotlib import rcParams
 
@@ -463,13 +464,27 @@ def train_ppo(
     # Save starting timestamp for model saving
     start_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     
+    # Check if we're in finetune mode (reward type is not "default")
+    is_finetune_mode = config.reward.type != "default"
+    
+    if is_finetune_mode:
+        print(f"[Finetune Mode] Reward type is '{config.reward.type}' with target_ratio={config.reward.target_ratio}")
+        print(f"[Finetune Mode] Will load checkpoint but start training from timestep 0")
+    
     # Determine callback directory: use existing one if resuming, otherwise create new
     callback_dir = None
     initial_rollout_count = 0
     best_eval_score_resume = -float('inf')
     best_eval_rollout_resume = 0
     
-    if load_model_path and os.path.exists(load_model_path):
+    # In finetune mode, always create new callback directory and reset counters
+    if is_finetune_mode:
+        callback_dir = None  # Force new directory creation
+        initial_rollout_count = 0
+        best_eval_score_resume = -float('inf')
+        best_eval_rollout_resume = 0
+        print(f"[Finetune Mode] Creating new training log directory (not resuming from previous training)")
+    elif load_model_path and os.path.exists(load_model_path):
         # Try to find existing callback directory from model path
         # Model path format: models/ppo_model_YYYYMMDD_HHMMSS.zip
         model_stem = Path(load_model_path).stem
@@ -560,35 +575,42 @@ def train_ppo(
         print(f"Loading existing model from {load_model_path}...")
         model = PPO.load(load_model_path, env=env)
         
-        # Get the number of timesteps already trained
-        trained_timesteps = model.num_timesteps
-        remaining_timesteps = total_timesteps - trained_timesteps
-        
-        if remaining_timesteps <= 0:
-            print(f"Model has already been trained for {trained_timesteps} timesteps, "
-                  f"which exceeds the target {total_timesteps} timesteps.")
-            print("Returning loaded model without additional training.")
-            return model
-        
-        print(f"Model has been trained for {trained_timesteps} timesteps.")
-        print(f"Continuing training for {remaining_timesteps} more timesteps...")
-        
-        # Calculate rollout count from timesteps (more accurate than CSV)
-        # rollout_timesteps = n_envs * n_steps = 16 * 240 = 3840
-        rollout_timesteps = n_envs * n_steps
-        calculated_rollout_count = trained_timesteps // rollout_timesteps
-        
-        # Use the maximum of CSV and calculated rollout count (more accurate)
-        if calculated_rollout_count > initial_rollout_count:
-            print(f"Calculated rollout count from timesteps: {calculated_rollout_count} "
-                  f"(CSV had {initial_rollout_count}, using calculated value)")
-            initial_rollout_count = calculated_rollout_count
+        if is_finetune_mode:
+            # Finetune mode: reset timesteps to 0, start fresh training
+            print(f"[Finetune Mode] Resetting timestep counter from {model.num_timesteps} to 0")
+            model.num_timesteps = 0
+            print(f"[Finetune Mode] Will train for {total_timesteps} timesteps from scratch (using pretrained weights)")
         else:
-            print(f"Using rollout count from CSV: {initial_rollout_count} "
-                  f"(calculated would be {calculated_rollout_count})")
-        
-        # Update total_timesteps to remaining amount
-        total_timesteps = remaining_timesteps
+            # Normal resume mode: continue from where we left off
+            # Get the number of timesteps already trained
+            trained_timesteps = model.num_timesteps
+            remaining_timesteps = total_timesteps - trained_timesteps
+            
+            if remaining_timesteps <= 0:
+                print(f"Model has already been trained for {trained_timesteps} timesteps, "
+                      f"which exceeds the target {total_timesteps} timesteps.")
+                print("Returning loaded model without additional training.")
+                return model
+            
+            print(f"Model has been trained for {trained_timesteps} timesteps.")
+            print(f"Continuing training for {remaining_timesteps} more timesteps...")
+            
+            # Calculate rollout count from timesteps (more accurate than CSV)
+            # rollout_timesteps = n_envs * n_steps = 16 * 240 = 3840
+            rollout_timesteps = n_envs * n_steps
+            calculated_rollout_count = trained_timesteps // rollout_timesteps
+            
+            # Use the maximum of CSV and calculated rollout count (more accurate)
+            if calculated_rollout_count > initial_rollout_count:
+                print(f"Calculated rollout count from timesteps: {calculated_rollout_count} "
+                      f"(CSV had {initial_rollout_count}, using calculated value)")
+                initial_rollout_count = calculated_rollout_count
+            else:
+                print(f"Using rollout count from CSV: {initial_rollout_count} "
+                      f"(calculated would be {calculated_rollout_count})")
+            
+            # Update total_timesteps to remaining amount
+            total_timesteps = remaining_timesteps
     else:
         if load_model_path:
             print(f"Warning: Model path {load_model_path} not found. Creating new model...")
@@ -641,8 +663,12 @@ def train_ppo(
         print(f"Error during training: {e}")
 
     # Save the final model (even if interrupted)
-    # If resuming from a checkpoint, save to the same path or new timestamp
-    if load_model_path and os.path.exists(load_model_path):
+    # In finetune mode, always save with new timestamp (don't overwrite original checkpoint)
+    if is_finetune_mode:
+        model.save(save_path_with_timestamp)
+        print(f"[Finetune Mode] Model saved to {save_path_with_timestamp} (finetuned model, original checkpoint preserved)")
+    elif load_model_path and os.path.exists(load_model_path):
+        # Normal resume mode: save to both original path and new timestamp
         # Option 1: Overwrite the loaded model
         model.save(load_model_path)
         print(f"Model saved to {load_model_path} (updated checkpoint)")
