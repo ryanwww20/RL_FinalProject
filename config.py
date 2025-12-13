@@ -39,6 +39,11 @@ class EnvironmentConfig:
     max_steps: int
     num_previous_layers: int
 
+@dataclass
+class RewardConfig:
+    type: str  # "default" or "target_ratio"
+    target_ratio: float = 0.6  # Only used when type is "target_ratio"
+
 # @dataclass 
 # class TrainingConfig:
 
@@ -46,6 +51,7 @@ class EnvironmentConfig:
 class Config:
     simulation: SimulationConfig
     environment: EnvironmentConfig
+    reward: RewardConfig
 
 def load_config(path="config.yaml"):
     with open(path, "r") as f:
@@ -55,11 +61,19 @@ def load_config(path="config.yaml"):
     sim_raw["cell_size"] = mp.Vector3(*sim_raw["cell_size"])
     Simulation = SimulationConfig(**sim_raw)
     Environment = EnvironmentConfig(**raw["environment"])
+    
+    # Load reward config with defaults
+    reward_raw = raw.get("reward", {})
+    Reward = RewardConfig(
+        type=reward_raw.get("type", "default"),
+        target_ratio=reward_raw.get("target_ratio", 0.6)
+    )
 
     return Config(
         simulation=Simulation,
-        environment=Environment
+        environment=Environment,
+        reward=Reward
     )
 
-# ★ 這個變數叫 config
+# This variable is called config
 config = load_config()

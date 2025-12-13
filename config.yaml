@@ -10,6 +10,12 @@ environment:
   max_steps: 20
   num_previous_layers: *num_previous_layers
 
+reward:
+  # Reward function type: "default" or "target_ratio"
+  type: "default"  # Options: "default", "target_ratio"
+  # For target_ratio type: target ratio for output split (e.g., 0.6 means 60:40 split)
+  target_ratio: 0.5  # Only used when type is "target_ratio"
+
 
 simulation:
   resolution: 20
@@ -69,12 +75,12 @@ training:
   a2c:
     total_timesteps: 960000
     n_envs: 16
-    learning_rate: 0.0001
+    learning_rate: 0.0003  # A2C 建議稍高學習率（0.0001-0.0005），因為沒有多次更新機制
     n_steps: 240       # multiple of 20; rollout_len = n_envs * n_steps = 3840
     gamma: 0.99
     gae_lambda: 0.95
-    ent_coef: 0.01
-    vf_coef: 0.5
+    ent_coef: 0.005    # 建議降低以減少過度探索（0.001-0.01），與 PPO 一致
+    vf_coef: 0.5       # 可嘗試 0.25-0.75，當前值合理
     max_grad_norm: 0.5
     use_cnn: true
     tensorboard_log: ./a2c_tensorboard/

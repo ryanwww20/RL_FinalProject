@@ -81,6 +81,10 @@ class MinimalEnv(gym.Env):
         self.design_region_y_max = config.simulation.design_region_y_max
         self.pixel_size = config.simulation.pixel_size
 
+        # Reward configuration
+        self.reward_type = config.reward.type
+        self.target_ratio = config.reward.target_ratio
+        
         # Timing statistics
         self.step_count = 0
         self.log_interval = 100  # Print timing every 100 steps
@@ -319,6 +323,7 @@ class MinimalEnv(gym.Env):
         """
         Calculate reward using transmission from meep_simulation.
         Uses get_output_transmission() method directly.
+        Supports configurable reward functions via config.reward.type.
         
         Args:
             current_layer: Current layer (1D array) for metrics/logging (similarity reward removed)
@@ -328,15 +333,6 @@ class MinimalEnv(gym.Env):
         _, input_mode = self.simulation.get_flux_input_mode(band_num=1)
         transmission_1, transmission_2, total_transmission, diff_transmission = self.simulation.get_output_transmission(band_num=1)
         
-        transmission_score = min(max(total_transmission/input_mode, 0), 1)
-
-        # Calculate balance score (how evenly distributed between outputs)
-        if total_transmission > 0:
-            diff_ratio = diff_transmission / total_transmission
-        else:
-            diff_ratio = 1.0  # If no transmission, balance is worst
-        balance_score = max(1 - diff_ratio, 0)
-
         # Calculate similarity: number of identical pixels between current and previous layer
         # NOTE: Similarity is calculated for logging/metrics only, NOT added to reward (too artificial)
         if current_layer is not None and previous_layer is not None:
@@ -347,12 +343,42 @@ class MinimalEnv(gym.Env):
             similarity = 0.0
             similarity_score = 0.0
 
-        # Calculate current_score: use transmission_score which is already normalized to [0,1]
-        # transmission_score = (total_transmission/input_mode) normalized to [0,1] with min/max clamping
-        current_score = transmission_score * 10 + balance_score * 10
-        reward = current_score - self.last_score if self.last_score is not None else 0
-        # Similarity reward removed - too artificial, let agent learn naturally
-        # reward += similarity_score/10
+        # Calculate reward based on configured reward type
+        if self.reward_type == "target_ratio":
+            # New reward function: 1 - abs((1-target_ratio)*out1 - target_ratio*out2) / ((1-target_ratio)*out1 + target_ratio*out2)
+            # where out1 = transmission_1, out2 = transmission_2
+            out1 = transmission_1
+            out2 = transmission_2
+            denominator = (1 - self.target_ratio) * out1 + self.target_ratio * out2
+            
+            if denominator > 0:
+                numerator = abs((1 - self.target_ratio) * out1 - self.target_ratio * out2)
+                balance_score = 1 - (numerator / denominator)
+                balance_score = max(0, min(1, balance_score))  # Clamp to [0, 1]
+            else:
+                balance_score = 0.0  # If no transmission, balance is worst
+            
+            # Normalize transmission score
+            transmission_score = min(max(total_transmission/input_mode, 0), 1)
+            
+            # Calculate current_score: combine transmission and balance
+            current_score = transmission_score * 10 + balance_score * 10
+            reward = current_score - self.last_score if self.last_score is not None else 0
+            
+        else:  # "default" reward function
+            transmission_score = min(max(total_transmission/input_mode, 0), 1)
+
+            # Calculate balance score (how evenly distributed between outputs)
+            if total_transmission > 0:
+                diff_ratio = diff_transmission / total_transmission
+            else:
+                diff_ratio = 1.0  # If no transmission, balance is worst
+            balance_score = max(1 - diff_ratio, 0)
+
+            # Calculate current_score: use transmission_score which is already normalized to [0,1]
+            # transmission_score = (total_transmission/input_mode) normalized to [0,1] with min/max clamping
+            current_score = transmission_score * 10 + balance_score * 10
+            reward = current_score - self.last_score if self.last_score is not None else 0
 
         self.last_score = current_score
 
