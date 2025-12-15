@@ -53,11 +53,11 @@ training:
     # n_steps: 80
     # batch_size: 64
     # n_epochs: 40
-    total_timesteps: 960000
-    n_envs: 1
+    total_timesteps: 2000000
+    n_envs: 16
     learning_rate: 0.0001
-    n_steps: 20       # multiple of 20; rollout_len = n_envs * n_steps = 3840
-    batch_size: 512    # larger batch to smooth updates
+    n_steps: 240       # multiple of 20; rollout_len = n_envs * n_steps = 3840
+    batch_size: 480    # larger batch to smooth updates
     n_epochs: 20       # reduce epochs to avoid overfitting each batch
     gamma: 0.99
     gae_lambda: 0.95
