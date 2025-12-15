@@ -89,10 +89,11 @@ class MinimalEnv(gym.Env):
         self.total_sim_time = 0.0
         self.total_other_time = 0.0
         
-        # Fixed input_mode from first rollout average
-        self.fixed_input_mode = None
-        self.first_rollout_input_modes = []  # Collect input_mode values during first rollout
-        self.is_first_rollout = True  # Track if we're in the first rollout
+        # Fixed input_mode: calculate once at initialization with all-silicon matrix
+        all_silicon_matrix = np.ones((config.simulation.pixel_num_x, config.simulation.pixel_num_y))
+        self.simulation.calculate_flux(all_silicon_matrix)  # Run simulation to get flux
+        _, self.fixed_input_mode = self.simulation.get_flux_input_mode(band_num=1)
+        print(f"Fixed input_mode set to {self.fixed_input_mode:.6f} (all-silicon matrix)")
 
     def _get_default_waveguide_layer(self):
         """
@@ -194,11 +195,6 @@ class MinimalEnv(gym.Env):
         self.material_matrix_idx = 0
         self.layer_history = []  # Reset layer history
         self.last_score = None
-        
-        # Reset first rollout tracking (but keep fixed_input_mode once it's set)
-        if self.fixed_input_mode is None:
-            self.first_rollout_input_modes = []
-            self.is_first_rollout = True
 
         # Use calculate_flux to get initial hzfield_state for initial matrix
         # This returns: hzfield_state, hz_data
@@ -266,12 +262,6 @@ class MinimalEnv(gym.Env):
        
         terminated = self.material_matrix_idx >= self.max_steps  # Goal reached
         truncated = False   # Time limit exceeded
-        
-        # Calculate and store fixed input_mode at end of first rollout
-        if terminated and self.is_first_rollout and self.fixed_input_mode is None and len(self.first_rollout_input_modes) > 0:
-            self.fixed_input_mode = np.mean(self.first_rollout_input_modes)
-            self.is_first_rollout = False
-            print(f"Fixed input_mode set to {self.fixed_input_mode:.6f} (average of {len(self.first_rollout_input_modes)} values from first rollout)")
         
         # Save final metrics when episode ends (before reset happens)
         if terminated:
@@ -341,20 +331,10 @@ class MinimalEnv(gym.Env):
             previous_layer: Previous layer (1D array) for metrics/logging (similarity reward removed)
         """
         # Get transmission using the method from meep_simulation
-        # Only call get_flux_input_mode during first rollout (it's time-consuming)
-        if self.fixed_input_mode is None:
-            # Still collecting values for first rollout
-            _, current_input_mode = self.simulation.get_flux_input_mode(band_num=1)
-            if self.is_first_rollout:
-                self.first_rollout_input_modes.append(current_input_mode)
-            input_mode = current_input_mode
-        else:
-            # Use fixed input_mode (skip expensive call)
-            input_mode = self.fixed_input_mode
-        
+        # Use fixed input_mode (calculated at initialization with all-silicon matrix)
         transmission_1, transmission_2, total_transmission, diff_transmission = self.simulation.get_output_transmission(band_num=1)
         diff_transmission = abs(transmission_1/0.7 - transmission_2/0.3)
-        transmission_score = min(max(total_transmission/input_mode, 0), 1)
+        transmission_score = total_transmission / self.fixed_input_mode
 
         # Calculate balance score (how evenly distributed between outputs)
         if total_transmission > 0:
@@ -373,8 +353,8 @@ class MinimalEnv(gym.Env):
             similarity = 0.0
             similarity_score = 0.0
 
-        # Calculate current_score: use transmission_score which is already normalized to [0,1]
-        # transmission_score = (total_transmission/input_mode) normalized to [0,1] with min/max clamping
+        # Calculate current_score using transmission_score (no clipping)
+        # transmission_score = total_transmission / fixed_input_mode
         current_score = transmission_score * 10 + balance_score * 10
         reward = current_score - self.last_score if self.last_score is not None else 0
         # Similarity reward removed - too artificial, let agent learn naturally
@@ -409,14 +389,7 @@ class MinimalEnv(gym.Env):
             return self.last_episode_metrics
         
         # Fallback: return current state (for first rollout before any episode completes)
-        # Only call get_flux_input_mode during first rollout (it's time-consuming)
-        if self.fixed_input_mode is None:
-            _, current_input_mode = self.simulation.get_flux_input_mode(band_num=1)
-            input_mode = current_input_mode
-        else:
-            # Use fixed input_mode (skip expensive call)
-            input_mode = self.fixed_input_mode
-        
+        # Use fixed input_mode (calculated at initialization with all-silicon matrix)
         hzfield_state, _ = self.simulation.calculate_flux(self.material_matrix)
         
         transmission_1, transmission_2, total_transmission, diff_transmission = \
@@ -429,9 +402,8 @@ class MinimalEnv(gym.Env):
             diff_ratio = 1.0
         balance_score = max(1 - diff_ratio, 0)
         
-        # Use same formula as get_reward() for consistency
-        # Calculate normalized transmission score (matching get_reward)
-        transmission_score = min(max(total_transmission / input_mode, 0), 1)
+        # Use same formula as get_reward() for consistency (no clipping)
+        transmission_score = total_transmission / self.fixed_input_mode
         current_score = transmission_score * 10 + balance_score * 10
         
         return {
