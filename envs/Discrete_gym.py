@@ -340,7 +340,7 @@ class MinimalEnv(gym.Env):
             actual_ratio = transmission_1 / total_transmission  # Actual % to output 1
             target_ratio = 0.7  # Target is 70% to output 1
             # balance_score = 1 when perfect, 0 when completely off
-            balance_score = max(1 - abs(actual_ratio - target_ratio) / 0.7, 0)
+            balance_score = max(1 - abs(actual_ratio - target_ratio) / target_ratio, 0)
         else:
             balance_score = 0
 
@@ -400,7 +400,7 @@ class MinimalEnv(gym.Env):
         if total_transmission > 0:
             actual_ratio = transmission_1 / total_transmission  # Actual % to output 1
             target_ratio = 0.7  # Target is 70% to output 1
-            balance_score = max(1 - abs(actual_ratio - target_ratio) / 0.7, 0)
+            balance_score = max(1 - abs(actual_ratio - target_ratio) / target_ratio, 0)
         else:
             balance_score = 0
         
