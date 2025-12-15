@@ -759,7 +759,7 @@ class WaveguideSimulation:
             (transmission_1, transmission_2, total_transmission): 
             Transmission ratios relative to input mode
         """
-        _, input_mode = self.get_flux_input_mode(band_num)
+        # _, input_mode = self.get_flux_input_mode(band_num)
         _, _, output_mode_1, output_mode_2, diff_transmission = self.get_flux_output_mode(band_num)
         
         transmission_1 = output_mode_1
