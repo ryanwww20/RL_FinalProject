@@ -68,7 +68,7 @@ training:
     max_grad_norm: 0.5
     use_cnn: true
     tensorboard_log: ./ppo_tensorboard/
-    load_model_path: ""
+    load_model_path: /storage/undergrad/b12901074/RL_FinalProject/models/ppo_model_20251214_122759_best.zip
     save_path: models/
   a2c:
     total_timesteps: 960000
