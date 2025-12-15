@@ -63,7 +63,8 @@ class MinimalEnv(gym.Env):
         self.state = None
         self.render_mode = render_mode
         # Material matrix is 2D: (pixel_num_x, pixel_num_y) representing the current design
-        self.material_matrix = np.zeros(
+        # Initialize with all 1's (silicon) instead of 0's (silica)
+        self.material_matrix = np.ones(
             (config.simulation.pixel_num_x, config.simulation.pixel_num_y))
         self.material_matrix_idx = 0
         self.max_steps = config.environment.max_steps
@@ -187,7 +188,8 @@ class MinimalEnv(gym.Env):
         super().reset(seed=seed)
 
         # Reset material matrix and index
-        self.material_matrix = np.zeros(
+        # Initialize with all 1's (silicon) instead of 0's (silica)
+        self.material_matrix = np.ones(
             (config.simulation.pixel_num_x, config.simulation.pixel_num_y))
         self.material_matrix_idx = 0
         self.layer_history = []  # Reset layer history
@@ -198,11 +200,11 @@ class MinimalEnv(gym.Env):
             self.first_rollout_input_modes = []
             self.is_first_rollout = True
 
-        # Use calculate_flux to get initial hzfield_state for empty matrix
-        # This returns: input_mode_flux, output_mode_flux_1, output_mode_flux_2, hzfield_state, hz_data, input_mode, output_mode_1, output_mode_2
-        # For initial state, use empty matrix (all zeros)
-        empty_matrix = np.zeros((config.simulation.pixel_num_x, config.simulation.pixel_num_y))
-        hzfield_state, _, _ = self.simulation.calculate_flux(empty_matrix)
+        # Use calculate_flux to get initial hzfield_state for initial matrix
+        # This returns: hzfield_state, hz_data
+        # For initial state, use matrix with all 1's (silicon)
+        initial_matrix = np.ones((config.simulation.pixel_num_x, config.simulation.pixel_num_y))
+        hzfield_state, _ = self.simulation.calculate_flux(initial_matrix)
         
         # Normalize hzfield_state by dividing by maximum (bounded between 0 and 1)
         hzfield_max = np.max(hzfield_state)
