@@ -204,12 +204,8 @@ def main():
                         help="Environment type (continuous or discrete). Default: continuous")
     parser.add_argument("--n_episodes", type=int, default=1, help="Number of evaluation episodes (default: 1)")
     parser.add_argument("--output_dir", type=str, default="eval_results", help="Directory to save evaluation results")
-    parser.add_argument("--stochastic", action="store_true", help="Use stochastic actions (default: deterministic)")
     
     args = parser.parse_args()
-    
-    # Determine deterministic mode
-    deterministic = not args.stochastic
     
     # Verify model path
     if not os.path.exists(args.model_path):
@@ -244,12 +240,12 @@ def main():
     # Create evaluator
     evaluator = ModelEvaluator(model, env)
     
-    if deterministic and args.n_episodes > 1:
+    if args.n_episodes > 1:
         print(f"Note: Running {args.n_episodes} episodes with deterministic actions and fixed start state.")
         print("      Expect identical results across episodes.")
 
     # Run evaluation
-    evaluator.evaluate(n_episodes=args.n_episodes, deterministic=deterministic)
+    evaluator.evaluate(n_episodes=args.n_episodes, deterministic=True)
     
     # Save results
     save_path = Path(args.output_dir) / f"{args.algo}_{Path(args.model_path).stem}"

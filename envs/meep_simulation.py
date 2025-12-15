@@ -7,7 +7,7 @@
 
 import time
 
-from sympy.logic.boolalg import true
+from sympy.logic.boolalg import false, true
 import meep as mp
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,6 +15,7 @@ from matplotlib.patches import Rectangle
 from datetime import datetime
 import sys
 import os
+from scipy.ndimage import gaussian_filter1d
 
 # Add the parent directory to sys.path if running directly
 if __name__ == "__main__":
@@ -70,7 +71,9 @@ class WaveguideSimulation:
         # Magnetic field monitor for state
         self.hzfield_monitor = None  # Magnetic field monitor for state (backward compatibility)
         self.hzfield_monitors = []  # List of magnetic field monitors (10 monitors)
+        self.hzfield_full_distribution_monitors = []  # List of magnetic field monitors for full distribution
         self.hzfield_region_y_positions = []  # Y-coordinates of state hzfield monitors
+        self.hzfield_full_distribution_region_y_positions = []  # Y-coordinates of full distribution hzfield monitors
         self.input_flux_region = None  # Input mode flux monitor
         self.output_flux_region_1 = None  # Output mode flux monitor 1
         self.output_flux_region_2 = None  # Output mode flux monitor 2
@@ -442,7 +445,27 @@ class WaveguideSimulation:
         # Keep backward compatibility with single monitor attribute
         self.hzfield_monitor = self.hzfield_monitors[0] if self.hzfield_monitors else None
         
-        return self.hzfield_monitors
+        # Add real field monitors for real distribution
+        num_monitors = self.num_flux_regions * 10
+        monitor_length = self.monitor_length / 10
+        y_min = - self.design_region_y
+        y_max = self.design_region_y
+        y_centers = np.linspace(y_min + monitor_length/2, y_max - monitor_length/2, num_monitors)
+        self.hzfield_full_distribution_region_y_positions = y_centers.copy()
+        for y_center in y_centers:
+            field_region = mp.Volume(
+                center=mp.Vector3(self.state_output_x, y_center, 0),
+                size=mp.Vector3(0, monitor_length, 0)  # Vertical line segment of length 0.2 um
+            )
+            monitor = self.sim.add_dft_fields(
+                [mp.Hz],  # Monitor Hz component (for 2D TE mode)
+                frequency, 0.0, 1,  # fcen, df, nfreq (single frequency: center freq, zero width, 1 frequency)
+                center=field_region.center,
+                size=field_region.size
+            )
+            self.hzfield_full_distribution_monitors.append(monitor)
+        
+        return self.hzfield_monitors, self.hzfield_full_distribution_monitors
 
     def add_flux_monitor_input_mode(self):
         """
@@ -556,6 +579,20 @@ class WaveguideSimulation:
             
             hzfield_values.append(monitor_value)
 
+        return np.array(hzfield_values)
+
+    def get_hzfield_full_distribution(self):
+
+        hzfield_values = []
+        for monitor in self.hzfield_full_distribution_monitors:
+            hzfield_data = self.sim.get_dft_array(monitor, mp.Hz, 0)
+            if hzfield_data.ndim == 1:
+                monitor_value = np.mean(np.abs(hzfield_data) ** 2)
+            elif hzfield_data.ndim == 2:
+                monitor_value = np.mean(np.abs(hzfield_data) ** 2)
+            else:
+                monitor_value = np.mean(np.abs(hzfield_data.flatten()) ** 2)
+            hzfield_values.append(monitor_value)
         return np.array(hzfield_values)
 
     def get_flux_input_mode(self, band_num=1):
@@ -917,45 +954,102 @@ class WaveguideSimulation:
             x_data = np.arange(len(hzfield_state))
             x_label = 'Detector Index'
         
-        plt.figure(figsize=(10, 6))
-        # Use markers for better visualization with fewer monitors (10 monitors)
-        if len(hzfield_state) <= 20:
-            # For small number of monitors, use markers with line
-            plt.plot(x_data, hzfield_state, 'b-o', linewidth=2, markersize=8,
-                     label='Magnetic Field |Hz|²', markeredgewidth=1.5)
-        else:
-            # For many monitors, use line only
-            plt.plot(x_data, hzfield_state, 'b-', linewidth=2, label='Magnetic Field |Hz|²')
-        plt.xlabel(x_label)
-        plt.ylabel('|Hz|²')
-        
-        # Build title
-        base_title = 'Magnetic Field Distribution at Output Plane'
-        if title_suffix:
-            plt.title(f'{base_title}\n{title_suffix}')
-        else:
-            plt.title(base_title)
-        
-        plt.legend()
-        plt.grid(True, alpha=0.3)
+        with plt.style.context("seaborn-v0_8"), plt.rc_context({"figure.figsize": (12, 6), "font.size": 13}):
+            plt.figure()
+            # Use markers for better visualization with fewer monitors (10 monitors)
+            if len(hzfield_state) <= 20:
+                # For small number of monitors, use markers with line
+                plt.plot(x_data, hzfield_state, color="#4C72B0", linewidth=2, label='Magnetic Field |Hz|²')
+            else:
+                # For many monitors, use line only
+                plt.plot(x_data, hzfield_state, color="#4C72B0", linewidth=2, label='Magnetic Field |Hz|²')
+            plt.xlabel(x_label)
+            plt.ylabel('|Hz|²')
+            
+            # Build title
+            base_title = 'Magnetic Field Distribution at Output Plane'
+            if title_suffix:
+                plt.title(f'{base_title}\n{title_suffix}')
+            else:
+                plt.title(base_title)
+            
+            plt.legend()
+            plt.grid(True, alpha=0.3)
 
-        if save_path:
-            try:
-                # Create directory if it doesn't exist
-                save_dir = os.path.dirname(save_path)
-                if save_dir and not os.path.exists(save_dir):
-                    os.makedirs(save_dir, exist_ok=True)
-                plt.savefig(save_path, dpi=150, bbox_inches='tight')
-                print(f"Magnetic field distribution plot saved to '{save_path}'")
-            except (FileNotFoundError, OSError) as e:
-                print(f"Warning: Could not save plot to '{save_path}': {e}")
-            except Exception as e:
-                print(f"Error saving plot: {e}")
+            if save_path:
+                try:
+                    # Create directory if it doesn't exist
+                    save_dir = os.path.dirname(save_path)
+                    if save_dir and not os.path.exists(save_dir):
+                        os.makedirs(save_dir, exist_ok=True)
+                    plt.savefig(save_path, dpi=150, bbox_inches='tight')
+                    print(f"Magnetic field distribution plot saved to '{save_path}'")
+                except (FileNotFoundError, OSError) as e:
+                    print(f"Warning: Could not save plot to '{save_path}': {e}")
+                except Exception as e:
+                    print(f"Error saving plot: {e}")
 
-        if show_plot:
-            plt.show()
+            if show_plot:
+                plt.show()
+            else:
+                plt.close()
+    
+    def plot_full_distribution(self, hzfield_full_distribution, save_path=None, show_plot=True, title_suffix=None):
+        """
+        Plot the electric field distribution along the output plane.
+
+        Args:
+            hzfield_full_distribution: 1D array of |Hz|^2 values at each detector position
+            save_path: Optional path to save the plot
+            show_plot: Whether to display the plot
+            title_suffix: Optional suffix to add to the title (e.g., "Rollout 5")
+        """
+        if hzfield_full_distribution is None:
+            hzfield_full_distribution = self.get_hzfield_full_distribution()
+        # Use y-coordinates as x-axis if available
+        if len(self.hzfield_full_distribution_region_y_positions) == len(hzfield_full_distribution):
+            x_data = self.hzfield_full_distribution_region_y_positions
+            x_label = 'Y Position (μm)'
         else:
-            plt.close()
+            # Fallback to index if y positions not available
+            x_data = np.arange(len(hzfield_full_distribution))
+            x_label = 'Detector Index'
+        
+        hzfield_full_distribution = gaussian_filter1d(hzfield_full_distribution, sigma=1.1)
+        
+        with plt.style.context("seaborn-v0_8"), plt.rc_context({"figure.figsize": (12, 6), "font.size": 13}):
+            plt.figure()
+            plt.plot(x_data, hzfield_full_distribution, color="#4C72B0", alpha=0.7, label='Magnetic Field |Hz|²')
+            plt.xlabel(x_label)
+            plt.ylabel('|Hz|²')
+            
+            # Build title
+            base_title = 'Magnetic Field Full Distribution at Output Plane'
+            if title_suffix:
+                plt.title(f'{base_title}\n{title_suffix}')
+            else:
+                plt.title(base_title)
+            
+            plt.legend()
+            plt.grid(True, alpha=0.3)
+
+            if save_path:
+                try:
+                    # Create directory if it doesn't exist
+                    save_dir = os.path.dirname(save_path)
+                    if save_dir and not os.path.exists(save_dir):
+                        os.makedirs(save_dir, exist_ok=True)
+                    plt.savefig(save_path, dpi=150, bbox_inches='tight')
+                    print(f"Magnetic field full distribution plot saved to '{save_path}'")
+                except (FileNotFoundError, OSError) as e:
+                    print(f"Warning: Could not save plot to '{save_path}': {e}")
+                except Exception as e:
+                    print(f"Error saving plot: {e}")
+
+            if show_plot:
+                plt.show()
+            else:
+                plt.close()
 
     def calculate_flux(self, matrix):
         """
@@ -1012,14 +1106,16 @@ if __name__ == "__main__":
     
     # 3. Run simulation and get results
     results = sim.calculate_flux(matrix)
-    input_mode_flux, output_mode_flux_1, output_mode_flux_2, hzfield_state, hz_data, input_mode, output_mode_1, output_mode_2 = results
+    hzfield_state, hz_data = results
     
     # 4. Display results
     trans_1, trans_2, total_trans, diff_trans = sim.get_output_transmission(band_num=1)
     print(f"Transmission: Output1={trans_1*100:.1f}%, Output2={trans_2*100:.1f}%, Total={total_trans*100:.1f}%, Diff={diff_trans:.6f}")
     
     # Optional: Plot results
-    sim.plot_design(matrix=matrix, show_plot=true, 
+    sim.plot_design(matrix=matrix, show_plot=false, 
                    save_path='sample_img/field_result.png')
     sim.plot_distribution(hzfield_state=hzfield_state,
                          save_path='sample_img/hzfield_distribution.png', show_plot=False)
+    sim.plot_full_distribution(hzfield_full_distribution=None,
+                               save_path='sample_img/hzfield_full_distribution.png', show_plot=False)
