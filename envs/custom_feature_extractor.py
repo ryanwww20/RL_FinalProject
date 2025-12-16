@@ -17,10 +17,10 @@ class MatrixCombinedExtractor(BaseFeaturesExtractor):
     def __init__(
         self,
         observation_space: gym.spaces.Box,
-        cnn_proj_dim: int = 128,
-        pixel_num_x: int = 20,
-        pixel_num_y: int = 20,
-        num_monitors: int = 10,
+        cnn_proj_dim: int = 256,
+        pixel_num_x: int = 50,
+        pixel_num_y: int = 50,
+        num_monitors: int = 25,
     ):
         self.pixel_num_x = pixel_num_x
         self.pixel_num_y = pixel_num_y
@@ -43,10 +43,10 @@ class MatrixCombinedExtractor(BaseFeaturesExtractor):
         self.cnn = nn.Sequential(
             nn.Conv2d(1, 16, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(2, 2),  # 20x20 -> 10x10
+            nn.MaxPool2d(2, 2),  # (H,W) -> (H/2, W/2)
             nn.Conv2d(16, 32, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(2, 2),  # 10x10 -> 5x5
+            nn.MaxPool2d(2, 2),  # (H,W) -> (H/2, W/2)
             nn.Conv2d(32, 64, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.Flatten(),

@@ -18,6 +18,7 @@ from envs.Discrete_gym import MinimalEnv
 from envs.custom_feature_extractor import MatrixCombinedExtractor
 from PIL import Image
 from eval import ModelEvaluator
+from config import config
 
 from matplotlib import rcParams
 
@@ -566,9 +567,10 @@ def train_ppo(
             features_extractor_class=MatrixCombinedExtractor,
             features_extractor_kwargs=dict(
                 cnn_proj_dim=128,  # Dimension of CNN output after compression
-                pixel_num_x=20,
-                pixel_num_y=20,
-                num_monitors=10,
+                # Must match env observation layout (matrix_flat size + scalars)
+                pixel_num_x=config.simulation.pixel_num_x,
+                pixel_num_y=config.simulation.pixel_num_y,
+                num_monitors=config.simulation.num_flux_regions,
             ),
         ))
 

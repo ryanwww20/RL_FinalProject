@@ -1,19 +1,19 @@
 # New state space: 10 monitors + 1 matrix index + previous layer (each layer = 20 pixels in +y direction)
 # Total: 10 + 1 + 20 = 31
 state_dim: &state_dim 31
-num_monitors: &num_monitors 10
+num_monitors: &num_monitors 25
 num_previous_layers: &num_previous_layers 3
 
 environment:
   obs_size: *state_dim
-  action_size: 20
-  max_steps: 20
+  action_size: 50
+  max_steps: 50
   num_previous_layers: *num_previous_layers
   target_ratio: 0.5  # Target ratio for output 1 (70% to output 1, 30% to output 2)
 
 
 simulation:
-  resolution: 20
+  resolution: 50
   wavelength: 1.55
   cell_size: [6, 4, 0]
   pml_thickness: 0.2
@@ -30,11 +30,11 @@ simulation:
   design_region_y: 2.0
   design_region_y_min: -1.0  # Minimum y position for monitor placement
   design_region_y_max: 1.0   # Maximum y position for monitor placement
-  pixel_size: 0.1
+  pixel_size: 0.04
   silicon_index: 3.45
   silica_index: 1.45
-  pixel_num_x: 20
-  pixel_num_y: 20
+  pixel_num_x: 50
+  pixel_num_y: 50
   src_pos_shift_coeff: 0.95
   input_coupler_length: 1.5
   output_coupler_length: 1.5
@@ -55,9 +55,9 @@ training:
     # batch_size: 64
     # n_epochs: 40
     total_timesteps: 2000000
-    n_envs: 16
+    n_envs: 1
     learning_rate: 0.0001
-    n_steps: 240       # multiple of 20; rollout_len = n_envs * n_steps = 3840
+    n_steps: 50       # multiple of 20; rollout_len = n_envs * n_steps = 3840
     batch_size: 480    # larger batch to smooth updates
     n_epochs: 20       # reduce epochs to avoid overfitting each batch
     gamma: 0.99
