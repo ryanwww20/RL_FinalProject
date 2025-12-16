@@ -152,6 +152,22 @@ class ModelEvaluator:
         self._plot_metric(output_path, 'balance_score', 'Balance Score per Episode')
         self._plot_metric(output_path, 'total_reward', 'Total Reward per Episode')
 
+        # Save design/distribution visuals if environment exposes helpers (parity with training logs)
+        try:
+            design_path = output_path / "design.png"
+            distribution_path = output_path / "distribution.png"
+            env_obj = self.env.unwrapped if hasattr(self.env, "unwrapped") else self.env
+
+            if hasattr(env_obj, "save_design_plot"):
+                env_obj.save_design_plot(str(design_path), title_suffix="Evaluation")
+                print(f"Design plot saved to {design_path}")
+
+            if hasattr(env_obj, "save_distribution_plot"):
+                env_obj.save_distribution_plot(str(distribution_path), title_suffix="Evaluation")
+                print(f"Distribution plot saved to {distribution_path}")
+        except Exception as e:
+            print(f"Warning: could not save design/distribution plots: {e}")
+
     def _plot_metric(self, output_path: Path, metric: str, title: str):
         """Helper to plot a single metric."""
         if metric not in self.df.columns:
