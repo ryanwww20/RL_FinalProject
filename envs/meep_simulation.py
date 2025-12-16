@@ -446,6 +446,7 @@ class WaveguideSimulation:
         self.hzfield_monitor = self.hzfield_monitors[0] if self.hzfield_monitors else None
         
         # Add real field monitors for real distribution
+        self.hzfield_full_distribution_monitors = []
         num_monitors = self.num_flux_regions * 10
         monitor_length = self.monitor_length / 10
         y_min = - self.design_region_y
@@ -782,158 +783,160 @@ class WaveguideSimulation:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             save_path = f'meep_2d_result_{timestamp}.png'
 
-        plt.figure(figsize=(12, 6))
-        ax = plt.gca()  # Get current axes for adding patches
+        with plt.style.context("seaborn-v0_8"), plt.rc_context({"figure.figsize": (12, 6), "font.size": 13}):
+            plt.figure(figsize=(12, 6))
+            ax = plt.gca()  # Get current axes for adding patches
 
-        # Set extent dynamically based on cell_size
-        extent = [-self.cell_size.x/2, self.cell_size.x/2,
-                  -self.cell_size.y/2, self.cell_size.y/2]
+            # Set extent dynamically based on cell_size
+            extent = [-self.cell_size.x/2, self.cell_size.x/2,
+                    -self.cell_size.y/2, self.cell_size.y/2]
 
-        # Plot electric field
-        # Transpose ez_data because imshow expects (rows, cols) where rows=y, cols=x
-        # Meep's get_array gives (x, y), so transpose for correct orientation
-        field_magnitude = np.abs(hz_data)
-        plt.imshow(field_magnitude, interpolation='spline36', cmap='viridis',
-                   aspect='auto', extent=extent, origin='lower')
-        plt.colorbar(label='Hz (electric field)')
-        plt.xlabel('x (microns)')
-        plt.ylabel('y (microns)')
-        
-        # Build title
-        base_title = f'Waveguide Simulation - Hz Field (L_in={self.input_coupler_length}µm, L_out={self.output_coupler_length}µm)'
-        if title_suffix:
-            plt.title(f'{base_title}\n{title_suffix}')
-        else:
-            plt.title(base_title)
+            # Plot electric field
+            # Transpose ez_data because imshow expects (rows, cols) where rows=y, cols=x
+            # Meep's get_array gives (x, y), so transpose for correct orientation
+            field_magnitude = np.abs(hz_data)
+            plt.imshow(field_magnitude, interpolation='spline36', cmap='viridis',
+                    aspect='auto', extent=extent, origin='lower')
+            plt.colorbar(label='Hz (electric field)')
+            plt.xlabel('x (microns)')
+            plt.ylabel('y (microns)')
+            plt.grid(False)
+            
+            # Build title
+            base_title = f'Waveguide Simulation - Hz Field (L_in={self.input_coupler_length}µm, L_out={self.output_coupler_length}µm)'
+            if title_suffix:
+                plt.title(f'{base_title}\n{title_suffix}')
+            else:
+                plt.title(base_title)
 
-        # --- 0. Overlay Material Matrix (if provided) ---
-        silicon_label_added = False
-        silica_label_added = False
-        if matrix is not None:
-            matrix = np.array(matrix)
-            if matrix.shape == (self.pixel_num_x, self.pixel_num_y):
-                square_x_min = self.design_region_x_min  # -1.0
-                square_y_min = self.design_region_y_min  # -1.0
-                dx = self.pixel_size
-                dy = self.pixel_size
+            # --- 0. Overlay Material Matrix (if provided) ---
+            silicon_label_added = False
+            silica_label_added = False
+            if matrix is not None:
+                matrix = np.array(matrix)
+                if matrix.shape == (self.pixel_num_x, self.pixel_num_y):
+                    square_x_min = self.design_region_x_min  # -1.0
+                    square_y_min = self.design_region_y_min  # -1.0
+                    dx = self.pixel_size
+                    dy = self.pixel_size
 
-                # Plot each pixel as a rectangle
-                for i in range(self.pixel_num_x):
-                    for j in range(self.pixel_num_y):
-                        # Calculate lower-left corner position
-                        x_left = square_x_min + i * dx
-                        y_bottom = square_y_min + j * dy
+                    # Plot each pixel as a rectangle
+                    for i in range(self.pixel_num_x):
+                        for j in range(self.pixel_num_y):
+                            # Calculate lower-left corner position
+                            x_left = square_x_min + i * dx
+                            y_bottom = square_y_min + j * dy
 
-                        if matrix[i, j] == 1:
-                            # Silicon - darker grey
-                            ax.add_patch(Rectangle(
-                                (x_left, y_bottom), dx, dy,
-                                facecolor='black', edgecolor='none', alpha=0.4,
-                                label='Silicon' if not silicon_label_added else ''
-                            ))
-                            if not silicon_label_added:
-                                silicon_label_added = True
-                        else:
-                            # Silica - lighter grey
-                            ax.add_patch(Rectangle(
-                                (x_left, y_bottom), dx, dy,
-                                facecolor='lightgrey', edgecolor='none', alpha=0.4,
-                                label='Silica' if not silica_label_added else ''
-                            ))
-                            if not silica_label_added:
-                                silica_label_added = True
+                            if matrix[i, j] == 1:
+                                # Silicon - darker grey
+                                ax.add_patch(Rectangle(
+                                    (x_left, y_bottom), dx, dy,
+                                    facecolor='black', edgecolor='none', alpha=0.6,
+                                    label='Silicon' if not silicon_label_added else ''
+                                ))
+                                if not silicon_label_added:
+                                    silicon_label_added = True
+                            else:
+                                # Silica - lighter grey
+                                ax.add_patch(Rectangle(
+                                    (x_left, y_bottom), dx, dy,
+                                    facecolor='lightgrey', edgecolor='none', alpha=0.6,
+                                    label='Silica' if not silica_label_added else ''
+                                ))
+                                if not silica_label_added:
+                                    silica_label_added = True
 
-        # --- 1. Overlays: Input Waveguide ---
-        input_waveguide_x_start = self.design_region_x_min - self.input_coupler_length
-        input_waveguide_y_start = -self.waveguide_width / 2
+            # --- 1. Overlays: Input Waveguide ---
+            input_waveguide_x_start = self.design_region_x_min - self.input_coupler_length
+            input_waveguide_y_start = -self.waveguide_width / 2
 
-        ax.add_patch(Rectangle(
-            (input_waveguide_x_start, input_waveguide_y_start),
-            self.input_coupler_length, self.waveguide_width,
-            linewidth=2.5, edgecolor='yellow', facecolor='none', linestyle='-', alpha=0.9,
-            label='Input Waveguide Outline'
-        ))
+            ax.add_patch(Rectangle(
+                (input_waveguide_x_start, input_waveguide_y_start),
+                self.input_coupler_length, self.waveguide_width,
+                linewidth=2.5, edgecolor="#333333", facecolor='none', linestyle='-', alpha=0.8,
+                label='Input Waveguide Outline'
+            ))
 
-        # --- 2. Overlays: Output Waveguides ---
-        # Use the same fixed separation as in create_geometry
-        output_y_separation = self.output_y_separation
-        output_waveguide_x_start = self.design_region_x_max
-        output_waveguide_length = self.output_coupler_length
+            # --- 2. Overlays: Output Waveguides ---
+            # Use the same fixed separation as in create_geometry
+            output_y_separation = self.output_y_separation
+            output_waveguide_x_start = self.design_region_x_max
+            output_waveguide_length = self.output_coupler_length
 
-        # Output Waveguide 1 (Top)
-        output1_waveguide_y_start = output_y_separation - self.waveguide_width / 2
-        ax.add_patch(Rectangle(
-            (output_waveguide_x_start, output1_waveguide_y_start),
-            output_waveguide_length, self.waveguide_width,
-            linewidth=2.5, edgecolor='orange', facecolor='none', linestyle='-', alpha=0.9,
-            label='Output Waveguide Outline'  # Only label once
-        ))
-        # Output Waveguide 2 (Bottom)
-        output2_waveguide_y_start = -output_y_separation - self.waveguide_width / 2
-        ax.add_patch(Rectangle(
-            (output_waveguide_x_start, output2_waveguide_y_start),
-            output_waveguide_length, self.waveguide_width,
-            linewidth=2.5, edgecolor='orange', facecolor='none', linestyle='-', alpha=0.9
-            # No label here to avoid duplicate legend entry
-        ))
-        # --- 3. Overlays: Design Region ---
-        ax.add_patch(Rectangle(
-            # Lower-left corner: (-1.0, -1.0)
-            (self.design_region_x_min, self.design_region_y_min),
-            2.0, 2.0,  # Width=2.0, Height=2.0
-            linewidth=2.5, edgecolor='lime', facecolor='none',
-            linestyle='--', alpha=0.9, label='Design Region (2x2um)')
-        )
+            # Output Waveguide 1 (Top)
+            output1_waveguide_y_start = output_y_separation - self.waveguide_width / 2
+            ax.add_patch(Rectangle(
+                (output_waveguide_x_start, output1_waveguide_y_start),
+                output_waveguide_length, self.waveguide_width,
+                linewidth=2.5, edgecolor="#DDDDDD", facecolor='none', linestyle='-', alpha=0.8,
+                label='Output Waveguide Outline'  # Only label once
+            ))
+            # Output Waveguide 2 (Bottom)
+            output2_waveguide_y_start = -output_y_separation - self.waveguide_width / 2
+            ax.add_patch(Rectangle(
+                (output_waveguide_x_start, output2_waveguide_y_start),
+                output_waveguide_length, self.waveguide_width,
+                linewidth=2.5, edgecolor="#DDDDDD", facecolor='none', linestyle='-', alpha=0.8
+                # No label here to avoid duplicate legend entry
+            ))
+            # --- 3. Overlays: Design Region ---
+            ax.add_patch(Rectangle(
+                # Lower-left corner: (-1.0, -1.0)
+                (self.design_region_x_min, self.design_region_y_min),
+                2.0, 2.0,  # Width=2.0, Height=2.0
+                linewidth=2.5, edgecolor="#111111", facecolor='none',
+                linestyle='-', alpha=0.9, label='Design Region (2x2um)')
+            )
 
-        # --- 4. Overlays: Output Measurement Plane ---
-        # Draw a vertical dashed line at self.state_output_x
-        plt.axvline(x=self.state_output_x, color='red', linestyle=':', linewidth=2,
-                    label=f'Output Flux Plane (x={self.state_output_x}µm)')
+            # --- 4. Overlays: Output Measurement Plane ---
+            # Draw a vertical dashed line at self.state_output_x
+            plt.axvline(x=self.state_output_x, color="#D55E00", linestyle=':', linewidth=2,
+                        label=f'Output Flux Plane (x={self.state_output_x}µm)')
 
-        # --- 5. Legend and Final Setup ---
-        # Use ax.legend() to collect labels from patches
-        handles, labels = ax.get_legend_handles_labels()
-        # Remove duplicate labels (e.g., if 'Output Waveguide Outline' appears twice)
-        unique_handles = {}
-        for h, l in zip(handles, labels):
-            # Dict automatically handles duplicates, keeping last one
-            unique_handles[l] = h
+            # --- 5. Legend and Final Setup ---
+            # Use ax.legend() to collect labels from patches
+            handles, labels = ax.get_legend_handles_labels()
+            # Remove duplicate labels (e.g., if 'Output Waveguide Outline' appears twice)
+            unique_handles = {}
+            for h, l in zip(handles, labels):
+                # Dict automatically handles duplicates, keeping last one
+                unique_handles[l] = h
 
-        # FIX: Move legend outside the plot area
-        ax.legend(unique_handles.values(), unique_handles.keys(),
-                  # Tells the legend to position its lower-right corner at the anchor point
-                  loc='lower right',
-                  # Sets the anchor point to the bottom-left corner of the axes (x=0, y=0)
-                  bbox_to_anchor=(0.3, -0.4),
-                  borderaxespad=0.)        # No padding between the legend and the anchor point
+            # FIX: Move legend outside the plot area
+            ax.legend(unique_handles.values(), unique_handles.keys(),
+                    # Tells the legend to position its lower-right corner at the anchor point
+                    loc='lower right',
+                    # Sets the anchor point to the bottom-left corner of the axes (x=0, y=0)
+                    bbox_to_anchor=(0.3, -0.4),
+                    borderaxespad=0.)        # No padding between the legend and the anchor point
 
-        # FIX: Ensure 1:1 scale for the axes
-        ax.set_aspect('equal', adjustable='box')
+            # FIX: Ensure 1:1 scale for the axes
+            ax.set_aspect('equal', adjustable='box')
 
-        plt.tight_layout()  # IMPORTANT: Adjust plot to make room for the legend
+            plt.tight_layout()  # IMPORTANT: Adjust plot to make room for the legend
 
-        # Save and show
-        if save_path:
-            try:
-                # Create directory if it doesn't exist
-                save_dir = os.path.dirname(save_path)
-                if save_dir and not os.path.exists(save_dir):
-                    os.makedirs(save_dir, exist_ok=True)
-                plt.savefig(save_path, dpi=150, bbox_inches='tight')
-                print(f"Simulation results saved to '{save_path}'")
-            except (FileNotFoundError, OSError) as e:
-                print(f"Warning: Could not save plot to '{save_path}': {e}")
-            except Exception as e:
-                print(f"Error saving plot: {e}")
-        print(
-            f"Waveguide: {self.waveguide_width}um wide, {self.waveguide_index} index")
-        print(
-            f"EigenModeSource: Continuous wave at {self.wavelength}um, from left")
+            # Save and show
+            if save_path:
+                try:
+                    # Create directory if it doesn't exist
+                    save_dir = os.path.dirname(save_path)
+                    if save_dir and not os.path.exists(save_dir):
+                        os.makedirs(save_dir, exist_ok=True)
+                    plt.savefig(save_path, dpi=150, bbox_inches='tight')
+                    print(f"Simulation results saved to '{save_path}'")
+                except (FileNotFoundError, OSError) as e:
+                    print(f"Warning: Could not save plot to '{save_path}': {e}")
+                except Exception as e:
+                    print(f"Error saving plot: {e}")
+            print(
+                f"Waveguide: {self.waveguide_width}um wide, {self.waveguide_index} index")
+            print(
+                f"EigenModeSource: Continuous wave at {self.wavelength}um, from left")
 
-        if show_plot:
-            plt.show()
-        else:
-            plt.close()
+            if show_plot:
+                plt.show()
+            else:
+                plt.close()
 
     def plot_distribution(self, hzfield_state, save_path=None, show_plot=True, title_suffix=None):
         """
@@ -1007,6 +1010,7 @@ class WaveguideSimulation:
         if hzfield_full_distribution is None:
             hzfield_full_distribution = self.get_hzfield_full_distribution()
         # Use y-coordinates as x-axis if available
+        # print("hzfield_full_distribution length: ", len(hzfield_full_distribution))
         if len(self.hzfield_full_distribution_region_y_positions) == len(hzfield_full_distribution):
             x_data = self.hzfield_full_distribution_region_y_positions
             x_label = 'Y Position (μm)'
@@ -1076,6 +1080,7 @@ class WaveguideSimulation:
 
         # Get electric field state (distribution along y-axis)
         hzfield_state = self.get_hzfield_state()  # Returns |Hz|^2 values
+        hzfield_full_distribution = self.get_hzfield_full_distribution()
         
         # Get input and output flux values and mode coefficients (using existing functions)
         # input_mode_flux, input_mode = self.get_flux_input_mode(band_num=1)
@@ -1084,7 +1089,7 @@ class WaveguideSimulation:
         # Get field data
         hz_data = self.get_hzfield_data()
 
-        return hzfield_state, hz_data
+        return hzfield_state, hz_data, hzfield_full_distribution
 
 
 if __name__ == "__main__":
@@ -1106,7 +1111,7 @@ if __name__ == "__main__":
     
     # 3. Run simulation and get results
     results = sim.calculate_flux(matrix)
-    hzfield_state, hz_data = results
+    hzfield_state, hz_data, hzfield_full_distribution = results
     
     # 4. Display results
     trans_1, trans_2, total_trans, diff_trans = sim.get_output_transmission(band_num=1)
@@ -1117,5 +1122,5 @@ if __name__ == "__main__":
                    save_path='sample_img/field_result.png')
     sim.plot_distribution(hzfield_state=hzfield_state,
                          save_path='sample_img/hzfield_distribution.png', show_plot=False)
-    sim.plot_full_distribution(hzfield_full_distribution=None,
+    sim.plot_full_distribution(hzfield_full_distribution=hzfield_full_distribution,
                                save_path='sample_img/hzfield_full_distribution.png', show_plot=False)
