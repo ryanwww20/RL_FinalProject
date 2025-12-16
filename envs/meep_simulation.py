@@ -895,13 +895,13 @@ class WaveguideSimulation:
                 # Lower-left corner: (-1.0, -1.0)
                 (self.design_region_x_min, self.design_region_y_min),
                 2.0, 2.0,  # Width=2.0, Height=2.0
-                linewidth=2.5, edgecolor="#111111", facecolor='none',
+                linewidth=1, edgecolor="#111111", facecolor='none',
                 linestyle='-', alpha=0.9, label='Design Region (2x2um)')
             )
 
             # --- 4. Overlays: Output Measurement Plane ---
             # Draw a vertical dashed line at self.state_output_x
-            plt.axvline(x=self.state_output_x, color="#D55E00", linestyle=':', linewidth=2,
+            plt.axvline(x=self.state_output_x, color="#D5CE00", linestyle=':', linewidth=2,
                         label=f'Output Flux Plane (x={self.state_output_x}µm)')
 
             # --- 5. Legend and Final Setup ---
