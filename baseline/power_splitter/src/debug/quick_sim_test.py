@@ -47,6 +47,19 @@ def extract_design_and_factor(data: dict) -> Tuple[np.ndarray, float | None]:
     return design_vals, discr
 
 
+def load_design_txt(path: str) -> np.ndarray:
+    """Load a design matrix from a plain text file.
+
+    Notes:
+    - Lines starting with '#' are ignored (np.savetxt header-compatible).
+    - Expected shape is (Nx, Ny), e.g. 20x20 for default config.
+    """
+    arr = np.loadtxt(path, dtype=float)
+    if arr.ndim != 2:
+        raise ValueError(f"Expected 2D matrix in txt, got shape {arr.shape}")
+    return arr
+
+
 def build_simulation(config: SplitterConfig, stage: str, discr_factor: float | None):
     """Create the correct simulation graph (continuous or sigmoid/discrete)."""
     var, wg_in, wg_up, wg_down, design, _ = create_design(config)
@@ -67,7 +80,10 @@ def build_simulation(config: SplitterConfig, stage: str, discr_factor: float | N
 
 def main():
     parser = argparse.ArgumentParser(description="Evaluate a saved splitter design (continuous or sigmoid).")
-    parser.add_argument("pkl", help="Path to checkpoint .pkl (stepXX.pkl)")
+    parser.add_argument(
+        "input",
+        help="Path to checkpoint .pkl (stepXX.pkl) OR a plain-text design matrix .txt (np.savetxt format).",
+    )
     parser.add_argument(
         "--stage",
         choices=["auto", "cont", "sig"],
@@ -80,22 +96,36 @@ def main():
     parser.add_argument("--fig-prefix", default="quick_sim", help="Prefix for saved figures (PNG).")
     args = parser.parse_args()
 
-    if not os.path.isfile(args.pkl):
-        raise FileNotFoundError(args.pkl)
+    if not os.path.isfile(args.input):
+        raise FileNotFoundError(args.input)
 
-    with open(args.pkl, "rb") as fp:
-        data = pickle.load(fp)
+    in_path = args.input
+    _, ext = os.path.splitext(in_path)
+    ext = ext.lower()
 
-    design_vals, discr_factor = extract_design_and_factor(data)
-    print(
-        f"Loaded design_var with shape {design_vals.shape} "
-        f"and range [{design_vals.min():.3f}, {design_vals.max():.3f}]"
-    )
+    discr_factor = None
+    if ext == ".txt":
+        design_vals = load_design_txt(in_path)
+        stage = "cont" if args.stage == "auto" else args.stage
+        print(
+            f"Loaded TXT design with shape {design_vals.shape} "
+            f"and range [{design_vals.min():.3f}, {design_vals.max():.3f}]"
+        )
+        print(f"Evaluation stage: {stage.upper()} (TE mode in create_simulation)")
+    else:
+        with open(in_path, "rb") as fp:
+            data = pickle.load(fp)
 
-    stage = args.stage
-    if stage == "auto":
-        stage = detect_stage(data)
-    print(f"Evaluation stage: {stage.upper()} (TE mode in create_simulation)")
+        design_vals, discr_factor = extract_design_and_factor(data)
+        print(
+            f"Loaded design_var with shape {design_vals.shape} "
+            f"and range [{design_vals.min():.3f}, {design_vals.max():.3f}]"
+        )
+
+        stage = args.stage
+        if stage == "auto":
+            stage = detect_stage(data)
+        print(f"Evaluation stage: {stage.upper()} (TE mode in create_simulation)")
 
     config = SplitterConfig()
 
@@ -130,7 +160,7 @@ def main():
         field_mag = np.linalg.norm(field_raw, axis=0)
         extent = get_extent(config.simulation.region)
         
-        base = os.path.splitext(os.path.basename(args.pkl))[0]
+        base = os.path.splitext(os.path.basename(in_path))[0]
         fig_name = f"{args.fig_prefix}_{base}.png"
         out_path = os.path.join(args.save_path, fig_name)
         

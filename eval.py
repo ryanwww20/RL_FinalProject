@@ -31,13 +31,22 @@ class ModelEvaluator:
         self.rolling_window = max(1, int(rolling_window))
         self.results = []
         
-    def evaluate(self, n_episodes: int = 10, deterministic: bool = True) -> pd.DataFrame:
+    def evaluate(
+        self,
+        n_episodes: int = 10,
+        deterministic: bool = True,
+        export_design_dir: Optional[str] = None,
+        export_design_prefix: str = "design_ep",
+    ) -> pd.DataFrame:
         """
         Run evaluation episodes.
         
         Args:
             n_episodes: Number of episodes to run
             deterministic: Whether to use deterministic actions
+            export_design_dir: If set, export the final design matrix of each episode
+                as a plain-text file (np.savetxt compatible).
+            export_design_prefix: Prefix for exported design filenames.
             
         Returns:
             DataFrame containing metrics for each episode
@@ -46,6 +55,11 @@ class ModelEvaluator:
         
         episode_metrics = []
         
+        export_path: Optional[Path] = None
+        if export_design_dir:
+            export_path = Path(export_design_dir)
+            export_path.mkdir(parents=True, exist_ok=True)
+
         for i in range(n_episodes):
             # Use different seed for each episode to ensure diversity
             # Start from seed=0 and increment for each episode
@@ -71,6 +85,32 @@ class ModelEvaluator:
                     final_info.update(info)
             
             print(f"Episode {i+1}/{n_episodes} completed. Reward: {total_reward:.4f}")
+
+            # Export final design matrix (compatible with spins-b quick_sim_test.py .txt mode).
+            if export_path is not None:
+                try:
+                    metrics = None
+                    if hasattr(self.env.unwrapped, "get_current_metrics"):
+                        metrics = self.env.unwrapped.get_current_metrics()
+                    matrix = None
+                    if isinstance(metrics, dict):
+                        matrix = metrics.get("material_matrix")
+                    if matrix is None and hasattr(self.env.unwrapped, "material_matrix"):
+                        matrix = self.env.unwrapped.material_matrix
+                    if matrix is None:
+                        raise AttributeError("Could not locate material_matrix from environment.")
+
+                    matrix = np.asarray(matrix, dtype=float)
+                    out_file = export_path / f"{export_design_prefix}{i+1}.txt"
+                    np.savetxt(
+                        out_file,
+                        matrix,
+                        fmt="%.6f",
+                        header="RL exported material_matrix (shape: Nx x Ny).",
+                    )
+                    print(f"Saved design matrix to {out_file}")
+                except Exception as e:
+                    print(f"Warning: failed to export design matrix for episode {i+1}: {e}")
             
             # Collect metrics for this episode
             metric = {
@@ -205,6 +245,22 @@ def main():
     parser.add_argument("--n_episodes", type=int, default=1, help="Number of evaluation episodes (default: 1)")
     parser.add_argument("--output_dir", type=str, default="eval_results", help="Directory to save evaluation results")
     parser.add_argument("--stochastic", action="store_true", help="Use stochastic actions (default: deterministic)")
+    parser.add_argument(
+        "--export_design_dir",
+        type=str,
+        default=None,
+        help=(
+            "If set, export each episode's final design matrix as a .txt file "
+            "(np.savetxt format). This is directly loadable by "
+            "spins-b/power_splitter/src/debug/quick_sim_test.py when given a .txt path."
+        ),
+    )
+    parser.add_argument(
+        "--export_design_prefix",
+        type=str,
+        default="design_ep",
+        help="Filename prefix for exported design matrices (default: design_ep).",
+    )
     
     args = parser.parse_args()
     
@@ -249,7 +305,12 @@ def main():
         print("      Expect identical results across episodes.")
 
     # Run evaluation
-    evaluator.evaluate(n_episodes=args.n_episodes, deterministic=deterministic)
+    evaluator.evaluate(
+        n_episodes=args.n_episodes,
+        deterministic=deterministic,
+        export_design_dir=args.export_design_dir,
+        export_design_prefix=args.export_design_prefix,
+    )
     
     # Save results
     save_path = Path(args.output_dir) / f"{args.algo}_{Path(args.model_path).stem}"
