@@ -318,10 +318,10 @@ class MinimalEnv(gym.Env):
         transmission_1, transmission_2, total_transmission, _ = self.simulation.get_output_transmission(band_num=1)
         transmission_score = total_transmission / self.fixed_input_mode
 
-        # Calculate balance score based on how close to 70/30 split
+        # Calculate balance score based on how close to target ratio split
         if total_transmission > 0:
             actual_ratio = transmission_1 / total_transmission  # Actual % to output 1
-            target_ratio = 0.7  # Target is 70% to output 1
+            target_ratio = config.environment.target_ratio
             # balance_score = 1 when perfect, 0 when completely off
             balance_score = max(1 - abs(actual_ratio - target_ratio) / target_ratio, 0)
         else:
@@ -365,10 +365,10 @@ class MinimalEnv(gym.Env):
         transmission_1, transmission_2, total_transmission, _ = \
             self.simulation.get_output_transmission(band_num=1)
         
-        # Calculate balance score based on how close to 70/30 split
+        # Calculate balance score based on how close to target ratio split
         if total_transmission > 0:
             actual_ratio = transmission_1 / total_transmission  # Actual % to output 1
-            target_ratio = 0.7  # Target is 70% to output 1
+            target_ratio = config.environment.target_ratio
             balance_score = max(1 - abs(actual_ratio - target_ratio) / target_ratio, 0)
         else:
             balance_score = 0
