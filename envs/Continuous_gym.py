@@ -157,7 +157,7 @@ class MinimalEnv(gym.Env):
         # This returns: input_mode_flux, output_mode_flux_1, output_mode_flux_2, hzfield_state, hz_data, input_mode, output_mode_1, output_mode_2
         # For initial state, use empty matrix (all zeros)
         empty_matrix = np.zeros((config.simulation.pixel_num_x, config.simulation.pixel_num_y))
-        hzfield_state, hz_data = self.simulation.calculate_flux(empty_matrix)
+        hzfield_state, hz_data, _ = self.simulation.calculate_flux(empty_matrix)
         
         # Normalize hzfield_state by dividing by maximum (bounded between 0 and 1)
         hzfield_max = np.max(hzfield_state)
@@ -215,7 +215,7 @@ class MinimalEnv(gym.Env):
         self.material_matrix_idx += 1
 
         # calculate_flux returns: input_mode_flux, output_mode_flux_1, output_mode_flux_2, hzfield_state, hz_data, input_mode, output_mode_1, output_mode_2
-        hzfield_state, hz_data= self.simulation.calculate_flux(
+        hzfield_state, hz_data, _ = self.simulation.calculate_flux(
             self.material_matrix)
 
         # Use MODE coefficients for reward calculation (instead of raw flux)
@@ -321,7 +321,7 @@ class MinimalEnv(gym.Env):
         
         # Fallback: return current state (for first rollout before any episode completes)
         _, input_mode = self.simulation.get_flux_input_mode(band_num=1)
-        hzfield_state, hz_data = self.simulation.calculate_flux(self.material_matrix)
+        hzfield_state, hz_data, _ = self.simulation.calculate_flux(self.material_matrix)
         
         transmission_1, transmission_2, total_transmission, diff_transmission = \
             self.simulation.get_output_transmission(band_num=1)
@@ -360,7 +360,7 @@ class MinimalEnv(gym.Env):
             hz_data = self.last_episode_metrics['hz_data']
         else:
             matrix = self.material_matrix
-            _, hz_data= self.simulation.calculate_flux(self.material_matrix)
+            _, hz_data, _ = self.simulation.calculate_flux(self.material_matrix)
         self.simulation.plot_design(
             matrix=matrix,
             hz_data=hz_data,
@@ -375,7 +375,7 @@ class MinimalEnv(gym.Env):
         if self.last_episode_metrics is not None:
             hzfield_state = self.last_episode_metrics['hzfield_state']
         else:
-            hzfield_state, _= self.simulation.calculate_flux(self.material_matrix)
+            hzfield_state, _, _ = self.simulation.calculate_flux(self.material_matrix)
         self.simulation.plot_distribution(
             hzfield_state=hzfield_state,
             save_path=save_path,
