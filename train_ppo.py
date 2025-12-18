@@ -453,6 +453,7 @@ def train_ppo(
     vf_coef=0.5,
     max_grad_norm=0.5,
     use_cnn=True,
+    ablation_setting=None,  # If None, auto-select based on use_cnn
     tensorboard_log="./ppo_tensorboard/",
     save_path="./ppo_model",
     load_model_path=None,  # Path to existing model to resume training
@@ -473,7 +474,8 @@ def train_ppo(
         ent_coef: Entropy coefficient
         vf_coef: Value function coefficient
         max_grad_norm: Maximum gradient norm for clipping
-        use_cnn: Whether to use CNN feature extractor
+        use_cnn: Whether to use CNN feature extractor (deprecated, use ablation_setting)
+        ablation_setting: Ablation study setting (1-4), if None auto-select based on use_cnn
         tensorboard_log: Directory for tensorboard logs
         save_path: Path to save the trained model
     """
@@ -534,9 +536,14 @@ def train_ppo(
     # contain lambda functions that can't be pickled for multiprocessing
     print("Creating environment...")
     
+    # Determine ablation_setting
+    if ablation_setting is None:
+        # Auto-select based on use_cnn for backward compatibility
+        ablation_setting = 1 if not use_cnn else 2
+
     env_kwargs = {
         "render_mode": None,
-        "use_cnn": use_cnn,
+        "ablation_setting": ablation_setting,
     }
     
     env = make_vec_env(
@@ -547,7 +554,7 @@ def train_ppo(
     )
 
     # Create evaluation environment
-    eval_env = MinimalEnv(render_mode=None, use_cnn=use_cnn)
+    eval_env = MinimalEnv(render_mode=None, ablation_setting=ablation_setting)
     
     # Define model save path
     save_path_with_timestamp = f"models/ppo_model_{start_timestamp}.zip"
