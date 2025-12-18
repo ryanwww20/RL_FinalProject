@@ -331,7 +331,7 @@ class WaveguideSimulation:
                     # Position source at the start of the input coupler
                     center=mp.Vector3(input_coupler_start_x *
                                       self.src_pos_shift_coeff, 0.0, 0),
-                    size=mp.Vector3(0, self.waveguide_width, 0),
+                    size=mp.Vector3(0, self.waveguide_width, 0.22),
                     eig_band=1,
                     direction=mp.NO_DIRECTION,
                     eig_kpoint=mp.Vector3(1, 0, 0),  # +X direction (rightward)
