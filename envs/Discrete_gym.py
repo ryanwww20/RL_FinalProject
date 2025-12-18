@@ -93,6 +93,7 @@ class MinimalEnv(gym.Env):
         all_silicon_matrix = np.ones((config.simulation.pixel_num_x, config.simulation.pixel_num_y))
         _, _, _ = self.simulation.calculate_flux(all_silicon_matrix)  # Run simulation to get flux
         _, self.fixed_input_mode = self.simulation.get_flux_input_mode(band_num=1)
+        self.fixed_input_mode *= 2
         print(f"Fixed input_mode set to {self.fixed_input_mode:.6f} (all-silicon matrix)")
 
     def _get_default_waveguide_layer(self):
