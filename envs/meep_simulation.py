@@ -119,7 +119,7 @@ class WaveguideSimulation:
 
         input_waveguide = mp.Block(
             center=mp.Vector3(input_center_x, 0, 0),
-            size=mp.Vector3(input_length, self.waveguide_width, 0),
+            size=mp.Vector3(input_length, self.waveguide_width, 0.22),
             material=mp.Medium(index=self.waveguide_index)
         )
         geometry.append(input_waveguide)
@@ -137,7 +137,7 @@ class WaveguideSimulation:
         # Output Waveguide 1 (Top)
         output_waveguide_1 = mp.Block(
             center=mp.Vector3(output_center_x, self.output_y_separation, 0),
-            size=mp.Vector3(output_length, self.waveguide_width, 0),
+            size=mp.Vector3(output_length, self.waveguide_width, 0.22),
             material=mp.Medium(index=self.waveguide_index)
         )
         geometry.append(output_waveguide_1)
@@ -145,7 +145,7 @@ class WaveguideSimulation:
         # Output Waveguide 2 (Bottom)
         output_waveguide_2 = mp.Block(
             center=mp.Vector3(output_center_x, -self.output_y_separation, 0),
-            size=mp.Vector3(output_length, self.waveguide_width, 0),
+            size=mp.Vector3(output_length, self.waveguide_width, 0.22),
             material=mp.Medium(index=self.waveguide_index)
         )
         geometry.append(output_waveguide_2)
@@ -174,14 +174,14 @@ class WaveguideSimulation:
                     if matrix[i, j] == 1:
                         silicon_pixel = mp.Block(
                             center=mp.Vector3(x_center, y_center, 0),
-                            size=mp.Vector3(dx, dy, 0),
+                            size=mp.Vector3(dx, dy, 0.22),
                             material=mp.Medium(index=self.silicon_index)
                         )
                         geometry.append(silicon_pixel)
                     else:
                         silica_pixel = mp.Block(
                             center=mp.Vector3(x_center, y_center, 0),
-                            size=mp.Vector3(dx, dy, 0),
+                            size=mp.Vector3(dx, dy, 0.22),
                             material=mp.Medium(index=self.silica_index)
                         )
                         geometry.append(silica_pixel)
@@ -435,7 +435,7 @@ class WaveguideSimulation:
         for y_center in y_centers:
             field_region = mp.Volume(
                 center=mp.Vector3(self.state_output_x, y_center, 0),
-                size=mp.Vector3(0, monitor_length, 0)  # Vertical line segment of length 0.2 um
+                size=mp.Vector3(0, monitor_length, 0.22)  # Vertical line segment of length 0.2 um
             )
             
             # Add DFT fields monitor for Hz component (TE mode)
@@ -461,7 +461,7 @@ class WaveguideSimulation:
         for y_center in y_centers:
             field_region = mp.Volume(
                 center=mp.Vector3(self.state_output_x, y_center, 0),
-                size=mp.Vector3(0, monitor_length, 0)  # Vertical line segment of length 0.2 um
+                size=mp.Vector3(0, monitor_length, 0.22)  # Vertical line segment of length 0.2 um
             )
             monitor = self.sim.add_dft_fields(
                 [mp.Hz],  # Monitor Hz component (for 2D TE mode)
@@ -485,7 +485,7 @@ class WaveguideSimulation:
                 "Simulation must be created first. Call create_simulation() method.")
         self.input_flux_region = mp.FluxRegion(
             center=mp.Vector3(self.input_flux_monitor_x, 0, 0),
-            size=mp.Vector3(0, self.waveguide_width, 0)
+            size=mp.Vector3(0, self.waveguide_width, 0.22)
         )
         self.input_flux_region = self.sim.add_flux(
             frequency, 0, 1, self.input_flux_region)
@@ -502,7 +502,7 @@ class WaveguideSimulation:
         self.output_flux_region_1 = mp.FluxRegion(
             center=mp.Vector3(self.output_flux_monitor_x,
                               self.output_y_separation, 0),
-            size=mp.Vector3(0, self.waveguide_width, 0)
+            size=mp.Vector3(0, self.waveguide_width, 0.22)
         )
         self.output_flux_region_1 = self.sim.add_flux(
             frequency, 0, 1, self.output_flux_region_1)
@@ -510,7 +510,7 @@ class WaveguideSimulation:
         self.output_flux_region_2 = mp.FluxRegion(
             center=mp.Vector3(self.output_flux_monitor_x, -
                               self.output_y_separation, 0),
-            size=mp.Vector3(0, self.waveguide_width, 0)
+            size=mp.Vector3(0, self.waveguide_width, 0.22)
         )
         self.output_flux_region_2 = self.sim.add_flux(
             frequency, 0, 1, self.output_flux_region_2)
@@ -1145,28 +1145,28 @@ if __name__ == "__main__":
     # [0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1],
     # [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1],
     # ]) # -> Baseline 30:70 matrix
-#     matrix = np.array([
-#     [1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0],
-#     [1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-#     [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0],
-#     [1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0],
-#     [1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0],
-#     [0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0],
-#     [0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0],
-#     [0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-#     [0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0],
-#     [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1],
-#     [1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1],
-#     [1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1],
-#     [0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0],
-#     [0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0],
-#     [0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0],
-#     [1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1],
-#     [1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1],
-#     [0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1],
-#     [0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0],
-#     [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0]
-# ])# -> Willisu 30:70 matrix
+    matrix = np.array([
+    [1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+    [1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+    [1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+    [1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0],
+    [1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0],
+    [0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0],
+    [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1],
+    [1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1],
+    [0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0],
+    [0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0],
+    [0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0],
+    [1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1],
+    [1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1],
+    [0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1],
+    [0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0]
+])# -> Willisu 30:70 matrix
 #     matrix = np.array([
 #   [1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
 #   [0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -1189,28 +1189,28 @@ if __name__ == "__main__":
 #   [1, 0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0],
 #   [1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1],
 # ]) # -> sherman matrix
-    matrix = np.array([
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-        [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-    ]) # -> 5050 baseline matrix
+    # matrix = np.array([
+    #     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    #     [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    #     [1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1],
+    #     [1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1],
+    #     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1],
+    #     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1],
+    #     [1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    #     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    #     [1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1],
+    #     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    #     [1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    #     [1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    #     [1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    #     [1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    #     [1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    #     [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    #     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    #     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    #     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0],
+    #     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    # ]) # -> 5050 baseline matrix
     # Optional: Create a simple pattern (e.g., a vertical line of silica)
     # matrix[sim.pixel_num_x // 2, :] = 0
     _, _, _ = sim.calculate_flux(all_silicon_matrix)
