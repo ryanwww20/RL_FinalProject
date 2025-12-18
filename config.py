@@ -42,6 +42,7 @@ class EnvironmentConfig:
     action_size: int
     max_steps: int
     num_previous_layers: int
+    target_ratio: float
 
 # @dataclass 
 # class TrainingConfig:

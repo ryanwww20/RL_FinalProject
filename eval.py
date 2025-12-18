@@ -95,8 +95,7 @@ class ModelEvaluator:
                 "total_transmission",
                 "transmission_1",
                 "transmission_2",
-                "diff_transmission",
-                "similarity_score"
+                "actual_ratio"
             ]
             
             for key in keys_to_extract:

@@ -111,7 +111,7 @@ def main():
     simulation = WaveguideSimulation()
 
     # Run simulation and get results
-    hzfield_state, hz_data = simulation.calculate_flux(material_matrix)
+    hzfield_state, hz_data, _ = simulation.calculate_flux(material_matrix)
 
     # Get input and output mode values (mode integral)
     _, input_mode = simulation.get_flux_input_mode(band_num=1)

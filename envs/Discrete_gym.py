@@ -63,7 +63,8 @@ class MinimalEnv(gym.Env):
         self.state = None
         self.render_mode = render_mode
         # Material matrix is 2D: (pixel_num_x, pixel_num_y) representing the current design
-        self.material_matrix = np.zeros(
+        # Initialize with all 1's (silicon) instead of 0's (silica)
+        self.material_matrix = np.ones(
             (config.simulation.pixel_num_x, config.simulation.pixel_num_y))
         self.material_matrix_idx = 0
         self.max_steps = config.environment.max_steps
@@ -87,6 +88,12 @@ class MinimalEnv(gym.Env):
         self.total_step_time = 0.0
         self.total_sim_time = 0.0
         self.total_other_time = 0.0
+        
+        # Fixed input_mode: calculate once at initialization with all-silicon matrix
+        all_silicon_matrix = np.ones((config.simulation.pixel_num_x, config.simulation.pixel_num_y))
+        _, _, _ = self.simulation.calculate_flux(all_silicon_matrix)  # Run simulation to get flux
+        _, self.fixed_input_mode = self.simulation.get_flux_input_mode(band_num=1)
+        print(f"Fixed input_mode set to {self.fixed_input_mode:.6f} (all-silicon matrix)")
 
     def _get_default_waveguide_layer(self):
         """
@@ -151,22 +158,6 @@ class MinimalEnv(gym.Env):
 
         return np.concatenate([monitors, idx_arr, previous_layer]).astype(np.float32)
 
-    def _calculate_similarity(self, current_layer, previous_layer):
-        """
-        Calculate similarity between current and previous layer.
-        Similarity is the number of identical pixels (both 0 or both 1).
-        
-        Args:
-            current_layer: 1D array of current layer (length pixel_num_y)
-            previous_layer: 1D array of previous layer (length pixel_num_y)
-        
-        Returns:
-            similarity: Number of identical pixels (0 to pixel_num_y)
-        """
-        # Count pixels where current_layer == previous_layer
-        similarity = np.sum(current_layer == previous_layer)
-        return float(similarity)
-
     def reset(self, seed=None, options=None):
         """
         Reset the environment to initial state.
@@ -182,17 +173,18 @@ class MinimalEnv(gym.Env):
         super().reset(seed=seed)
 
         # Reset material matrix and index
-        self.material_matrix = np.zeros(
+        # Initialize with all 1's (silicon) instead of 0's (silica)
+        self.material_matrix = np.ones(
             (config.simulation.pixel_num_x, config.simulation.pixel_num_y))
         self.material_matrix_idx = 0
         self.layer_history = []  # Reset layer history
         self.last_score = None
 
-        # Use calculate_flux to get initial hzfield_state for empty matrix
-        # This returns: input_mode_flux, output_mode_flux_1, output_mode_flux_2, hzfield_state, hz_data, input_mode, output_mode_1, output_mode_2
-        # For initial state, use empty matrix (all zeros)
-        empty_matrix = np.zeros((config.simulation.pixel_num_x, config.simulation.pixel_num_y))
-        hzfield_state, _, _ = self.simulation.calculate_flux(empty_matrix)
+        # Use calculate_flux to get initial hzfield_state for initial matrix
+        # This returns: hzfield_state, hz_data
+        # For initial state, use matrix with all 1's (silicon)
+        initial_matrix = np.ones((config.simulation.pixel_num_x, config.simulation.pixel_num_y))
+        hzfield_state, _, _ = self.simulation.calculate_flux(initial_matrix)
         
         # Normalize hzfield_state by dividing by maximum (bounded between 0 and 1)
         hzfield_max = np.max(hzfield_state)
@@ -227,7 +219,7 @@ class MinimalEnv(gym.Env):
         assert self.action_space.contains(action), f"Invalid action: {action}"
 
         # Action is a binary array representing one layer (row) of the design
-        # Get previous layer before updating (for metrics/logging, similarity reward removed)
+        # Get previous layer before updating (for metrics/logging)
         previous_layer = self._get_previous_layer()
         
         # Update the material matrix: set the row at material_matrix_idx
@@ -249,7 +241,7 @@ class MinimalEnv(gym.Env):
         t_sim_end = time.time()
         
         # Use MODE coefficients for reward calculation (instead of raw flux)
-        # Pass current layer and previous layer for metrics/logging (similarity reward removed)
+        # Pass current layer and previous layer for metrics/logging
         current_score, reward = self.get_reward(current_layer=action, previous_layer=previous_layer)
        
         terminated = self.material_matrix_idx >= self.max_steps  # Goal reached
@@ -268,7 +260,6 @@ class MinimalEnv(gym.Env):
                 'transmission_2': self._step_metrics['transmission_2'],
                 'balance_score': self._step_metrics['balance_score'],
                 'current_score': self._step_metrics['current_score'],
-                'similarity_score': self._step_metrics.get('similarity_score', 0.0),
             }
 
         if self.material_matrix_idx > 0:
@@ -319,51 +310,38 @@ class MinimalEnv(gym.Env):
         Uses get_output_transmission() method directly.
         
         Args:
-            current_layer: Current layer (1D array) for metrics/logging (similarity reward removed)
-            previous_layer: Previous layer (1D array) for metrics/logging (similarity reward removed)
+            current_layer: Current layer (1D array) for metrics/logging
+            previous_layer: Previous layer (1D array) for metrics/logging
         """
         # Get transmission using the method from meep_simulation
-        _, input_mode = self.simulation.get_flux_input_mode(band_num=1)
-        transmission_1, transmission_2, total_transmission, diff_transmission = self.simulation.get_output_transmission(band_num=1)
-        
-        transmission_score = min(max(total_transmission/input_mode, 0), 1)
+        # Use fixed input_mode (calculated at initialization with all-silicon matrix)
+        transmission_1, transmission_2, total_transmission, _ = self.simulation.get_output_transmission(band_num=1)
+        transmission_score = total_transmission / self.fixed_input_mode
 
-        # Calculate balance score (how evenly distributed between outputs)
+        # Calculate balance score based on how close to target ratio split
         if total_transmission > 0:
-            diff_ratio = diff_transmission / total_transmission
+            actual_ratio = transmission_1 / total_transmission  # Actual % to output 1
+            target_ratio = config.environment.target_ratio
+            # balance_score = 1 when perfect, 0 when completely off
+            balance_score = max(1 - abs(actual_ratio - target_ratio) / target_ratio, 0)
         else:
-            diff_ratio = 1.0  # If no transmission, balance is worst
-        balance_score = max(1 - diff_ratio, 0)
+            balance_score = 0
 
-        # Calculate similarity: number of identical pixels between current and previous layer
-        # NOTE: Similarity is calculated for logging/metrics only, NOT added to reward (too artificial)
-        if current_layer is not None and previous_layer is not None:
-            similarity = self._calculate_similarity(current_layer, previous_layer)
-            # Normalize similarity to [0, 1] by dividing by pixel_num_y
-            similarity_score = similarity / self.pixel_num_y
-        else:
-            similarity = 0.0
-            similarity_score = 0.0
-
-        # Calculate current_score: use transmission_score which is already normalized to [0,1]
-        # transmission_score = (total_transmission/input_mode) normalized to [0,1] with min/max clamping
+        # Calculate current_score using transmission_score (no clipping)
+        # transmission_score = total_transmission / fixed_input_mode
         current_score = transmission_score * 10 + balance_score * 10
         reward = current_score - self.last_score if self.last_score is not None else 0
-        # Similarity reward removed - too artificial, let agent learn naturally
-        # reward += similarity_score/10
 
         self.last_score = current_score
 
         # Store metrics for info dict
         self._step_metrics = {
             "total_transmission": total_transmission,
-            "diff_transmission": diff_transmission,
+            "actual_ratio": actual_ratio if total_transmission > 0 else 0.0,  # Actual % to output 1
             "transmission_1": transmission_1,
             "transmission_2": transmission_2,
             "transmission_score": transmission_score,
             "balance_score": balance_score,
-            "similarity": similarity,
-            "similarity_score": similarity_score,
             "current_score": current_score,
         }
 
@@ -381,21 +359,22 @@ class MinimalEnv(gym.Env):
             return self.last_episode_metrics
         
         # Fallback: return current state (for first rollout before any episode completes)
-        _, input_mode = self.simulation.get_flux_input_mode(band_num=1)
-        hzfield_state, _ = self.simulation.calculate_flux(self.material_matrix)
+        # Use fixed input_mode (calculated at initialization with all-silicon matrix)
+        hzfield_state, _, _ = self.simulation.calculate_flux(self.material_matrix)
         
-        transmission_1, transmission_2, total_transmission, diff_transmission = \
+        transmission_1, transmission_2, total_transmission, _ = \
             self.simulation.get_output_transmission(band_num=1)
         
+        # Calculate balance score based on how close to target ratio split
         if total_transmission > 0:
-            diff_ratio = diff_transmission / total_transmission
+            actual_ratio = transmission_1 / total_transmission  # Actual % to output 1
+            target_ratio = config.environment.target_ratio
+            balance_score = max(1 - abs(actual_ratio - target_ratio) / target_ratio, 0)
         else:
-            diff_ratio = 1.0
-        balance_score = max(1 - diff_ratio, 0)
+            balance_score = 0
         
-        # Use same formula as get_reward() for consistency
-        # Calculate normalized transmission score (matching get_reward)
-        transmission_score = min(max(total_transmission / input_mode, 0), 1)
+        # Use same formula as get_reward() for consistency (no clipping)
+        transmission_score = total_transmission / self.fixed_input_mode
         current_score = transmission_score * 10 + balance_score * 10
         
         return {
@@ -403,12 +382,11 @@ class MinimalEnv(gym.Env):
             'hzfield_state': hzfield_state,
             'total_transmission': total_transmission,
             'transmission_score': transmission_score,  # Use normalized score for consistency
-            'diff_transmission': diff_transmission,
+            'actual_ratio': actual_ratio if total_transmission > 0 else 0.0,  # Actual % to output 1
             'transmission_1': transmission_1,
             'transmission_2': transmission_2,
             'balance_score': balance_score,
             'current_score': current_score,
-            'similarity_score': 0.0,  # Fallback: similarity not available in get_current_metrics
         }
 
     def save_design_plot(self, save_path, title_suffix=None):
@@ -419,7 +397,7 @@ class MinimalEnv(gym.Env):
             hz_data = self.last_episode_metrics['hz_data']
         else:
             matrix = self.material_matrix
-            _, hz_data = self.simulation.calculate_flux(self.material_matrix)
+            _, hz_data, _ = self.simulation.calculate_flux(self.material_matrix)
         self.simulation.plot_design(
             matrix=matrix,
             hz_data=hz_data,
@@ -435,8 +413,7 @@ class MinimalEnv(gym.Env):
             hzfield_state = self.last_episode_metrics['hzfield_state']
             hzfield_full_distribution = self.last_episode_metrics['hzfield_full_distribution']
         else:
-            hzfield_state, _ = self.simulation.calculate_flux(self.material_matrix)
-            hzfield_full_distribution = self.simulation.get_hzfield_full_distribution()
+            hzfield_state, _, hzfield_full_distribution = self.simulation.calculate_flux(self.material_matrix)
         # self.simulation.plot_distribution(
         #     hzfield_state=hzfield_state,
         #     save_path=save_path,
