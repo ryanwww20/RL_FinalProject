@@ -174,8 +174,8 @@ class MinimalEnv(gym.Env):
         super().reset(seed=seed)
 
         # Reset material matrix and index
-        # Initialize with all 1's (silicon) instead of 0's (silica)
-        self.material_matrix = np.ones(
+        # Initialize with all 0's (silica)
+        self.material_matrix = np.zeros(
             (config.simulation.pixel_num_x, config.simulation.pixel_num_y))
         self.material_matrix_idx = 0
         self.layer_history = []  # Reset layer history
@@ -183,8 +183,8 @@ class MinimalEnv(gym.Env):
 
         # Use calculate_flux to get initial hzfield_state for initial matrix
         # This returns: hzfield_state, hz_data
-        # For initial state, use matrix with all 1's (silicon)
-        initial_matrix = np.ones((config.simulation.pixel_num_x, config.simulation.pixel_num_y))
+        # For initial state, use matrix with all 0's (silica)
+        initial_matrix = np.zeros((config.simulation.pixel_num_x, config.simulation.pixel_num_y))
         hzfield_state, _, _ = self.simulation.calculate_flux(initial_matrix)
         
         # Normalize hzfield_state by dividing by maximum (bounded between 0 and 1)
