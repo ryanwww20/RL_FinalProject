@@ -9,7 +9,7 @@ environment:
   action_size: 20
   max_steps: 20
   num_previous_layers: *num_previous_layers
-  target_ratio: 0.5  # Target ratio for output 1 (70% to output 1, 30% to output 2)
+  target_ratio: 0.7  # Target ratio for output 1 (70% to output 1, 30% to output 2)
 
 
 simulation:
