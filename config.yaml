@@ -4,12 +4,22 @@ state_dim: &state_dim 31
 num_monitors: &num_monitors 10
 num_previous_layers: &num_previous_layers 3
 
+# One-shot environment: 400 (matrix) + 10 (monitors) = 410
+oneshot_state_dim: &oneshot_state_dim 410
+
 environment:
   obs_size: *state_dim
   action_size: 20
   max_steps: 20
   num_previous_layers: *num_previous_layers
-  target_ratio: 0.5  # Target ratio for output 1 (70% to output 1, 30% to output 2)
+  target_ratio: 0.5  # Target ratio for output 1 (50% to output 1, 50% to output 2)
+
+# One-shot environment configuration
+oneshot_environment:
+  obs_size: *oneshot_state_dim  # 410 = 400 (matrix) + 10 (monitors)
+  action_size: 400  # Full 20x20 design in one action
+  max_steps: 1  # Episode ends after 1 step
+  target_ratio: 0.5  # Target ratio for output 1 (50% to output 1, 50% to output 2)
 
 
 simulation:
@@ -70,6 +80,25 @@ training:
     use_cnn: true
     tensorboard_log: ./ppo_tensorboard/
     # load_model_path: /storage/undergrad/b12901074/RL_FinalProject/models/ppo_model_20251214_122759_best.zip
+    load_model_path: ""
+    save_path: models/
+  
+  # PPO configuration for One-Shot environment
+  ppo_oneshot:
+    total_timesteps: 100000  # Fewer timesteps since 1 step = 1 episode
+    n_envs: 16
+    learning_rate: 0.0003
+    n_steps: 128       # Rollout buffer size per env (each step = 1 episode)
+    batch_size: 256    # Batch size for training
+    n_epochs: 10       # Epochs per update
+    gamma: 0.99        # Discount factor (not very relevant for 1-step episodes)
+    gae_lambda: 0.95
+    clip_range: 0.2
+    ent_coef: 0.01     # Higher entropy for exploration in large action space
+    vf_coef: 0.5
+    max_grad_norm: 0.5
+    use_cnn: true
+    tensorboard_log: ./ppo_oneshot_tensorboard/
     load_model_path: ""
     save_path: models/
   a2c:

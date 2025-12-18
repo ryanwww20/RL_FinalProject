@@ -215,8 +215,8 @@ def main():
     
     parser.add_argument("--model_path", type=str, required=True, help="Path to the trained model .zip file")
     parser.add_argument("--algo", type=str, choices=["ppo", "sac"], default="ppo", help="RL algorithm used (ppo or sac)")
-    parser.add_argument("--env_type", type=str, choices=["continuous", "discrete"], default="discrete", 
-                        help="Environment type (continuous or discrete). Default: continuous")
+    parser.add_argument("--env_type", type=str, choices=["continuous", "discrete", "oneshot"], default="discrete", 
+                        help="Environment type (continuous, discrete, or oneshot). Default: discrete")
     parser.add_argument("--n_episodes", type=int, default=1, help="Number of evaluation episodes (default: 1)")
     parser.add_argument("--output_dir", type=str, default="eval_results", help="Directory to save evaluation results")
     
@@ -232,12 +232,13 @@ def main():
     # Import the correct environment based on argument
     if args.env_type == "continuous":
         from envs.Continuous_gym import MinimalEnv
+        env = MinimalEnv(render_mode=None)
+    elif args.env_type == "oneshot":
+        from envs.OneShot_gym import OneShotEnv
+        env = OneShotEnv(render_mode=None, use_cnn=True)
     else:
         from envs.Discrete_gym import MinimalEnv
-        
-    # Initialize environment
-    # Note: MinimalEnv writes logs to ppo_model_logs by default. 
-    env = MinimalEnv(render_mode=None)
+        env = MinimalEnv(render_mode=None)
     
     print(f"Loading {args.algo.upper()} model from {args.model_path}...")
     try:

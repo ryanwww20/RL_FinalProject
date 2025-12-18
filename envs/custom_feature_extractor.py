@@ -70,3 +70,77 @@ class MatrixCombinedExtractor(BaseFeaturesExtractor):
         # Concat CNN features with raw scalar, pass to subsequent MLP (policy/value net_arch)
         return torch.cat([cnn_feat, scalars], dim=1)
 
+
+class OneShotMatrixExtractor(BaseFeaturesExtractor):
+    """
+    Feature extractor for One-Shot environment.
+    
+    Extracts features from the 20×20 material matrix using CNN,
+    then combines with monitor readings.
+    
+    Observation layout assumption:
+        [matrix_flat (400), monitors (10)] = 410 total values
+    
+    No layer_index or previous_layer in this design.
+    """
+
+    def __init__(
+        self,
+        observation_space: gym.spaces.Box,
+        cnn_proj_dim: int = 128,
+        pixel_num_x: int = 20,
+        pixel_num_y: int = 20,
+        num_monitors: int = 10,
+    ):
+        self.pixel_num_x = pixel_num_x
+        self.pixel_num_y = pixel_num_y
+        self.num_monitors = num_monitors
+        self.matrix_len = pixel_num_x * pixel_num_y  # 400
+
+        # Scalars = monitors only (10 values)
+        scalar_len = num_monitors
+
+        # Expected CNN output size (twice 2x2 pool): (pixel_num_x/4)*(pixel_num_y/4)*64
+        pooled_x = pixel_num_x // 4  # 5
+        pooled_y = pixel_num_y // 4  # 5
+        cnn_out_dim = 64 * pooled_x * pooled_y  # 64 * 25 = 1600
+
+        # features_dim = CNN projection + scalar (monitors)
+        features_dim = cnn_proj_dim + scalar_len
+        super().__init__(observation_space, features_dim)
+        self._features_dim = features_dim
+
+        # CNN branch operates on the 20×20 matrix
+        self.cnn = nn.Sequential(
+            nn.Conv2d(1, 16, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),  # 20x20 -> 10x10
+            nn.Conv2d(16, 32, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),  # 10x10 -> 5x5
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Flatten(),  # 64 * 5 * 5 = 1600
+        )
+
+        # Compress CNN output to cnn_proj_dim
+        self.cnn_proj = nn.Sequential(
+            nn.Linear(cnn_out_dim, cnn_proj_dim),
+            nn.ReLU(),
+        )
+
+    def forward(self, observations: torch.Tensor) -> torch.Tensor:
+        # Split observation into matrix (400) and monitors (10)
+        matrix_flat = observations[:, :self.matrix_len]
+        monitors = observations[:, self.matrix_len:]
+
+        # Reshape matrix to 2D for CNN: (batch, 1, 20, 20)
+        matrix_2d = matrix_flat.view(-1, 1, self.pixel_num_x, self.pixel_num_y)
+        
+        # Extract CNN features
+        cnn_feat = self.cnn(matrix_2d)
+        cnn_feat = self.cnn_proj(cnn_feat)
+
+        # Concatenate CNN features with monitor readings
+        return torch.cat([cnn_feat, monitors], dim=1)
+
