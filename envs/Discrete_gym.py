@@ -9,23 +9,71 @@ import numpy as np
 from envs.meep_simulation import WaveguideSimulation
 from config import config
 
+# Ablation study configurations
+ABLATION_CONFIGS = {
+    1: {
+        'name': 'MLP_Full_Matrix',
+        'use_cnn': False,
+        'include_matrix': True,      # Include full material matrix in observation
+        'include_monitors': True,
+        'include_index': True,
+        'include_previous_layer': True,
+    },
+    2: {
+        'name': 'CNN_No_Previous_Layer',
+        'use_cnn': True,
+        'include_matrix': True,      # Include flattened material matrix
+        'include_monitors': True,
+        'include_index': True,
+        'include_previous_layer': False,
+    },
+    3: {
+        'name': 'MLP_Monitors_Index_Only',
+        'use_cnn': False,
+        'include_matrix': False,
+        'include_monitors': True,
+        'include_index': True,
+        'include_previous_layer': False,
+    },
+    4: {
+        'name': 'CNN_No_Index',
+        'use_cnn': True,
+        'include_matrix': True,      # Include flattened material matrix
+        'include_monitors': True,
+        'include_index': False,
+        'include_previous_layer': True,
+    },
+}
+
+def get_ablation_config(setting_num):
+    """Get ablation study configuration by setting number."""
+    if setting_num not in ABLATION_CONFIGS:
+        raise ValueError(f"Invalid setting number {setting_num}. Available: {list(ABLATION_CONFIGS.keys())}")
+    return ABLATION_CONFIGS[setting_num]
+
 
 class MinimalEnv(gym.Env):
 
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
 
-    def __init__(self, render_mode=None, use_cnn=True):
+    def __init__(self, render_mode=None, ablation_setting=1):
         """
         Initialize the environment.
 
         Args:
             render_mode: "human" for GUI, "rgb_array" for image, None for no rendering
-            use_cnn: True -> new CNN-style observation (matrix flatten + monitors + idx + prev layer);
-                     False -> legacy dense observation (monitors + idx + prev layer)
+            ablation_setting: Ablation study setting number (1-4)
         """
         super().__init__()
 
-        self.use_cnn = use_cnn
+        # Get ablation configuration
+        self.ablation_config = get_ablation_config(ablation_setting)
+        self.setting_name = self.ablation_config['name']
+        self.use_cnn = self.ablation_config['use_cnn']
+        self.include_matrix = self.ablation_config['include_matrix']
+        self.include_monitors = self.ablation_config['include_monitors']
+        self.include_index = self.ablation_config['include_index']
+        self.include_previous_layer = self.ablation_config['include_previous_layer']
         self.action_size = config.environment.action_size
         self.pixel_num_x = config.simulation.pixel_num_x
         self.pixel_num_y = config.simulation.pixel_num_y
@@ -33,20 +81,21 @@ class MinimalEnv(gym.Env):
         # Validate that max_steps doesn't exceed material matrix size
         assert config.environment.max_steps <= self.pixel_num_x, \
             f"max_steps ({config.environment.max_steps}) must be <= pixel_num_x ({self.pixel_num_x})"
-        
-        # Observation
+
+        # Observation size calculation based on ablation config
         num_monitors = config.simulation.num_flux_regions  # 10 monitors
-        if self.use_cnn:
-            # Flattened matrix + monitors + idx + previous layer
-            self.obs_size = (
-                self.pixel_num_x * self.pixel_num_y  # design matrix
-                + num_monitors                       # monitor readings
-                + 1                                  # layer index
-                + self.pixel_num_y                   # previous layer
-            )
-        else:
-            # Legacy dense obs (monitors + idx + previous layer), match old_discrete_gym
-            self.obs_size = config.environment.obs_size
+        self.obs_size = 0
+
+        if self.include_matrix:
+            self.obs_size += self.pixel_num_x * self.pixel_num_y  # design matrix
+        if self.include_monitors:
+            self.obs_size += num_monitors  # monitor readings
+        if self.include_index:
+            self.obs_size += 1  # layer index
+        if self.include_previous_layer:
+            self.obs_size += self.pixel_num_y  # previous layer
+
+        print(f"Ablation Setting {ablation_setting} ({self.setting_name}): obs_size={self.obs_size}, use_cnn={self.use_cnn}")
         
         # Define observation and action spaces
         self.observation_space = spaces.Box(
@@ -145,19 +194,27 @@ class MinimalEnv(gym.Env):
 
     def _build_observation(self, hzfield_state_normalized: np.ndarray) -> np.ndarray:
         """
-        Build observation.
-        - use_cnn=True : [flattened matrix | monitors | index | previous_layer]
-        - use_cnn=False: [monitors | index | previous_layer] (legacy dense)
+        Build observation based on ablation configuration.
         """
-        monitors = hzfield_state_normalized.astype(np.float32)
-        idx_arr = np.array([float(self.material_matrix_idx)], dtype=np.float32)
-        previous_layer = self._get_previous_layers_state()
+        obs_components = []
 
-        if self.use_cnn:
+        if self.include_matrix:
             matrix_flat = self.material_matrix.flatten().astype(np.float32)
-            return np.concatenate([matrix_flat, monitors, idx_arr, previous_layer])
+            obs_components.append(matrix_flat)
 
-        return np.concatenate([monitors, idx_arr, previous_layer]).astype(np.float32)
+        if self.include_monitors:
+            monitors = hzfield_state_normalized.astype(np.float32)
+            obs_components.append(monitors)
+
+        if self.include_index:
+            idx_arr = np.array([float(self.material_matrix_idx)], dtype=np.float32)
+            obs_components.append(idx_arr)
+
+        if self.include_previous_layer:
+            previous_layer = self._get_previous_layers_state()
+            obs_components.append(previous_layer)
+
+        return np.concatenate(obs_components).astype(np.float32)
 
     def reset(self, seed=None, options=None):
         """
