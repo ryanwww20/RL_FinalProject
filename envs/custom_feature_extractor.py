@@ -17,10 +17,10 @@ class MatrixCombinedExtractor(BaseFeaturesExtractor):
     def __init__(
         self,
         observation_space: gym.spaces.Box,
-        cnn_proj_dim: int = 128,
-        pixel_num_x: int = 20,
-        pixel_num_y: int = 20,
-        num_monitors: int = 10,
+        cnn_proj_dim: int = 256,
+        pixel_num_x: int = 40,
+        pixel_num_y: int = 40,
+        num_monitors: int = 20,
     ):
         self.pixel_num_x = pixel_num_x
         self.pixel_num_y = pixel_num_y
