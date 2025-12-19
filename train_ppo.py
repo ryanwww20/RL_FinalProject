@@ -149,11 +149,11 @@ class TrainingCallback(BaseCallback):
             # Calculate average across all environments
             n_envs = len(all_metrics)
             # Use transmission_score (normalized efficiency) instead of raw total_transmission
-            train_transmission_score = sum(m['transmission_score'] for m in all_metrics) / n_envs
-            train_balance_score = sum(m['balance_score'] for m in all_metrics) / n_envs
-            train_score = sum(m['current_score'] for m in all_metrics) / n_envs
-            train_similarity_score = sum(m['similarity_score'] for m in all_metrics) / n_envs
-            train_spatial_proximity_score = sum(m['spatial_proximity_score'] for m in all_metrics) / n_envs
+            train_transmission_score = sum(m.get('transmission_score', 0.0) for m in all_metrics) / n_envs
+            train_balance_score = sum(m.get('balance_score', 0.0) for m in all_metrics) / n_envs
+            train_score = sum(m.get('current_score', 0.0) for m in all_metrics) / n_envs
+            train_similarity_score = sum(m.get('similarity_score', 0.0) for m in all_metrics) / n_envs
+            train_spatial_proximity_score = sum(m.get('spatial_proximity_score', 0.0) for m in all_metrics) / n_envs
             
             # Get episode reward from rollout buffer
             # Since episode length is fixed at 20 and n_steps is a multiple of 20,

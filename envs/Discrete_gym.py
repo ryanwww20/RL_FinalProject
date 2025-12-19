@@ -487,6 +487,11 @@ class MinimalEnv(gym.Env):
         transmission_score = total_transmission / self.fixed_input_mode
         current_score = transmission_score * 10 + balance_score * 10
         
+        # Calculate similarity and spatial proximity scores if we have layer information
+        # In fallback case, we don't have current_layer/previous_layer, so set to 0.0
+        similarity_score = 0.0
+        spatial_proximity_score = 0.0
+        
         return {
             'material_matrix': self.material_matrix.copy(),
             'hzfield_state': hzfield_state,
@@ -497,6 +502,8 @@ class MinimalEnv(gym.Env):
             'transmission_2': transmission_2,
             'balance_score': balance_score,
             'current_score': current_score,
+            'similarity_score': similarity_score,
+            'spatial_proximity_score': spatial_proximity_score,
         }
 
     def save_design_plot(self, save_path, title_suffix=None):
