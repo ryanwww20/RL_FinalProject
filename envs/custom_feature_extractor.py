@@ -40,15 +40,17 @@ class MatrixCombinedExtractor(BaseFeaturesExtractor):
         self._features_dim = features_dim
 
         # CNN branch only operates on matrix
+        # For 40x40 input: 40x40 -> Conv1(16, k=5, p=2) -> 40x40
+        #                   -> Conv2(16, k=3, s=2) -> 20x20
+        #                   -> Conv3(32, k=3, s=2) -> 10x10
+        #                   -> Conv4(64, k=3) -> 10x10 -> Flatten -> 6400
         self.cnn = nn.Sequential(
-            nn.Conv2d(1, 16, kernel_size=3, padding=1),
+            nn.Conv2d(1, 16, kernel_size=5, padding=2),  # padding=2 to maintain 40x40
             nn.ReLU(),
-            nn.Conv2d(16, 16, kernel_size=3, padding=1),
+            nn.Conv2d(16, 16, kernel_size=3, stride=2, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(2, 2),  # 40x40 -> 20x20
-            nn.Conv2d(16, 32, kernel_size=3, padding=1),
+            nn.Conv2d(16, 32, kernel_size=3, stride=2, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(2, 2),  # 20x20 -> 10x10
             nn.Conv2d(32, 64, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.Flatten(),
