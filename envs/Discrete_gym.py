@@ -10,6 +10,23 @@ from envs.meep_simulation import WaveguideSimulation
 from config import config
 
 
+# ============================================================================
+# ABLATION CONFIG
+# ============================================================================
+# Setting 1: Use similarity_score
+# Setting 2: Use spatial_proximity_score
+# Reward bonus: += 0.15 * score
+# gated: If True, only add ablation_bonus when current_score - last_score > -0.01
+#        If False, always add ablation_bonus when enabled
+# ============================================================================
+ABLATION_CONFIG = {
+    "setting": 1,  # 1: similarity_score, 2: spatial_proximity_score
+    "reward_weight": 0.125,  # Weight for the ablation score bonus
+    "enabled": True,  # Set to False to disable ablation reward
+    "gated": False  # If True, gate ablation_bonus based on score improvement
+}
+
+
 class MinimalEnv(gym.Env):
 
     metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 4}
@@ -89,12 +106,22 @@ class MinimalEnv(gym.Env):
         self.total_sim_time = 0.0
         self.total_other_time = 0.0
         
+        # ABLATION config
+        self.ablation_setting = ABLATION_CONFIG["setting"]
+        self.ablation_reward_weight = ABLATION_CONFIG["reward_weight"]
+        self.ablation_enabled = ABLATION_CONFIG["enabled"]
+        self.ablation_gated = ABLATION_CONFIG["gated"]
+        
         # Fixed input_mode: calculate once at initialization with all-silicon matrix
         all_silicon_matrix = np.ones((config.simulation.pixel_num_x, config.simulation.pixel_num_y))
         _, _, _ = self.simulation.calculate_flux(all_silicon_matrix)  # Run simulation to get flux
         _, self.fixed_input_mode = self.simulation.get_flux_input_mode(band_num=1)
         self.fixed_input_mode *= 2
         print(f"Fixed input_mode set to {self.fixed_input_mode:.6f} (all-silicon matrix)")
+        if self.ablation_enabled:
+            setting_name = "similarity_score" if self.ablation_setting == 1 else "spatial_proximity_score"
+            gated_status = "gated" if self.ablation_gated else "ungated"
+            print(f"ABLATION: Setting {self.ablation_setting} ({setting_name}) enabled with weight {self.ablation_reward_weight} ({gated_status})")
 
     def _get_default_waveguide_layer(self):
         """
@@ -142,6 +169,58 @@ class MinimalEnv(gym.Env):
         Return the physical previous layer.
         """
         return self._get_previous_layers_state()
+    
+    def _similarity_score(self, current_layer, previous_layer):
+        """
+        Calculate similarity between current and previous layer.
+        Similarity is the number of identical pixels (both 0 or both 1).
+        
+        Args:
+            current_layer: 1D array of current layer (length pixel_num_y)
+            previous_layer: 1D array of previous layer (length pixel_num_y)
+        
+        Returns:
+            similarity: Number of identical pixels (0 to pixel_num_y)
+        """
+        # Count pixels where current_layer == previous_layer
+        similarity = np.sum(current_layer == previous_layer)
+        return float(similarity) / self.pixel_num_y
+    
+    def _spatial_proximity_score(self, curr_layer, prev_layer):
+        """
+        Calculate spatial proximity reward between current and previous layer.
+        Uses convolution to create a "blurred" version of the previous layer,
+        then rewards placing silicon in areas near the previous layer.
+        
+        Args:
+            curr_layer: 1D array of current layer (length pixel_num_y)
+            prev_layer: 1D array of previous layer (length pixel_num_y)
+        
+        Returns:
+            spatial_proximity_score: Normalized spatial proximity score (0 to 1)
+        """
+
+        from scipy.ndimage import convolve
+        # 1. Define the Kernel (The "Spread")
+        # [0.5, 1, 0.5] allows 1-pixel shifts. 
+        # [0.2, 0.5, 1, 0.5, 0.2] allows 2-pixel shifts (wider bends).
+        kernel = np.array([0.5, 1.0, 0.5])
+        
+        # 2. Blur the PREVIOUS layer
+        # We want to see if Current aligns with the "Aura" of Previous
+        # mode='constant' assumes air (0) outside boundaries
+        prev_blurred = convolve(prev_layer, kernel, mode='constant', cval=0.0)
+        
+        # 3. Calculate overlap
+        # We use dot product to reward placing silicon in high-value areas
+        raw_score = np.dot(curr_layer, prev_blurred)
+        
+        # 4. Normalize (Optional but recommended)
+        # This ensures the max possible reward is 1.0 (if they are identical)
+        # The max possible score is dot(prev_blurred, prev_layer) approx.
+        norm_factor = np.dot(prev_layer, prev_blurred) + 1e-6
+        
+        return float(raw_score) / norm_factor
 
     def _build_observation(self, hzfield_state_normalized: np.ndarray) -> np.ndarray:
         """
@@ -261,6 +340,8 @@ class MinimalEnv(gym.Env):
                 'transmission_2': self._step_metrics['transmission_2'],
                 'balance_score': self._step_metrics['balance_score'],
                 'current_score': self._step_metrics['current_score'],
+                'similarity_score': self._step_metrics['similarity_score'],
+                'spatial_proximity_score': self._step_metrics['spatial_proximity_score'],
             }
 
         if self.material_matrix_idx > 0:
@@ -327,11 +408,37 @@ class MinimalEnv(gym.Env):
             balance_score = max(1 - abs(actual_ratio - target_ratio) / target_ratio, 0)
         else:
             balance_score = 0
-
+        if current_layer is not None and previous_layer is not None:
+            similarity_score = self._similarity_score(current_layer, previous_layer)
+            spatial_proximity_score = self._spatial_proximity_score(current_layer, previous_layer)
+        else:
+            similarity_score = 0
+            spatial_proximity_score = 0
+        
         # Calculate current_score using transmission_score (no clipping)
         # transmission_score = total_transmission / fixed_input_mode
         current_score = transmission_score * 10 + balance_score * 10
         reward = current_score - self.last_score if self.last_score is not None else 0
+        
+        # ABLATION: Add bonus reward based on selected score
+        if self.ablation_enabled:
+            if self.ablation_setting == 1:
+                # Setting 1: Use similarity_score
+                ablation_bonus = self.ablation_reward_weight * similarity_score
+            elif self.ablation_setting == 2:
+                # Setting 2: Use spatial_proximity_score
+                ablation_bonus = self.ablation_reward_weight * spatial_proximity_score
+            else:
+                ablation_bonus = 0
+            
+            # Apply gating: if gated=True, only add bonus when score improvement > -0.01
+            if self.ablation_gated:
+                score_diff = current_score - self.last_score if self.last_score is not None else float('inf')
+                if score_diff <= -0.01:
+                    # Score decreased too much, don't add ablation bonus
+                    ablation_bonus = 0
+            
+            reward += ablation_bonus
 
         self.last_score = current_score
 
@@ -344,6 +451,8 @@ class MinimalEnv(gym.Env):
             "transmission_score": transmission_score,
             "balance_score": balance_score,
             "current_score": current_score,
+            "similarity_score": similarity_score,
+            "spatial_proximity_score": spatial_proximity_score,
         }
 
         return current_score, reward

@@ -81,13 +81,13 @@ class TrainingCallback(BaseCallback):
         self.train_csv_path = self.save_dir / "train_metrics.csv"
         if not self.train_csv_path.exists():
             with open(self.train_csv_path, 'w') as f:
-                f.write('timestamp,rollout_count,type,transmission_score,balance_score,score,reward\n')
+                f.write('timestamp,rollout_count,type,transmission_score,balance_score,score,reward,similarity_score,spatial_proximity_score\n')
         
         # CSV file for evaluation metrics (every eval_freq rollouts)
         self.eval_csv_path = self.save_dir / "eval_metrics.csv"
         if not self.eval_csv_path.exists():
             with open(self.eval_csv_path, 'w') as f:
-                f.write('timestamp,rollout_count,transmission_score,balance_score,score,reward\n')
+                f.write('timestamp,rollout_count,transmission_score,balance_score,score,reward,similarity_score,spatial_proximity_score\n')
         
         # Store image paths for GIF creation
         # If resuming, try to load existing image paths
@@ -152,6 +152,8 @@ class TrainingCallback(BaseCallback):
             train_transmission_score = sum(m['transmission_score'] for m in all_metrics) / n_envs
             train_balance_score = sum(m['balance_score'] for m in all_metrics) / n_envs
             train_score = sum(m['current_score'] for m in all_metrics) / n_envs
+            train_similarity_score = sum(m['similarity_score'] for m in all_metrics) / n_envs
+            train_spatial_proximity_score = sum(m['spatial_proximity_score'] for m in all_metrics) / n_envs
             
             # Get episode reward from rollout buffer
             # Since episode length is fixed at 20 and n_steps is a multiple of 20,
@@ -171,11 +173,13 @@ class TrainingCallback(BaseCallback):
             train_balance_score = 0.0
             train_score = 0.0
             train_reward = 0.0
+            train_similarity_score = 0.0
+            train_spatial_proximity_score = 0.0
             n_envs = 1
         
         # Record training metrics to CSV
         with open(self.train_csv_path, 'a') as f:
-            f.write(f'{timestamp},{self.rollout_count},train,{train_transmission_score},{train_balance_score},{train_score},{train_reward}\n')
+            f.write(f'{timestamp},{self.rollout_count},train,{train_transmission_score},{train_balance_score},{train_score},{train_reward},{train_similarity_score},{train_spatial_proximity_score}\n')
         
         # Print training metrics
         print(f"\n[Train] Rollout {self.rollout_count} (avg of {n_envs} envs, n_steps={n_steps}): "
@@ -202,19 +206,23 @@ class TrainingCallback(BaseCallback):
                 eval_balance_score = metrics.get('balance_score', 0.0)
                 eval_score = metrics.get('current_score', 0.0)
                 eval_total_reward = metrics.get('total_reward', 0.0)
+                eval_similarity_score = metrics.get('similarity_score', 0.0)
+                eval_spatial_proximity_score = metrics.get('spatial_proximity_score', 0.0)
             else:
                 eval_transmission_score = 0.0
                 eval_balance_score = 0.0
                 eval_score = 0.0
                 eval_total_reward = 0.0
+                eval_similarity_score = 0.0
+                eval_spatial_proximity_score = 0.0
             
             # Record evaluation metrics to CSV
             with open(self.eval_csv_path, 'a') as f:
-                f.write(f'{timestamp},{self.rollout_count},{eval_transmission_score},{eval_balance_score},{eval_score},{eval_total_reward}\n')
+                f.write(f'{timestamp},{self.rollout_count},{eval_transmission_score},{eval_balance_score},{eval_score},{eval_total_reward},{eval_similarity_score},{eval_spatial_proximity_score}\n')
             
             # Also add to train_csv with 'eval' type for combined plotting
             with open(self.train_csv_path, 'a') as f:
-                f.write(f'{timestamp},{self.rollout_count},eval,{eval_transmission_score},{eval_balance_score},{eval_score},{eval_total_reward}\n')
+                f.write(f'{timestamp},{self.rollout_count},eval,{eval_transmission_score},{eval_balance_score},{eval_score},{eval_total_reward},{eval_similarity_score},{eval_spatial_proximity_score}\n')
             
             # Print evaluation metrics
             print(f"[Eval]  Rollout {self.rollout_count} (deterministic): "
