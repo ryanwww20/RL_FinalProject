@@ -538,9 +538,9 @@ def train_ppo(
     print("Creating environment...")
     
     # Determine ablation_setting
-    if ablation_setting is 1 or ablation_setting is 3:
+    if ablation_setting == 1 or ablation_setting == 3:
         use_cnn = False
-    elif ablation_setting is 2 or ablation_setting is 4:
+    elif ablation_setting == 2 or ablation_setting == 4:
         use_cnn = True
     else:
         raise ValueError(f"Invalid ablation_setting: {ablation_setting}")
