@@ -565,10 +565,10 @@ def train_ppo(
         policy_kwargs.update(dict(
             features_extractor_class=MatrixCombinedExtractor,
             features_extractor_kwargs=dict(
-                cnn_proj_dim=128,  # Dimension of CNN output after compression
-                pixel_num_x=20,
-                pixel_num_y=20,
-                num_monitors=10,
+                cnn_proj_dim=256,  # Dimension of CNN output after compression
+                pixel_num_x=40,
+                pixel_num_y=40,
+                num_monitors=20,
             ),
         ))
 

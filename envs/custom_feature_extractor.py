@@ -43,10 +43,10 @@ class MatrixCombinedExtractor(BaseFeaturesExtractor):
         self.cnn = nn.Sequential(
             nn.Conv2d(1, 16, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(2, 2),  # 20x20 -> 10x10
+            nn.MaxPool2d(2, 2),  # 40x40 -> 20x20
             nn.Conv2d(16, 32, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.MaxPool2d(2, 2),  # 10x10 -> 5x5
+            nn.MaxPool2d(2, 2),  # 20x20 -> 10x10
             nn.Conv2d(32, 64, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.Flatten(),
@@ -54,7 +54,9 @@ class MatrixCombinedExtractor(BaseFeaturesExtractor):
 
         # Compress CNN output to cnn_proj_dim, then concat with scalar
         self.cnn_proj = nn.Sequential(
-            nn.Linear(cnn_out_dim, cnn_proj_dim),
+            nn.Linear(cnn_out_dim, cnn_proj_dim//2),
+            nn.ReLU(),
+            nn.Linear(cnn_proj_dim//2, cnn_proj_dim),
             nn.ReLU(),
         )
 
