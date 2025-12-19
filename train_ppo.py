@@ -40,6 +40,7 @@ TRAIN_PPO_KWARGS = {
     "tensorboard_log",
     "save_path",
     "load_model_path",  # Path to existing model to resume training
+    "ablation_setting",
 }
 
 
@@ -537,9 +538,12 @@ def train_ppo(
     print("Creating environment...")
     
     # Determine ablation_setting
-    if ablation_setting is None:
-        # Auto-select based on use_cnn for backward compatibility
-        ablation_setting = 1 if not use_cnn else 2
+    if ablation_setting is 1 or ablation_setting is 3:
+        use_cnn = False
+    elif ablation_setting is 2 or ablation_setting is 4:
+        use_cnn = True
+    else:
+        raise ValueError(f"Invalid ablation_setting: {ablation_setting}")
 
     env_kwargs = {
         "render_mode": None,
