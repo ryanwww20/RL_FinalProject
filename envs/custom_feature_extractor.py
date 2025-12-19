@@ -43,6 +43,8 @@ class MatrixCombinedExtractor(BaseFeaturesExtractor):
         self.cnn = nn.Sequential(
             nn.Conv2d(1, 16, kernel_size=3, padding=1),
             nn.ReLU(),
+            nn.Conv2d(16, 16, kernel_size=3, padding=1),
+            nn.ReLU(),
             nn.MaxPool2d(2, 2),  # 40x40 -> 20x20
             nn.Conv2d(16, 32, kernel_size=3, padding=1),
             nn.ReLU(),
