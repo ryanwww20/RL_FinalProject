@@ -85,7 +85,7 @@ training:
   
   # PPO configuration for One-Shot environment
   ppo_oneshot:
-    total_timesteps: 100000  # Fewer timesteps since 1 step = 1 episode
+    total_timesteps: 2000000  # Fewer timesteps since 1 step = 1 episode
     n_envs: 16
     learning_rate: 0.0003
     n_steps: 128       # Rollout buffer size per env (each step = 1 episode)
