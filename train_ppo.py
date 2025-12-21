@@ -11,13 +11,16 @@ from datetime import datetime
 import yaml
 import pandas as pd
 import matplotlib.pyplot as plt
+import zipfile
+import pickle
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env, DummyVecEnv, SubprocVecEnv
 from stable_baselines3.common.callbacks import BaseCallback
-from envs.Discrete_gym import MinimalEnv
+from envs.Discrete_gym import MinimalEnv, get_ablation_config
 from envs.custom_feature_extractor import MatrixCombinedExtractor
 from PIL import Image
 from eval import ModelEvaluator
+from config import config
 
 from matplotlib import rcParams
 
@@ -440,6 +443,87 @@ class TrainingCallback(BaseCallback):
             print(f"Warning: No images found to create GIF at {output_path}")
 
 
+def calculate_obs_size_for_ablation_setting(ablation_setting, pixel_num_x=20, pixel_num_y=20, num_monitors=10):
+    """
+    Calculate observation space size for a given ablation_setting.
+    
+    Args:
+        ablation_setting: Ablation study setting (1-4)
+        pixel_num_x: Number of pixels in x direction (default 20)
+        pixel_num_y: Number of pixels in y direction (default 20)
+        num_monitors: Number of flux monitors (default 10)
+    
+    Returns:
+        int: Observation space size
+    """
+    config = get_ablation_config(ablation_setting)
+    obs_size = 0
+    
+    if config['include_matrix']:
+        obs_size += pixel_num_x * pixel_num_y
+    if config['include_monitors']:
+        obs_size += num_monitors
+    if config['include_index']:
+        obs_size += 1
+    if config['include_previous_layer']:
+        obs_size += pixel_num_y
+    
+    return obs_size
+
+
+def get_model_obs_size(model_path):
+    """
+    Extract observation space size from a saved model file.
+    
+    Args:
+        model_path: Path to the saved model .zip file
+    
+    Returns:
+        int: Observation space size, or None if cannot be determined
+    """
+    try:
+        with zipfile.ZipFile(model_path, 'r') as zip_file:
+            # Read the data file from the zip
+            with zip_file.open('data.pkl', 'r') as f:
+                data = pickle.load(f)
+                if 'observation_space' in data:
+                    obs_space = data['observation_space']
+                    # Handle different space types
+                    if hasattr(obs_space, 'shape') and len(obs_space.shape) > 0:
+                        return obs_space.shape[0]
+                    elif hasattr(obs_space, 'n'):
+                        # For Discrete spaces
+                        return obs_space.n
+    except (zipfile.BadZipFile, KeyError, AttributeError, pickle.UnpicklingError) as e:
+        # Silently return None - we'll handle it gracefully
+        pass
+    except Exception as e:
+        # For other exceptions, we might want to know
+        pass
+    return None
+
+
+def find_matching_ablation_setting(target_obs_size, pixel_num_x=20, pixel_num_y=20, num_monitors=10):
+    """
+    Find which ablation_setting matches the target observation space size.
+    
+    Args:
+        target_obs_size: Target observation space size
+        pixel_num_x: Number of pixels in x direction (default 20)
+        pixel_num_y: Number of pixels in y direction (default 20)
+        num_monitors: Number of flux monitors (default 10)
+    
+    Returns:
+        list: List of matching ablation_setting numbers
+    """
+    matches = []
+    for setting in [1, 2, 3, 4]:
+        obs_size = calculate_obs_size_for_ablation_setting(setting, pixel_num_x, pixel_num_y, num_monitors)
+        if obs_size == target_obs_size:
+            matches.append(setting)
+    return matches
+
+
 def train_ppo(
     total_timesteps=100000,
     n_envs=4,
@@ -538,12 +622,23 @@ def train_ppo(
     print("Creating environment...")
     
     # Determine ablation_setting
+    # If None, auto-select based on use_cnn (backward compatibility)
+    if ablation_setting is None:
+        if use_cnn:
+            ablation_setting = 2  # Default to CNN setting
+        else:
+            ablation_setting = 1  # Default to MLP setting
+        print(f"[Config] ablation_setting was None, auto-selected to {ablation_setting} based on use_cnn={use_cnn}")
+    
+    # Validate ablation_setting
+    if ablation_setting not in [1, 2, 3, 4]:
+        raise ValueError(f"Invalid ablation_setting: {ablation_setting}. Must be 1, 2, 3, or 4")
+    
+    # Determine use_cnn from ablation_setting
     if ablation_setting == 1 or ablation_setting == 3:
         use_cnn = False
     elif ablation_setting == 2 or ablation_setting == 4:
         use_cnn = True
-    else:
-        raise ValueError(f"Invalid ablation_setting: {ablation_setting}")
 
     env_kwargs = {
         "render_mode": None,
@@ -586,6 +681,55 @@ def train_ppo(
     # Load existing model or create new one
     if load_model_path and os.path.exists(load_model_path):
         print(f"Loading existing model from {load_model_path}...")
+        print(f"[Resume] Using ablation_setting={ablation_setting} ({get_ablation_config(ablation_setting)['name']})")
+        
+        # Check observation space compatibility before loading
+        model_obs_size = get_model_obs_size(load_model_path)
+        current_obs_size = env.observation_space.shape[0]
+        
+        if model_obs_size is not None:
+            print(f"[Resume] Model observation space size: {model_obs_size}")
+            print(f"[Resume] Current environment observation space size: {current_obs_size}")
+            
+            if model_obs_size != current_obs_size:
+                # Find which ablation_setting matches the model
+                pixel_num_x = config.simulation.pixel_num_x
+                pixel_num_y = config.simulation.pixel_num_y
+                num_monitors = config.simulation.num_flux_regions
+                
+                matching_settings = find_matching_ablation_setting(
+                    model_obs_size, pixel_num_x, pixel_num_y, num_monitors
+                )
+                
+                print(f"\n{'='*70}")
+                print(f"ERROR: Observation space mismatch!")
+                print(f"{'='*70}")
+                print(f"Model was trained with observation space size: {model_obs_size}")
+                print(f"Current environment has observation space size: {current_obs_size}")
+                print(f"\nThe model was likely trained with a different ablation_setting.")
+                
+                if matching_settings:
+                    print(f"\nSuggested ablation_setting(s) that match the model:")
+                    for setting in matching_settings:
+                        setting_config = get_ablation_config(setting)
+                        print(f"  - ablation_setting={setting}: {setting_config['name']}")
+                    print(f"\nPlease update your config.yaml to use one of these settings.")
+                else:
+                    print(f"\nWarning: Could not find a matching ablation_setting for obs_size={model_obs_size}")
+                    print(f"This might indicate a configuration change (pixel_num_x, pixel_num_y, or num_monitors).")
+                
+                print(f"{'='*70}\n")
+                raise ValueError(
+                    f"Observation space mismatch: model expects {model_obs_size} dimensions, "
+                    f"but current environment has {current_obs_size} dimensions. "
+                    f"Please use the correct ablation_setting that matches the model."
+                )
+            else:
+                print(f"[Resume] ✓ Observation space matches ({current_obs_size} dimensions)")
+        else:
+            print(f"[Resume] Warning: Could not verify observation space compatibility. Proceeding with caution...")
+        
+        print(f"[Resume] Warning: Ensure ablation_setting matches the original training setting.")
         model = PPO.load(load_model_path, env=env)
         
         # Get the number of timesteps already trained
