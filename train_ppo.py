@@ -474,6 +474,7 @@ def calculate_obs_size_for_ablation_setting(ablation_setting, pixel_num_x=20, pi
 def get_model_obs_size(model_path):
     """
     Extract observation space size from a saved model file.
+    Uses multiple methods to ensure reliability.
     
     Args:
         model_path: Path to the saved model .zip file
@@ -481,25 +482,43 @@ def get_model_obs_size(model_path):
     Returns:
         int: Observation space size, or None if cannot be determined
     """
+    # Method 1: Try reading from zip file directly
     try:
         with zipfile.ZipFile(model_path, 'r') as zip_file:
-            # Read the data file from the zip
-            with zip_file.open('data.pkl', 'r') as f:
-                data = pickle.load(f)
-                if 'observation_space' in data:
-                    obs_space = data['observation_space']
-                    # Handle different space types
-                    if hasattr(obs_space, 'shape') and len(obs_space.shape) > 0:
-                        return obs_space.shape[0]
-                    elif hasattr(obs_space, 'n'):
-                        # For Discrete spaces
-                        return obs_space.n
-    except (zipfile.BadZipFile, KeyError, AttributeError, pickle.UnpicklingError) as e:
-        # Silently return None - we'll handle it gracefully
-        pass
+            # Check available files
+            file_list = zip_file.namelist()
+            
+            # Try reading data.pkl
+            if 'data.pkl' in file_list:
+                with zip_file.open('data.pkl', 'r') as f:
+                    data = pickle.load(f)
+                    if 'observation_space' in data:
+                        obs_space = data['observation_space']
+                        # Handle different space types
+                        if hasattr(obs_space, 'shape') and len(obs_space.shape) > 0:
+                            return int(obs_space.shape[0])
+                        elif hasattr(obs_space, 'n'):
+                            # For Discrete spaces
+                            return int(obs_space.n)
     except Exception as e:
-        # For other exceptions, we might want to know
+        # Try alternative method
         pass
+    
+    # Method 2: Try loading model without env to get observation space
+    try:
+        # Load model without environment to access its observation space
+        # This will work even if the env doesn't match
+        temp_model = PPO.load(model_path, env=None)
+        if hasattr(temp_model, 'observation_space') and temp_model.observation_space is not None:
+            obs_space = temp_model.observation_space
+            if hasattr(obs_space, 'shape') and len(obs_space.shape) > 0:
+                return int(obs_space.shape[0])
+            elif hasattr(obs_space, 'n'):
+                return int(obs_space.n)
+    except Exception as e:
+        # If this also fails, we'll handle it in the calling code
+        pass
+    
     return None
 
 
