@@ -72,7 +72,12 @@ training:
     # load_model_path: /storage/undergrad/b12901074/RL_FinalProject/models/ppo_model_20251214_122759_best.zip
     load_model_path: ""
     save_path: models/
-    ablation_setting: 1
+    # ablation_setting is now a required command-line argument, not in config
+    # Usage: python train_ppo.py --ablation-setting <1-4>
+    #   1 = MLP_Full_Matrix
+    #   2 = CNN_No_Previous_Layer
+    #   3 = MLP_Monitors_Index_Only
+    #   4 = CNN_No_Index
   a2c:
     total_timesteps: 960000
     n_envs: 16

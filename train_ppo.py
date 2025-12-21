@@ -13,6 +13,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import zipfile
 import pickle
+import argparse
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env, DummyVecEnv, SubprocVecEnv
 from stable_baselines3.common.callbacks import BaseCallback
@@ -43,7 +44,7 @@ TRAIN_PPO_KWARGS = {
     "tensorboard_log",
     "save_path",
     "load_model_path",  # Path to existing model to resume training
-    "ablation_setting",
+    # ablation_setting is now a command-line argument, not in config
 }
 
 
@@ -1013,12 +1014,13 @@ def final_eval(model, env, save_dir=None):
 def load_training_config(config_path=None):
     """
     Load train_ppo keyword arguments from YAML config.
+    Note: ablation_setting is NOT loaded from config, it must be provided via command-line argument.
 
     Args:
         config_path: Optional override path. Defaults to config.yaml next to this file.
 
     Returns:
-        dict: Filtered kwargs to pass into train_ppo.
+        dict: Filtered kwargs to pass into train_ppo (excluding ablation_setting).
     """
     path = Path(config_path) if config_path else DEFAULT_CONFIG_PATH
     if not path.exists():
@@ -1030,6 +1032,13 @@ def load_training_config(config_path=None):
         data = yaml.safe_load(f) or {}
 
     training_cfg = data.get("training", {}).get("ppo", {}) or {}
+    
+    # Remove ablation_setting from config if present (it's now a command-line arg)
+    if "ablation_setting" in training_cfg:
+        print(f"[config] Warning: ablation_setting found in config.yaml will be ignored.")
+        print(f"[config] Please use --ablation-setting command-line argument instead.")
+        training_cfg = {k: v for k, v in training_cfg.items() if k != "ablation_setting"}
+    
     filtered_cfg = {k: v for k, v in training_cfg.items()
                     if k in TRAIN_PPO_KWARGS}
 
@@ -1041,8 +1050,50 @@ def load_training_config(config_path=None):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Train PPO agent with ablation study settings",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Train with ablation_setting=1 (MLP_Full_Matrix)
+  python train_ppo.py --ablation-setting 1
+
+  # Train with ablation_setting=2 (CNN_No_Previous_Layer)
+  python train_ppo.py --ablation-setting 2
+
+  # Train with ablation_setting=3 (MLP_Monitors_Index_Only)
+  python train_ppo.py --ablation-setting 3
+
+  # Train with ablation_setting=4 (CNN_No_Index)
+  python train_ppo.py --ablation-setting 4
+
+  # Use custom config file
+  TRAINING_CONFIG_PATH=my_config.yaml python train_ppo.py --ablation-setting 1
+        """
+    )
+    
+    parser.add_argument(
+        "--ablation-setting",
+        type=int,
+        required=True,
+        choices=[1, 2, 3, 4],
+        help="Ablation study setting (1-4). Required. "
+             "1=MLP_Full_Matrix, 2=CNN_No_Previous_Layer, "
+             "3=MLP_Monitors_Index_Only, 4=CNN_No_Index"
+    )
+    
+    args = parser.parse_args()
+    
+    # Load config from YAML (ablation_setting is NOT in config)
     config_override_path = os.environ.get(CONFIG_ENV_VAR)
     train_kwargs = load_training_config(config_override_path)
+    
+    # Add ablation_setting from command-line argument (overrides any config value)
+    train_kwargs["ablation_setting"] = args.ablation_setting
+    
+    print(f"\n{'='*70}")
+    print(f"Command-line argument: ablation_setting = {args.ablation_setting}")
+    print(f"{'='*70}\n")
 
     # Train PPO agent
     model = train_ppo(**train_kwargs)
