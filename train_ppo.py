@@ -747,9 +747,65 @@ def train_ppo(
                 print(f"[Resume] ✓ Observation space matches ({current_obs_size} dimensions)")
         else:
             print(f"[Resume] Warning: Could not verify observation space compatibility. Proceeding with caution...")
+            print(f"[Resume] Current environment observation space size: {current_obs_size}")
+            print(f"[Resume] Will attempt to load model and catch any mismatch errors...")
         
         print(f"[Resume] Warning: Ensure ablation_setting matches the original training setting.")
-        model = PPO.load(load_model_path, env=env)
+        
+        # Try to load the model, catch observation space mismatch errors
+        try:
+            model = PPO.load(load_model_path, env=env)
+        except ValueError as e:
+            error_msg = str(e)
+            if "Observation spaces do not match" in error_msg or "observation_space" in error_msg.lower():
+                # Extract model observation space size from error message if possible
+                import re
+                match = re.search(r'\((\d+),\)', error_msg)
+                if match:
+                    model_obs_size = int(match.group(1))
+                else:
+                    # Try to get it using alternative method
+                    model_obs_size = get_model_obs_size(load_model_path)
+                
+                if model_obs_size is not None:
+                    # Find which ablation_setting matches the model
+                    pixel_num_x = config.simulation.pixel_num_x
+                    pixel_num_y = config.simulation.pixel_num_y
+                    num_monitors = config.simulation.num_flux_regions
+                    
+                    matching_settings = find_matching_ablation_setting(
+                        model_obs_size, pixel_num_x, pixel_num_y, num_monitors
+                    )
+                    
+                    print(f"\n{'='*70}")
+                    print(f"ERROR: Observation space mismatch detected during model loading!")
+                    print(f"{'='*70}")
+                    print(f"Model was trained with observation space size: {model_obs_size}")
+                    print(f"Current environment has observation space size: {current_obs_size}")
+                    print(f"Current ablation_setting: {ablation_setting} ({get_ablation_config(ablation_setting)['name']})")
+                    print(f"\nThe model was likely trained with a different ablation_setting.")
+                    
+                    if matching_settings:
+                        print(f"\nSuggested ablation_setting(s) that match the model:")
+                        for setting in matching_settings:
+                            setting_config = get_ablation_config(setting)
+                            print(f"  - ablation_setting={setting}: {setting_config['name']}")
+                        print(f"\nPlease update your config.yaml to use one of these settings.")
+                    else:
+                        print(f"\nWarning: Could not find a matching ablation_setting for obs_size={model_obs_size}")
+                        print(f"This might indicate a configuration change (pixel_num_x, pixel_num_y, or num_monitors).")
+                    
+                    print(f"{'='*70}\n")
+                
+                # Re-raise with more context
+                raise ValueError(
+                    f"Observation space mismatch: model expects {model_obs_size if model_obs_size else 'unknown'} dimensions, "
+                    f"but current environment has {current_obs_size} dimensions. "
+                    f"Please use the correct ablation_setting that matches the model."
+                ) from e
+            else:
+                # Re-raise other ValueError exceptions as-is
+                raise
         
         # Get the number of timesteps already trained
         trained_timesteps = model.num_timesteps
