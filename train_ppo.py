@@ -653,11 +653,26 @@ def train_ppo(
     if ablation_setting not in [1, 2, 3, 4]:
         raise ValueError(f"Invalid ablation_setting: {ablation_setting}. Must be 1, 2, 3, or 4")
     
-    # Determine use_cnn from ablation_setting
+    # IMPORTANT: Print the ablation_setting being used BEFORE modifying use_cnn
+    ablation_config = get_ablation_config(ablation_setting)
+    print(f"\n{'='*70}")
+    print(f"[TRAINING CONFIG] Using ablation_setting = {ablation_setting}")
+    print(f"  Setting name: {ablation_config['name']}")
+    print(f"  use_cnn: {ablation_config['use_cnn']}")
+    print(f"  include_matrix: {ablation_config['include_matrix']}")
+    print(f"  include_monitors: {ablation_config['include_monitors']}")
+    print(f"  include_index: {ablation_config['include_index']}")
+    print(f"  include_previous_layer: {ablation_config['include_previous_layer']}")
+    print(f"{'='*70}\n")
+    
+    # Determine use_cnn from ablation_setting (override the parameter)
+    # This ensures ablation_setting takes precedence over use_cnn parameter
     if ablation_setting == 1 or ablation_setting == 3:
         use_cnn = False
     elif ablation_setting == 2 or ablation_setting == 4:
         use_cnn = True
+    
+    print(f"[Config] Overriding use_cnn to {use_cnn} based on ablation_setting={ablation_setting}")
 
     env_kwargs = {
         "render_mode": None,
@@ -673,6 +688,26 @@ def train_ppo(
 
     # Create evaluation environment
     eval_env = MinimalEnv(render_mode=None, ablation_setting=ablation_setting)
+    
+    # Verify observation space size matches expected ablation_setting
+    expected_obs_size = calculate_obs_size_for_ablation_setting(
+        ablation_setting, 
+        config.simulation.pixel_num_x,
+        config.simulation.pixel_num_y,
+        config.simulation.num_flux_regions
+    )
+    actual_obs_size = eval_env.observation_space.shape[0]
+    
+    if actual_obs_size != expected_obs_size:
+        print(f"\n{'!'*70}")
+        print(f"ERROR: Observation space size mismatch!")
+        print(f"  Expected (ablation_setting={ablation_setting}): {expected_obs_size}")
+        print(f"  Actual (from environment): {actual_obs_size}")
+        print(f"  This indicates a bug in the environment or ablation configuration!")
+        print(f"{'!'*70}\n")
+        raise ValueError(f"Observation space size mismatch: expected {expected_obs_size}, got {actual_obs_size}")
+    else:
+        print(f"[Config] ✓ Verified observation space size: {actual_obs_size} (matches ablation_setting={ablation_setting})")
     
     # Define model save path
     save_path_with_timestamp = f"models/ppo_model_{start_timestamp}.zip"
