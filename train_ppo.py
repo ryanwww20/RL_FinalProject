@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 from stable_baselines3 import PPO
 from stable_baselines3.common.env_util import make_vec_env, DummyVecEnv, SubprocVecEnv
 from stable_baselines3.common.callbacks import BaseCallback
+from stable_baselines3.common.buffers import RolloutBuffer
 from envs.Discrete_gym import MinimalEnv
 from envs.custom_feature_extractor import MatrixCombinedExtractor
 from PIL import Image
@@ -576,6 +577,25 @@ def train_ppo(
     if load_model_path and os.path.exists(load_model_path):
         print(f"Loading existing model from {load_model_path}...")
         model = PPO.load(load_model_path, env=env)
+        
+        # Update n_steps to the new value from config
+        old_n_steps = model.n_steps
+        model.n_steps = n_steps
+        print(f"Updated n_steps from {old_n_steps} to {n_steps} (from config.yaml)")
+
+        # Reinitialize rollout buffer with new n_steps
+        # The buffer was created with old n_steps and needs to be recreated
+        if hasattr(model, "rollout_buffer") and model.rollout_buffer is not None:
+            model.rollout_buffer = RolloutBuffer(
+                n_steps,
+                model.observation_space,
+                model.action_space,
+                device=model.device,
+                gamma=model.gamma,
+                gae_lambda=model.gae_lambda,
+                n_envs=n_envs,
+            )
+            print(f"Reinitialized rollout buffer with new n_steps={n_steps}")
         
         # Get the number of timesteps already trained
         trained_timesteps = model.num_timesteps
