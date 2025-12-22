@@ -55,9 +55,9 @@ training:
     # batch_size: 64
     # n_epochs: 40
     total_timesteps: 2000000
-    n_envs: 16
+    n_envs: 64
     learning_rate: 0.0001
-    n_steps: 240       # multiple of 20; rollout_len = n_envs * n_steps = 3840
+    n_steps: 60       # multiple of 20; rollout_len = n_envs * n_steps = 3840
     batch_size: 480    # larger batch to smooth updates
     n_epochs: 20       # reduce epochs to avoid overfitting each batch
     gamma: 0.99
@@ -69,8 +69,8 @@ training:
     max_grad_norm: 0.5
     use_cnn: true
     tensorboard_log: ./ppo_tensorboard/
-    # load_model_path: /storage/undergrad/b12901074/RL_FinalProject/models/ppo_model_20251214_122759_best.zip
-    load_model_path: ""
+    load_model_path: /storage/undergrad/b12901074/RL_FinalProject/models/ppo_model_20251218_135815_best.zip
+    # load_model_path: ""
     save_path: models/
   a2c:
     total_timesteps: 960000
